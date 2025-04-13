@@ -1,0 +1,65 @@
+<div class="events-section">
+    <!-- Location Selection -->
+    <div class="events-position">
+        <div class="location-header">
+            <i class="fa-solid fa-location-dot"></i>
+            <h2>Browsing events in</h2>
+        </div>
+        <div class="location-input">
+            <input type="text" [(ngModel)]="location" placeholder="Enter your location">
+            <div class="location-options" *ngIf="locationOptions.length < 0">
+                <div class="location-option" *ngFor="let option of locationOptions" (click)="selectLocation(option)">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>{{ option }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Categories -->
+    <div class="filter-categories">
+        <div class="filter-header">
+            <i class="fa-solid fa-filter"></i>
+            <h3>Filter Events</h3>
+        </div>
+        <div class="filters">
+            <button class="filter-select-btn" [class.active]="selectedFilter === 'all'" (click)="selectFilter('all')">
+                <i class="fa-solid fa-globe"></i>
+                <span>All Events</span>
+            </button>
+            <button class="filter-select-btn" [class.active]="selectedFilter === 'free'" (click)="selectFilter('free')">
+                <i class="fa-solid fa-ticket"></i>
+                <span>Free Events</span>
+            </button>
+            <button class="filter-select-btn" [class.active]="selectedFilter === 'online'" (click)="selectFilter('online')">
+                <i class="fa-solid fa-video"></i>
+                <span>Online Events</span>
+            </button>
+            <button class="filter-select-btn" [class.active]="selectedFilter === 'today'" (click)="selectFilter('today')">
+                <i class="fa-solid fa-calendar-day"></i>
+                <span>Today</span>
+            </button>
+            <button class="filter-select-btn" [class.active]="selectedFilter === 'weekend'" (click)="selectFilter('weekend')">
+                <i class="fa-solid fa-calendar-week"></i>
+                <span>This Weekend</span>
+            </button>
+            <button class="filter-select-btn" [class.active]="selectedFilter === 'music'" (click)="selectFilter('music')">
+                <i class="fa-solid fa-music"></i>
+                <span>Music</span>
+            </button>
+            <button class="filter-select-btn" [class.active]="selectedFilter === 'food'" (click)="selectFilter('food')">
+                <i class="fa-solid fa-utensils"></i>
+                <span>Food & Drink</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Events Data Listing -->
+    <app-body-events-data-listing 
+        [selectedFilter]="selectedFilter"
+        [location]="location">
+    </app-body-events-data-listing>
+
+    <!-- All Events Listing -->
+    <app-all-events-listing></app-all-events-listing>
+</div>

@@ -1,0 +1,18 @@
+<div class="slideShowContainer">
+  <div class="slideshow-header">
+    <h2>Featured Events</h2>
+    <p>Discover the most exciting blood donation events happening near you</p>
+  </div>
+  
+  <ng-image-slider #nav
+    [images]="imageObject"
+    [imageSize]="{ width: '1270px', height: '508px' }"
+    [infinite]="true"
+    [autoSlide]="5"
+    [showArrow]="true"
+    [slideImage]="1"
+    [imagePopup]="true"
+    [animationSpeed]="1"
+  > 
+  </ng-image-slider>
+</div>

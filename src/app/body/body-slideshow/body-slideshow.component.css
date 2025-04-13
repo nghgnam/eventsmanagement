@@ -1,0 +1,112 @@
+.slideShowContainer {
+    width: 1270px;
+    margin: auto;
+    padding: 40px 20px;
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    font-family: 'Roboto', Arial, sans-serif;
+}
+
+.slideshow-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.slideshow-header h2 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.slideshow-header p {
+    font-size: 16px;
+    color: #666;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.main {
+    border-radius: 12px !important;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom styles for the image slider */
+::ng-deep .ng-image-slider-container {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+::ng-deep .ng-image-slider .ng-image-slider-container .main {
+    border-radius: 12px;
+}
+
+::ng-deep .ng-image-slider .ng-image-slider-container .main .img-div {
+    border-radius: 12px;
+}
+
+::ng-deep .ng-image-slider .ng-image-slider-container .main .img-div img {
+    border-radius: 12px;
+}
+
+::ng-deep .ng-image-slider .ng-image-slider-container .thumb {
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 5px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+::ng-deep .ng-image-slider .ng-image-slider-container .thumb.active {
+    border-color: #e74c3c;
+}
+
+::ng-deep .ng-image-slider .ng-image-slider-container .thumb:hover {
+    border-color: #e74c3c;
+}
+
+::ng-deep .ng-image-slider .ng-image-slider-container .thumb img {
+    border-radius: 6px;
+}
+
+::ng-deep .ng-image-slider .ng-image-slider-container .main .img-div .caption {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 0 0 12px 12px;
+    padding: 10px 15px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Responsive styles */
+@media (max-width: 1300px) {
+    .slideShowContainer {
+        width: 100%;
+        max-width: 1270px;
+    }
+}
+
+@media (max-width: 768px) {
+    .slideShowContainer {
+        padding: 30px 15px;
+    }
+    
+    .slideshow-header h2 {
+        font-size: 24px;
+    }
+    
+    .slideshow-header p {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .slideShowContainer {
+        padding: 20px 10px;
+    }
+    
+    .slideshow-header h2 {
+        font-size: 20px;
+    }
+}

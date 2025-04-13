@@ -1,0 +1,71 @@
+<div class="search-results-container">
+    <!-- Search Header -->
+    <div class="search-header">
+        <h2>Search Results</h2>
+        <div class="search-info">
+            <span class="search-type">Searching by: {{searchType}}</span>
+            <span class="search-query">Query: "{{searchQuery}}"</span>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="isLoading">
+        <div class="spinner"></div>
+        <p>Loading events...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" *ngIf="error">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <p>{{error}}</p>
+    </div>
+
+    <!-- No Results State -->
+    <div class="no-results" *ngIf="!isLoading && !error && filteredEvents.length === 0">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <h3>No events found</h3>
+        <p>Try adjusting your search criteria</p>
+    </div>
+
+    <!-- Results Grid -->
+    <div class="results-grid" *ngIf="!isLoading && !error && filteredEvents.length > 0">
+        <div class="event-card" *ngFor="let event of filteredEvents" (click)="goToDetail(event.id)">
+            <!-- Event Image -->
+            <div class="event-image">
+                <img [src]="event.image_url" [alt]="event.name">
+                <div class="event-date">
+                    <span class="day">{{event.date_time_options[0].start_time | date:'d'}}</span>
+                    <span class="month">{{event.date_time_options[0].start_time | date:'MMM'}}</span>
+                </div>
+            </div>
+
+            <!-- Event Info -->
+            <div class="event-info">
+                <h3 class="event-title">{{event.name}}</h3>
+                <div class="event-details">
+                    <p class="event-time">
+                        <i class="fa-regular fa-clock"></i>
+                        {{event.date_time_options[0].start_time | date:'EEEE MMMM d ha'}}
+                    </p>
+                    <p class="event-price">
+                        <i class="fa-solid fa-ticket"></i>
+                        {{event.price ? (event.price | currency) : 'Free'}}
+                    </p>
+                    <p class="event-organizer">
+                        <i class="fa-solid fa-user"></i>
+                        {{event.organizer.name}}
+                    </p>
+                    <p class="event-location">
+                        <i class="fa-solid fa-location-dot"></i>
+                        {{event.location.address}}
+                    </p>
+                </div>
+
+                <!-- Tags -->
+                <div class="event-tags" *ngIf="event.tags && event.tags.length > 0">
+                    <span class="tag" *ngFor="let tag of event.tags">{{tag}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

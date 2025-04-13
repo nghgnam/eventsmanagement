@@ -1,0 +1,238 @@
+<div class="brower-event-container">
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <span>Event Management</span>
+            </div>
+            <div class="user-info">
+                <img [src]="sanitizeImageUrl(currentUser?.profileImage)" alt="User Avatar" class="avatar">
+                <div>
+                    <h4 class="username">{{currentUser?.fullName}}</h4>
+                    <p class="role">{{currentUser?.role}}</p>
+                </div>
+            </div>
+            <div class="menu">
+                <ul>
+                    <li [class.active]="activeTab === 'upcoming'" (click)="setActiveTab('upcoming')">
+                        <span>Upcoming Events</span>
+                    </li>
+                    <li [class.active]="activeTab === 'past'" (click)="setActiveTab('past')">
+                        <span>Past Events</span>
+                    </li>
+                    <!-- <li (click)="toggleCreateEventForm()">
+                        <span>Create New Event</span>
+                    </li> -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <h2>
+                    {{activeTab === 'upcoming' ? 'Upcoming Events' : 'Past Events'}}
+                </h2>
+                <button class="create-event-btn" (click)="toggleCreateEventForm()">
+                    Create New Event
+                </button>
+            </div>
+
+            <!-- Alert Messages -->
+            <div class="alert alert-error" *ngIf="errorMessage">
+                {{errorMessage}}
+            </div>
+            <div class="alert alert-success" *ngIf="successMessage">
+                {{successMessage}}
+            </div>
+
+            <!-- Create Event Form -->
+            <div class="card create-event-form" *ngIf="showCreateEventForm">
+                <h3>Create New Event</h3>
+                <form [formGroup]="eventForm" (ngSubmit)="onSubmit()">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Event Name *</label>
+                            <div class="input-with-icon">
+                                <input type="text" id="name" formControlName="name" placeholder="Enter event name">
+                            </div>
+                            <div class="error-message" *ngIf="eventForm.get('name')?.touched && eventForm.get('name')?.errors?.['required']">
+                                Event name is required
+                            </div>
+                            <div class="error-message" *ngIf="eventForm.get('name')?.touched && eventForm.get('name')?.errors?.['minlength']">
+                                Event name must be at least 3 characters
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="description">Description *</label>
+                            <div class="input-with-icon">
+                                <textarea id="description" formControlName="description" placeholder="Enter event description"></textarea>
+                            </div>
+                            <div class="error-message" *ngIf="eventForm.get('description')?.touched && eventForm.get('description')?.errors?.['required']">
+                                Description is required
+                            </div>
+                            <div class="error-message" *ngIf="eventForm.get('description')?.touched && eventForm.get('description')?.errors?.['minlength']">
+                                Description must be at least 10 characters
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="startDate">Start Date *</label>
+                            <div class="input-with-icon">
+                                <input type="datetime-local" id="startDate" formControlName="startDate">
+                            </div>
+                            <div class="error-message" *ngIf="eventForm.get('startDate')?.touched && eventForm.get('startDate')?.errors?.['required']">
+                                Start date is required
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="endDate">End Date *</label>
+                            <div class="input-with-icon">
+                                <input type="datetime-local" id="endDate" formControlName="endDate">
+                            </div>
+                            <div class="error-message" *ngIf="eventForm.get('endDate')?.touched && eventForm.get('endDate')?.errors?.['required']">
+                                End date is required
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="location">Location *</label>
+                            <div class="input-with-icon">
+                                <input type="text" id="location" formControlName="location" placeholder="Enter event location">
+                            </div>
+                            <div class="error-message" *ngIf="eventForm.get('location')?.touched && eventForm.get('location')?.errors?.['required']">
+                                Location is required
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="eventType">Event Type *</label>
+                            <div class="input-with-icon">
+                                <select id="eventType" formControlName="eventType">
+                                    <option value="offline">Offline</option>
+                                    <option value="online">Online</option>
+                                    <option value="hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                            <div class="error-message" *ngIf="eventForm.get('eventType')?.touched && eventForm.get('eventType')?.errors?.['required']">
+                                Event type is required
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="price">Price</label>
+                            <div class="input-with-icon">
+                                <input type="number" id="price" formControlName="price" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="maxAttendees">Max Attendees</label>
+                            <div class="input-with-icon">
+                                <input type="number" id="maxAttendees" formControlName="maxAttendees" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tags">Tags (comma separated)</label>
+                            <div class="input-with-icon">
+                                <input type="text" id="tags" formControlName="tags" placeholder="e.g., Business, Technology">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="image">Event Image</label>
+                            <div class="image-upload-container">
+                                <div class="image-preview" *ngIf="imagePreviewUrl">
+                                    <img [src]="imagePreviewUrl" alt="Event image preview">
+                                    <button type="button" class="remove-image" (click)="removeImage()">
+                                        X
+                                    </button>
+                                </div>
+                                <div class="image-upload-area" *ngIf="!imagePreviewUrl" (click)="triggerImageUpload()">
+                                    <p>Click to upload image</p>
+                                    <p class="image-hint">Recommended: 1200x630px, max 5MB</p>
+                                </div>
+                                <input type="file" id="image" (change)="onImageSelected($event)" accept="image/*" class="hidden-input">
+                            </div>
+                            <div class="error-message" *ngIf="imageError">
+                                {{imageError}}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" (click)="toggleCreateEventForm()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-primary" [disabled]="!eventForm.valid || isLoading">
+                            {{isLoading ? 'Creating...' : 'Create Event'}}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Events List -->
+            <div class="card events-list" *ngIf="!showCreateEventForm">
+                <div class="loading-spinner" *ngIf="isLoading">
+                    Loading events...
+                </div>
+                
+                <div class="events-grid" *ngIf="!isLoading">
+                    <div class="event-card" *ngFor="let event of getFilteredEvents()">
+                        <div class="event-image" *ngIf="event.image_url">
+                            <img [src]="event.image_url" alt="Event image">
+                        </div>
+                        <div class="event-header">
+                            <h3>{{event.name}}</h3>
+                            <span class="event-status" [class]="getEventStatus(event).toLowerCase()">
+                                {{getEventStatus(event)}}
+                            </span>
+                        </div>
+                        <div class="event-details">
+                            <p class="event-description">{{event.description}}</p>
+                            <div class="event-info">
+                                <div class="info-item">
+                                    <span>Start: {{formatDate(event.date_time_options[0].start_time)}}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span>{{event.location.type === 'online' ? 'Online Event' : event.location.address}}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span>{{event.attendees_count || 0}} / {{event.max_attendees || 'Unlimited'}} attendees</span>
+                                </div>
+                                <div class="info-item" *ngIf="event.price">
+                                    <span>Price: ${{event.price}}</span>
+                                </div>
+                            </div>
+                            <div class="event-actions">
+                                <button class="btn-edit" (click)="editEvent(event)">
+                                    Edit
+                                </button>
+                                <button class="btn-delete" (click)="deleteEvent(event)">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="no-events" *ngIf="!isLoading && getFilteredEvents().length === 0">
+                    <p>No {{activeTab}} events found.</p>
+                    <button class="btn-primary" (click)="toggleCreateEventForm()">
+                        Create Your First Event
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

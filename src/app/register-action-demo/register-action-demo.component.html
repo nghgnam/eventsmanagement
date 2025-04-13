@@ -1,0 +1,93 @@
+<div class="register_form">
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="form_login_container">
+        <div class="form_login_header">
+            <h2>Sign up</h2>
+        </div>
+        <div class="form_login_body">
+            <!-- Error Message -->
+            <div *ngIf="errorMessage" class="error-message-container">
+                <p class="error-message-text">{{ errorMessage }}</p>
+            </div>
+
+            <div class="form_login_block">
+                <i class="fa-solid fa-user"></i>
+                <input 
+                    type="text" 
+                    id="username" 
+                    formControlName="email" 
+                    placeholder="Email" 
+                    [class.invalid]="email?.invalid && email?.touched" 
+                />
+                <label for="username" class="from_login_label_name">Email</label>
+                <div *ngIf="email?.invalid && email?.touched" class="error-message">
+                    <small *ngIf="email?.errors?.['required']">Email is required.</small>
+                    <small *ngIf="email?.errors?.['email']">Please enter a valid email.</small>
+                </div>
+            </div>
+
+            <div class="form_login_block" style="position: relative;">
+                <i class="fa-solid fa-lock"></i>
+                <input 
+                    [type]="showPassword ? 'text' : 'password'" 
+                    id="password" 
+                    formControlName="password" 
+                    placeholder="Password" 
+                    [class.invalid]="password?.invalid && password?.touched" 
+                />
+                <label for="password" class="from_login_label_name">Password</label>
+                <i 
+                    class="fa-solid" 
+                    [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'" 
+                    (click)="togglePasswordVisibility()" 
+                    style="cursor: pointer; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);"
+                ></i>
+                <div *ngIf="password?.invalid && password?.touched" class="error-message">
+                    <small *ngIf="password?.errors?.['required']">Password is required.</small>
+                    <small *ngIf="password?.errors?.['minlength']">Password must be at least 6 characters long.</small>
+                </div>
+            </div>
+
+            <div class="form_login_block" style="position: relative;">
+                <i class="fa-solid fa-lock"></i>
+                <input 
+                    [type]="showPassword ? 'text' : 'password'" 
+                    id="repassword" 
+                    formControlName="repassword" 
+                    placeholder="Confirm Password" 
+                    [class.invalid]="(repassword?.invalid || registerForm.errors?.['mismatch']) && repassword?.touched" 
+                />
+                <label for="repassword" class="from_login_label_name">Confirm Password</label>
+                <i 
+                    class="fa-solid" 
+                    [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'" 
+                    (click)="togglePasswordVisibility()" 
+                    style="cursor: pointer; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);"
+                ></i>
+                <div *ngIf="repassword?.touched" class="error-message">
+                    <small *ngIf="repassword?.errors?.['required']">Please confirm your password.</small>
+                    <small *ngIf="registerForm.errors?.['mismatch']">Passwords do not match.</small>
+                </div>
+            </div>
+
+            <div class="form_login_forgot-register">
+                <a [routerLink]="['/login']">Already have an account? Login</a>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form_login_button">
+                <button type="submit" class="btn login_btn" [disabled]="isLoading || registerForm.invalid">
+                    <span *ngIf="!isLoading">SIGN UP</span>
+                    <span *ngIf="isLoading">Loading...</span>
+                </button>
+            </div>
+
+            <!-- Social Login -->
+            <div class="login_form_social">
+                <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                <a href="#"><i class="fa-brands fa-google"></i></a>
+            </div>
+        </div>
+    </form>
+    <div class="background_rightfront">
+    </div>
+</div>

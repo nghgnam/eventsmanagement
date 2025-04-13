@@ -1,0 +1,89 @@
+.header_navbar {
+    display: flex;
+    height: 100%;
+    color: #FFFFFF; /* Văn bản trắng */
+    text-transform: uppercase;
+    cursor: pointer;
+    align-items: center;
+    font-family: 'Open Sans', Helvetica, sans-serif; 
+    font-size: 14px;
+}
+
+.header_navbar_sign_up, 
+.header_navbar_login {
+    height: 100%;
+    line-height: 60px;
+    padding: 0 10px;
+    color: #FFFFFF; 
+    transition: color 0.3s ease;
+}
+.header_navbar_login_user, .header_navbar_login_user_name{
+    height: 100%;
+    
+    padding: 0 10px;
+    color: #FFFFFF; 
+    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+.header_navbar_sign_up:hover,
+.header_navbar_login:hover {
+    color: #A5D6A7;
+}
+.header_navbar_login_user_icon{
+    height: 36px;
+    width: 36px;
+    border-radius: 50%;
+    background: white;
+}
+a {
+    color: #FFFFFF; 
+    text-decoration: none;
+    font-size: 14px;
+}
+.header_navbar_logout{
+    color: black !important;
+    padding: 20px;
+    display: block;
+
+}
+.hidden{
+    display: none!important;
+}
+.show{
+    display: flex!important; 
+    align-items: center;
+}
+.header_navbar_state{
+    display: flex; 
+    align-items: center;
+    position: relative;
+    height: 100%;
+}
+.user_dropdown_menu{
+    position: absolute;
+    background: white;
+    color: black;
+    left: 0;
+    right: 0;
+    box-shadow: 0 0 4px #f1ebeb;
+    top: 100%;
+    z-index: 3;
+}
+.options_menu{
+    padding: 20px;
+
+}
+
+.header_navbar_logout:hover, .options_menu:hover{
+    background-color: #eeeded;
+}
+.border_line{
+    border-bottom: 1px solid #e0e0e0;
+}
+.header_navbar_login_user:hover{
+    background-color: rgb(53, 53, 53)
+}
+.show_dropdown_menu{
+    display: block;
+}

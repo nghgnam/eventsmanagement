@@ -1,0 +1,372 @@
+{
+  "events": [
+    {
+      "id": 1,
+      "name": "Hanoi: Remote Working? Good/Bad/Ugly?",
+      "description": "Discuss the pros and cons of remote working for employees and employers.",
+      "content": "Detailed content about the pros and cons of remote working, including expert opinions and research findings.",
+      "date_time_options": [
+        {
+          "start_time": "2024-04-15T19:00:00Z",
+          "end_time": "2024-04-15T20:00:00Z",
+          "time_zone": "GMT+7"
+        },
+        {
+          "start_time": "2024-04-16T19:00:00Z",
+          "end_time": "2024-04-16T20:00:00Z",
+          "time_zone": "GMT+7"
+        }
+      ],
+      "location": {
+        "type": "offline",
+        "address": "Hanoi, Vietnam"
+      },
+      "image_url": "https://cdn.prod.website-files.com/6769617aecf082b10bb149ff/67763d8a2775bee07438e7a5_Events.png",
+      "price": 39.17,
+      "currency": "USD",
+      "discount": 10,
+      "organizer": {
+        "id": 101,
+        "name": "Coach Michael Lin",
+        "followers": 14700
+      },
+      "tags": ["Business", "Remote Work"],
+      "event_type": "offline",
+      "ticket_link": "https://example.com/tickets/event1",
+      "max_attendees": 100,
+      "created_at": "2024-03-01T10:00:00Z",
+      "updated_at": "2024-03-10T15:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Free Online Coding Bootcamp",
+      "description": "Learn web development fundamentals in this free online bootcamp.",
+      "content": "Detailed schedule and curriculum covering HTML, CSS, and JavaScript, designed for beginners.",
+      "date_time_options": [
+        {
+          "start_time": "2024-04-10T18:00:00Z",
+          "end_time": "2024-04-10T20:00:00Z",
+          "time_zone": "GMT+7"
+        },
+        {
+          "start_time": "2024-04-11T18:00:00Z",
+          "end_time": "2024-04-11T20:00:00Z",
+          "time_zone": "GMT+7"
+        }
+      ],
+      "location": {
+        "type": "online"
+      },
+      "image_url": "https://theperfectevent.com/wp-content/uploads/2020/01/Main-Scroll-2.jpg",
+      "price": null,
+      "currency": "USD",
+      "discount": 0,
+      "organizer": {
+        "id": 103,
+        "name": "Code Academy",
+        "followers": 32000
+      },
+      "tags": ["Programming", "Education"],
+      "event_type": "online",
+      "ticket_link": "https://example.com/tickets/event2",
+      "max_attendees": 500,
+      "created_at": "2024-02-28T14:00:00Z",
+      "updated_at": "2024-03-08T17:00:00Z"
+    },
+    {
+      "id": 3,
+      "name": "Tech Innovation Summit 2024",
+      "description": "Explore the latest trends in AI, blockchain, and IoT with industry leaders.",
+      "content": "A comprehensive conference featuring keynote speakers, panel discussions, and networking sessions on emerging technologies.",
+      "date_time_options": [
+        {
+          "start_time": "2024-05-20T09:00:00Z",
+          "end_time": "2024-05-20T17:00:00Z",
+          "time_zone": "GMT-7"
+        },
+        {
+          "start_time": "2024-05-21T09:00:00Z",
+          "end_time": "2024-05-21T17:00:00Z",
+          "time_zone": "GMT-7"
+        }
+      ],
+      "location": {
+        "type": "offline",
+        "address": "San Francisco, USA"
+      },
+      "image_url": "https://www.oyorooms.com/blog/wp-content/uploads/2018/02/event.jpg",
+      "price": 299.99,
+      "currency": "USD",
+      "discount": 5,
+      "organizer": {
+        "id": 102,
+        "name": "Coach Michael Lin",
+        "followers": 50000
+      },
+      "tags": ["Technology", "Innovation"],
+      "event_type": "offline",
+      "ticket_link": "https://example.com/tickets/event3",
+      "max_attendees": 500,
+      "created_at": "2024-03-05T08:30:00Z",
+      "updated_at": "2024-03-12T12:00:00Z"
+    },
+    {
+      "id": 4,
+      "name": "Startup Pitch Night",
+      "description": "Watch top startups pitch their ideas to investors.",
+      "content": "An exciting evening of startup pitches, networking, and mentorship opportunities, ideal for emerging entrepreneurs.",
+      "date_time_options": [
+        {
+          "start_time": "2024-06-05T20:00:00Z",
+          "end_time": "2024-06-05T22:00:00Z",
+          "time_zone": "GMT-4"
+        },
+        {
+          "start_time": "2024-06-06T20:00:00Z",
+          "end_time": "2024-06-06T22:00:00Z",
+          "time_zone": "GMT-4"
+        }
+      ],
+      "location": {
+        "type": "offline",
+        "address": "New York, USA"
+      },
+      "image_url": "https://thumbor-cdn.b2match.com/bCC4xgRJbRZEiT9DUJvb3WJznrk=/full-fit-in/1600x0/filters:quality(75):no_upscale()/https://www.b2match.com/img/events-site_header-image.jpg",
+      "price": 25,
+      "currency": "USD",
+      "discount": 0,
+      "organizer": {
+        "id": 104,
+        "name": "Startup Hub",
+        "followers": 20000
+      },
+      "tags": ["Entrepreneurship", "Networking"],
+      "event_type": "hybrid",
+      "ticket_link": "https://example.com/tickets/event4",
+      "max_attendees": 300,
+      "created_at": "2024-03-10T09:00:00Z",
+      "updated_at": "2024-03-18T11:30:00Z"
+    },
+    {
+      "id": 5,
+      "name": "Blockchain & Cryptocurrency Conference",
+      "description": "Deep dive into the future of blockchain and crypto.",
+      "content": "Sessions on blockchain technology, market trends, and investment strategies with industry experts.",
+      "date_time_options": [
+        {
+          "start_time": "2024-07-15T10:00:00Z",
+          "end_time": "2024-07-15T16:00:00Z",
+          "time_zone": "GMT+8"
+        },
+        {
+          "start_time": "2024-07-16T10:00:00Z",
+          "end_time": "2024-07-16T16:00:00Z",
+          "time_zone": "GMT+8"
+        }
+      ],
+      "location": {
+        "type": "offline",
+        "address": "Singapore"
+      },
+      "image_url": "https://mailmktg.makemytrip.com/mybusiness/images/MICE-Corp-Events_2.jpg",
+      "price": 499,
+      "currency": "USD",
+      "discount": 10,
+      "organizer": {
+        "id": 105,
+        "name": "Crypto World",
+        "followers": 45000
+      },
+      "tags": ["Finance", "Crypto"],
+      "event_type": "offline",
+      "ticket_link": "https://example.com/tickets/event5",
+      "max_attendees": 800,
+      "created_at": "2024-03-15T07:45:00Z",
+      "updated_at": "2024-03-20T14:15:00Z"
+    },
+    {
+      "id": 6,
+      "name": "AI in Healthcare Webinar",
+      "description": "Learn how AI is transforming the healthcare industry.",
+      "content": "A comprehensive webinar featuring case studies and expert panels on the applications of artificial intelligence in healthcare.",
+      "date_time_options": [
+        {
+          "start_time": "2024-08-02T16:00:00Z",
+          "end_time": "2024-08-02T18:00:00Z",
+          "time_zone": "GMT+7"
+        },
+        {
+          "start_time": "2024-08-03T16:00:00Z",
+          "end_time": "2024-08-03T18:00:00Z",
+          "time_zone": "GMT+7"
+        }
+      ],
+      "location": {
+        "type": "online"
+      },
+      "image_url": "https://dkentertainment.vn/wp-content/uploads/2023/02/Profile-to-chuc-virtual-event-DK-2023-11-scaled.jpg",
+      "price": null,
+      "currency": "USD",
+      "discount": 0,
+      "organizer": {
+        "id": 106,
+        "name": "AI Medical Research",
+        "followers": 25000
+      },
+      "tags": ["AI", "Healthcare"],
+      "event_type": "online",
+      "ticket_link": "https://example.com/tickets/event6",
+      "max_attendees": 1000,
+      "created_at": "2024-03-18T10:20:00Z",
+      "updated_at": "2024-03-22T13:40:00Z"
+    },
+    {
+      "id": 7,
+      "name": "Photography Masterclass",
+      "description": "Improve your photography skills with professional tips and techniques.",
+      "content": "A hands-on masterclass covering lighting, composition, and editing, led by renowned photographers.",
+      "date_time_options": [
+        {
+          "start_time": "2024-09-12T14:00:00Z",
+          "end_time": "2024-09-12T17:00:00Z",
+          "time_zone": "GMT+2"
+        },
+        {
+          "start_time": "2024-09-13T14:00:00Z",
+          "end_time": "2024-09-13T17:00:00Z",
+          "time_zone": "GMT+2"
+        }
+      ],
+      "location": {
+        "type": "offline",
+        "address": "Paris, France"
+      },
+      "image_url": "https://www.hayward-ca.gov/sites/default/files/pictures/Special-Events-Guide.svg",
+      "price": 79.99,
+      "currency": "EUR",
+      "discount": 5,
+      "organizer": {
+        "id": 107,
+        "name": "Photo Studio Pro",
+        "followers": 12000
+      },
+      "tags": ["Photography", "Workshop"],
+      "event_type": "offline",
+      "ticket_link": "https://example.com/tickets/event7",
+      "max_attendees": 150,
+      "created_at": "2024-03-22T15:00:00Z",
+      "updated_at": "2024-03-27T09:30:00Z"
+    },
+    {
+      "id": 8,
+      "name": "Yoga & Meditation Retreat",
+      "description": "A relaxing getaway with yoga and meditation sessions.",
+      "content": "A weekend retreat focusing on wellness, mindfulness, and rejuvenation with guided yoga and meditation.",
+      "date_time_options": [
+        {
+          "start_time": "2024-10-05T07:00:00Z",
+          "end_time": "2024-10-05T18:00:00Z",
+          "time_zone": "GMT+8"
+        },
+        {
+          "start_time": "2024-10-06T07:00:00Z",
+          "end_time": "2024-10-06T18:00:00Z",
+          "time_zone": "GMT+8"
+        }
+      ],
+      "location": {
+        "type": "offline",
+        "address": "Bali, Indonesia"
+      },
+      "image_url": "https://www.discoverhongkong.com/content/dam/dhk/intl/what-s-new/events/events-festivals-720x860.jpg",
+      "price": 250,
+      "currency": "USD",
+      "discount": 15,
+      "organizer": {
+        "id": 108,
+        "name": "Wellness Retreats",
+        "followers": 18000
+      },
+      "tags": ["Wellness", "Yoga"],
+      "event_type": "offline",
+      "ticket_link": "https://example.com/tickets/event8",
+      "max_attendees": 300,
+      "created_at": "2024-03-25T11:00:00Z",
+      "updated_at": "2024-03-29T16:20:00Z"
+    },
+    {
+      "id": 9,
+      "name": "Virtual Reality Gaming Expo",
+      "description": "Experience the latest advancements in VR gaming.",
+      "content": "An expo showcasing the newest VR gaming technology, interactive demos, and competitive tournaments.",
+      "date_time_options": [
+        {
+          "start_time": "2024-11-15T12:00:00Z",
+          "end_time": "2024-11-15T17:00:00Z",
+          "time_zone": "GMT-8"
+        },
+        {
+          "start_time": "2024-11-16T12:00:00Z",
+          "end_time": "2024-11-16T17:00:00Z",
+          "time_zone": "GMT-8"
+        }
+      ],
+      "location": {
+        "type": "offline",
+        "address": "Los Angeles, USA"
+      },
+      "image_url": "https://aimacademy.vn/wp-content/uploads/45229-404-Post-vai-tro-marketing-trong-event.jpg",
+      "price": 150,
+      "currency": "USD",
+      "discount": 0,
+      "organizer": {
+        "id": 109,
+        "name": "VR World",
+        "followers": 22000
+      },
+      "tags": ["Gaming", "Technology"],
+      "event_type": "offline",
+      "ticket_link": "https://example.com/tickets/event9",
+      "max_attendees": 600,
+      "created_at": "2024-03-28T12:40:00Z",
+      "updated_at": "2024-04-02T18:00:00Z"
+    },
+    {
+      "id": 10,
+      "name": "Sustainable Living Workshop",
+      "description": "Learn sustainable habits for a greener lifestyle.",
+      "content": "A hands-on workshop on sustainable practices, renewable energy, and eco-friendly living with interactive sessions.",
+      "date_time_options": [
+        {
+          "start_time": "2024-12-03T10:30:00Z",
+          "end_time": "2024-12-03T15:30:00Z",
+          "time_zone": "GMT+11"
+        },
+        {
+          "start_time": "2024-12-04T10:30:00Z",
+          "end_time": "2024-12-04T15:30:00Z",
+          "time_zone": "GMT+11"
+        }
+      ],
+      "location": {
+        "type": "offline",
+        "address": "Sydney, Australia"
+      },
+      "image_url": "https://www.gl-events.com/sites/default/files/styles/slide_image_style/public/2023-07/LYON-SIRHA_2023_ABAGDASSARIAN_STANDS_BD-144_0.jpg?itok=TFM38KNs",
+      "price": 30,
+      "currency": "AUD",
+      "discount": 0,
+      "organizer": {
+        "id": 110,
+        "name": "Green Future",
+        "followers": 8000
+      },
+      "tags": ["Environment", "Sustainability"],
+      "event_type": "offline",
+      "ticket_link": "https://example.com/tickets/event10",
+      "max_attendees": 250,
+      "created_at": "2024-03-30T09:20:00Z",
+      "updated_at": "2024-04-05T14:10:00Z"
+    }
+  ]
+}

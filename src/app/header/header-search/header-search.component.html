@@ -1,0 +1,61 @@
+<div class="search-container" #searchContainer>
+  <form [formGroup]="searchForm" (ngSubmit)="onSubmit()" class="search-form">
+    <div class="search-input-wrapper">
+      <input 
+        type="text" 
+        formControlName="searchQuery"
+        placeholder="Search events..."
+        (focus)="onFocus()"
+        (blur)="onBlur($event)"
+        class="search-input"
+        autocomplete="off"
+      >
+    </div>
+  </form>
+
+  <!-- Search Results -->
+  <div class="search-results" *ngIf="showResults">
+    <div class="loading-spinner" *ngIf="isLoading">
+      <div class="spinner"></div>
+      <span>Searching...</span>
+    </div>
+
+    <div class="results-list" *ngIf="!isLoading">
+      <div *ngIf="searchResults.length === 0" class="no-results">
+        <span class="material-icons">search_off</span>
+        <p>No events found</p>
+        <p class="hint">Try different keywords</p>
+      </div>
+      
+      <div 
+        *ngFor="let event of searchResults" 
+        class="result-item"
+        (click)="onResultClick(event)"
+      >
+        <div class="event-image" *ngIf="event.image_url">
+          <img [src]="event.image_url" [alt]="event.name">
+        </div>
+        <div class="event-info">
+          <h4>{{event.name}}</h4>
+          <p class="event-date">
+            <span class="material-icons">calendar_today</span>
+            {{event.date_time_options && event.date_time_options.length > 0 ? (event.date_time_options[0].start_time | date:'mediumDate') : 'Date not specified'}}
+          </p>
+          <p class="event-location">
+            <span class="material-icons">location_on</span>
+            {{event.location.type === 'offline' ? event.location.address : 'Online Event'}}
+          </p>
+          <p class="event-type">
+            <span class="material-icons">category</span>
+            {{event.event_type}}
+          </p>
+          <p class="event-organizer">
+            <span class="material-icons">person</span>
+            {{event.organizer.name}}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  
