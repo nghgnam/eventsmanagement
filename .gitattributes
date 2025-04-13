@@ -1,0 +1,40 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Documents
+*.md text diff=markdown
+*.txt text
+*.json text
+*.yml text
+*.yaml text
+*.xml text
+*.html text
+*.css text
+*.scss text
+*.sass text
+*.less text
+*.js text
+*.ts text
+*.tsx text
+*.jsx text
+*.json text
+# Graphics
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.svg text
+
+# Fonts
+*.ttf binary
+*.eot binary
+*.woff binary
+*.woff2 binary
+
+# Exclude files from exporting
+.gitattributes export-ignore
+.gitignore export-ignore 
+
+.firebaserc text eol=lf
+Event_management_API/event-management-api/donatebloodv1-firebase-adminsdk-62d1u-bf4df95297.json text eol=lf
+Event_management_API/event-management-api/node_modules/.bin/bcrypt
