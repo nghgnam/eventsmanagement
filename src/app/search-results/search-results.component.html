@@ -157,7 +157,7 @@
         <div class="events-list" *ngIf="!isLoading && filteredEvents.length > 0">
           <div class="event-card" *ngFor="let event of filteredEvents">
             <div class="event-image">
-              <img [src]="event.image_url || 'assets/images/default-event.jpg'" [alt]="event.name">
+              <img [src]="event.image_url" [alt]="event.name">
               <span class="event-type">{{event.event_type || 'Blood Donation'}}</span>
             </div>
             <div class="event-content">

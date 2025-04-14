@@ -23,6 +23,7 @@ export class HeaderNavbarComponent implements OnInit {
   userCurrentId: string | undefined
   userCurrentname : string | undefined
   userCurrentImage : string | undefined
+  userCurrentEmail : string | undefined
   isDropdownOpen : boolean = false;
   auth = getAuth();
   
@@ -40,8 +41,9 @@ export class HeaderNavbarComponent implements OnInit {
         const currentUserId = user.uid;
         this.userCurrentId = user.uid
         this.usersService.getCurrentUserById(currentUserId).subscribe(userData=>{
-          this.userCurrentname = userData?.fullName || 'Guest'
-          this.userCurrentImage = userData?.profileImage || 'assets/images/Sample_User_Icon.png'
+          this.userCurrentname = userData?.fullName ;
+          this.userCurrentImage = userData?.profileImage || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'
+          this.userCurrentEmail = userData?.email ;
         } )
       }
     })

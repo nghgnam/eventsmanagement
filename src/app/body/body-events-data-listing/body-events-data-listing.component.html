@@ -58,7 +58,7 @@
                             <span>{{ event.price ? (event.price + ' ' + (event.currency || 'USD')) : 'Free' }}</span>
                         </div>
                         <div class="event-organizer">
-                            <img [src]="event.organizer.profileImage || 'assets/images/default-avatar.png'" alt="Organizer">
+                            <img [src]="event.organizer.profileImage || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'" alt="Organizer avatar" class="organizer-avatar">
                             <span>{{ event.organizer.name }}</span>
                         </div>
                     </div>

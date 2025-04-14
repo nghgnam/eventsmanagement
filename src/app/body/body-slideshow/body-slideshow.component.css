@@ -1,95 +1,159 @@
-.slideShowContainer {
-    width: 1270px;
-    margin: auto;
+.slideshow-section {
+    width: 100%;
     padding: 40px 20px;
-    background-color: #f9f9f9;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    font-family: 'Roboto', Arial, sans-serif;
+    background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+}
+
+.slideshow-container {
+    max-width: 1270px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.slideshow-container:hover {
+    transform: translateY(-5px);
 }
 
 .slideshow-header {
     text-align: center;
-    margin-bottom: 30px;
+    padding: 30px 20px;
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
 }
 
 .slideshow-header h2 {
-    font-size: 28px;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 10px;
+    font-size: 32px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
 }
 
 .slideshow-header p {
-    font-size: 16px;
-    color: #666;
+    font-size: 18px;
+    color: #6c757d;
     max-width: 600px;
     margin: 0 auto;
+    line-height: 1.6;
 }
 
-.main {
-    border-radius: 12px !important;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+.slideshow-wrapper {
+    padding: 0 20px 30px;
 }
-
+::ng-deep .ng-image-slider{
+    height: 450px!important;
+}
 /* Custom styles for the image slider */
 ::ng-deep .ng-image-slider-container {
     border-radius: 12px;
     overflow: hidden;
+    background-color: #ffffff;
 }
 
 ::ng-deep .ng-image-slider .ng-image-slider-container .main {
     border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    height: 450px!important;
 }
 
 ::ng-deep .ng-image-slider .ng-image-slider-container .main .img-div {
     border-radius: 12px;
+    overflow: hidden;
 }
 
 ::ng-deep .ng-image-slider .ng-image-slider-container .main .img-div img {
     border-radius: 12px;
+    transition: transform 0.3s ease;
+}
+
+::ng-deep .ng-image-slider .ng-image-slider-container .main .img-div:hover img {
+    transform: scale(1.05);
 }
 
 ::ng-deep .ng-image-slider .ng-image-slider-container .thumb {
     border-radius: 8px;
     overflow: hidden;
-    margin: 5px;
+    margin: 8px;
     border: 2px solid transparent;
     transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 ::ng-deep .ng-image-slider .ng-image-slider-container .thumb.active {
     border-color: #e74c3c;
+    transform: scale(1.05);
 }
 
 ::ng-deep .ng-image-slider .ng-image-slider-container .thumb:hover {
     border-color: #e74c3c;
+    transform: scale(1.05);
 }
 
 ::ng-deep .ng-image-slider .ng-image-slider-container .thumb img {
     border-radius: 6px;
+    transition: transform 0.3s ease;
 }
 
 ::ng-deep .ng-image-slider .ng-image-slider-container .main .img-div .caption {
-    background-color: rgba(0, 0, 0, 0.6);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
     border-radius: 0 0 12px 12px;
-    padding: 10px 15px;
-    font-size: 16px;
+    padding: 20px;
+    font-size: 18px;
     font-weight: 500;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Navigation arrows */
+::ng-deep .ng-image-slider .nav {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+::ng-deep .ng-image-slider .nav:hover {
+    background-color: #ffffff;
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 /* Responsive styles */
 @media (max-width: 1300px) {
-    .slideShowContainer {
-        width: 100%;
-        max-width: 1270px;
+    .slideshow-container {
+        margin: 0 20px;
     }
 }
 
 @media (max-width: 768px) {
-    .slideShowContainer {
+    .slideshow-section {
         padding: 30px 15px;
+    }
+    
+    .slideshow-header h2 {
+        font-size: 28px;
+    }
+    
+    .slideshow-header p {
+        font-size: 16px;
+    }
+    
+    .slideshow-wrapper {
+        padding: 0 15px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .slideshow-section {
+        padding: 20px 10px;
     }
     
     .slideshow-header h2 {
@@ -99,14 +163,8 @@
     .slideshow-header p {
         font-size: 14px;
     }
-}
-
-@media (max-width: 480px) {
-    .slideShowContainer {
-        padding: 20px 10px;
-    }
     
-    .slideshow-header h2 {
-        font-size: 20px;
+    .slideshow-wrapper {
+        padding: 0 10px 15px;
     }
 }

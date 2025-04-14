@@ -1,18 +1,22 @@
-<div class="slideShowContainer">
-  <div class="slideshow-header">
-    <h2>Featured Events</h2>
-    <p>Discover the most exciting blood donation events happening near you</p>
+<div class="slideshow-section">
+  <div class="slideshow-container">
+    <div class="slideshow-header">
+      <h2>Featured Events</h2>
+      <p>Discover exciting blood donation events happening near you</p>
+    </div>
+    
+    <div class="slideshow-wrapper">
+      <ng-image-slider #nav
+        [images]="imageObject"
+        [imageSize]="{ width: '100%', height: '450px' }"
+        [infinite]="true"
+        [autoSlide]="5"
+        [showArrow]="true"
+        [slideImage]="1"
+        [imagePopup]="true"
+        [animationSpeed]="1"
+      > 
+      </ng-image-slider>
+    </div>
   </div>
-  
-  <ng-image-slider #nav
-    [images]="imageObject"
-    [imageSize]="{ width: '1270px', height: '508px' }"
-    [infinite]="true"
-    [autoSlide]="5"
-    [showArrow]="true"
-    [slideImage]="1"
-    [imagePopup]="true"
-    [animationSpeed]="1"
-  > 
-  </ng-image-slider>
 </div>
