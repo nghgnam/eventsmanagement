@@ -2,7 +2,7 @@
     <!-- Hero Section with Background Image -->
     <div class="events_background">
         <div class="events_background2" [ngStyle]="{'background-image': 'url(' + event.image_url + ')'}"></div>
-        <img [src]="event.image_url" [alt]="event.name" class="background_details">
+        <img [src]="getSafeUrl(event.image_url)" [alt]="event.name" class="background_details">
     </div>
 
     <!-- Main Content -->
@@ -25,7 +25,7 @@
             <!-- Organizer Info -->
             <div class="about_organizer">
                 <div class="organizer_avatar">
-                    <img [src]="event.organizer.profileImage || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'" [alt]="event.organizer.name">
+                    <img [src]="getSafeUrl(event.organizer.profileImage) || sanitizerService.getDefaultAvatarUrl()" [alt]="event.organizer.name">
                 </div>
                 <div class="organizer_info">
                     <span style="    font-weight: 600;">By</span>
@@ -114,7 +114,7 @@
             </div>
             <div class="host_organized_about">
                 <div class="host_header">
-                    <img [src]="event.organizer.profileImage || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'" [alt]="event.organizer.name" class="host_avatar">
+                    <img [src]="safeProfileImage || getSafeUrl(event.organizer.profileImage)" [alt]="event.organizer.name" class="host_avatar">
                     <div class="host_info">
                         <p class="host_name">{{event.organizer.name}}</p>
                         <p class="host_follower">{{event.organizer.followers}} followers</p>
@@ -131,7 +131,7 @@
                 <div class="event_other" *ngFor="let e of events">
                     <div class="event_other_block" *ngIf="event.organizer && e.organizer.name === event.organizer.name" (click)="goToDetail(e.id)">
                         <div class="event_other_image">
-                            <img [src]="e.image_url" [alt]="e.name">
+                            <img [src]="getSafeUrl(e.image_url)" [alt]="e.name">
                             <div class="event_other_date">
                                 <span class="day">{{e.date_time_options[0].start_time | date : "d"}}</span>
                                 <span class="month">{{e.date_time_options[0].start_time | date : "MMM"}}</span>

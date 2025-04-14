@@ -155,38 +155,43 @@
         
         <!-- Events list -->
         <div class="events-list" *ngIf="!isLoading && filteredEvents.length > 0">
-          <div class="event-card" *ngFor="let event of filteredEvents">
+          <div class="event-card" *ngFor="let event of filteredEvents" (click)="viewEventDetails(event.id)">
             <div class="event-image">
               <img [src]="event.image_url" [alt]="event.name">
-              <span class="event-type">{{event.event_type || 'Blood Donation'}}</span>
+              <div class="event-type">{{ event.event_type }}</div>
+              <div class="event-distance" *ngIf="userLocation && event.location?.type === 'offline' && event.location?.coordinates">
+                <span class="material-icons">place</span>
+                {{ calculateDistance(event) | number:'1.1-1' }} km away
+              </div>
             </div>
             <div class="event-content">
               <div class="event-header">
-                <h3>{{event.name}}</h3>
-                <div class="event-meta">
-                  <div class="meta-item">
-                    <i class="material-icons">event</i>
-                    <div class="date-time">
-                      <span>{{event.date_time_options[0].start_time | date:'mediumDate'}}</span>
-                      <span>{{event.date_time_options[0].start_time | date:'shortTime'}}</span>
-                    </div>
-                  </div>
-                  <div class="meta-item">
-                    <i class="material-icons">{{event.location.type === 'online' ? 'computer' : 'location_on'}}</i>
-                    <span>{{event.location.type === 'online' ? 'Online Event' : event.location.address}}</span>
-                  </div>
+                <h3>{{ event.name }}</h3>
+              </div>
+              <div class="event-meta">
+                <div class="meta-item">
+                  <span class="material-icons">event</span>
+                  <span>{{ event.date_time_options[0].start_time | date:'mediumDate' }}</span>
+                </div>
+                <div class="meta-item">
+                  <span class="material-icons">schedule</span>
+                  <span>{{ event.date_time_options[0].start_time | date:'shortTime' }} - {{ event.date_time_options[0].end_time | date:'shortTime' }}</span>
+                </div>
+                <div class="meta-item">
+                  <span class="material-icons">{{ event.location.type === 'online' ? 'computer' : 'place' }}</span>
+                  <span>{{ event.location.type === 'online' ? 'Online Event' : (event.location.address || 'Location TBA') }}</span>
                 </div>
               </div>
-              <div class="event-tags">
-                <span class="tag" *ngFor="let tag of event.tags">
-                  <i class="material-icons">{{getTagIcon(tag)}}</i>
-                  {{tag}}
-                </span>
+              <div class="event-tags" *ngIf="event.tags && event.tags.length > 0">
+                <div class="tag" *ngFor="let tag of event.tags">
+                  <span class="material-icons">{{ getTagIcon(tag) }}</span>
+                  <span>{{ tag }}</span>
+                </div>
               </div>
               <div class="event-actions">
-                <button class="view-details-btn" (click)="viewEventDetails(event.id)">
-                  <i class="material-icons">visibility</i>
-                  View Details
+                <button class="view-details-btn">
+                  <span>View Details</span>
+                  <span class="material-icons">arrow_forward</span>
                 </button>
               </div>
             </div>
@@ -198,11 +203,16 @@
       <div class="map-sidebar">
         <div class="map-container">
           <div class="map-header">
-            <h3>Event Locations</h3>
-            <button class="view-map-btn" (click)="openFullMap()">
-              <span class="material-icons">fullscreen</span>
-              View Full Map
-            </button>
+            <div class="map-actions">
+              <button class="location-btn" (click)="getUserLocation()" [disabled]="isLocating">
+                <span class="material-icons">{{ isLocating ? 'hourglass_empty' : 'my_location' }}</span>
+                {{ isLocating ? 'Locating...' : 'My Location' }}
+              </button>
+              <button class="view-map-btn" (click)="openFullMap()">
+                <span class="material-icons">fullscreen</span>
+                View Full Map
+              </button>
+            </div>
           </div>
           <div class="map-content">
             <div id="mapContainer" #mapContainer></div>
@@ -231,15 +241,21 @@
 
   <!-- Full Map Modal -->
   <div class="full-map-modal" *ngIf="isFullMapOpen">
-    <div class="modal-content">
-      <div class="modal-header">
+    <div class="full-map-container">
+      <div class="full-map-header">
         <h3>Event Locations</h3>
-        <button class="close-modal" (click)="closeFullMap()">
-          <span class="material-icons">close</span>
-        </button>
+        <div class="map-actions">
+          <button class="location-btn" (click)="getUserLocation()" [disabled]="isLocating">
+            <span class="material-icons">{{ isLocating ? 'hourglass_empty' : 'my_location' }}</span>
+            {{ isLocating ? 'Locating...' : 'My Location' }}
+          </button>
+          <button class="close-map-btn" (click)="closeFullMap()">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
       </div>
-      <div class="modal-body">
-        <div id="fullMapContainer" #fullMapContainer></div>
+      <div class="full-map-content">
+        <div id="fullMapContainer" #mapContainer></div>
       </div>
     </div>
   </div>

@@ -91,6 +91,10 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy , OnCha
 
   showMore() {
     this.showAll = true;
+    this.events$.subscribe(events => {
+      this.filteredEvents = this.getFilteredEvents(events);
+      this.displayedEvents = this.filteredEvents;
+    });
   }
 
   goToDetail(eventId: string | undefined) {
@@ -101,7 +105,8 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy , OnCha
       console.error("Event ID is undefined!");
     }
   }
+
   ngOnDestroy(): void {
-    this.subscription.unsubscribe()
+    this.subscription.unsubscribe();
   }
 }
