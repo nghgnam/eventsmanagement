@@ -15,6 +15,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { finalize } from 'rxjs/operators';
 import { Timestamp } from 'firebase/firestore';
 import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { AddressInformationService } from '../../service/addressInformation.service';
+import { skip } from 'rxjs/operators';
 interface CloudinaryResponse {
   secure_url: string;
 }
@@ -42,7 +44,14 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   getCountryCallingCodes: { code: string, dialCode: string }[] = [];
   currentRole: string ='';
   activeOF: boolean =  false;
+  wardsValue:any[] = [];
+  districtsValue:any[] =[];
+  citiesValue:any[]= [];
 
+  filterDistricts:any[]= [];
+  filterWards:any[] =[];
+
+  
   constructor(
     private userService: UsersService, 
     private router: Router, 
@@ -50,7 +59,8 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     private cloudinaryService: CloudinaryService,
     private sanitizer: DomSanitizer,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private addressInfor: AddressInformationService
   ) {
     this.user$ = this.userService.users$;
     this.userForm = this.fb.group({
@@ -58,7 +68,9 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       phoneNumber: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
       countryCode: [''],
-      street: ['', [Validators.required]],
+      details_address: ['', [Validators.required]],
+      wards: ['', [Validators.required]],
+      districts: ['', [Validators.required]],
       country: ['', [Validators.required]],
       city: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
@@ -66,7 +78,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       password: ['', Validators.required],
       NewPassword: ['', [Validators.required, Validators.minLength(6)]],
       profileImage: [''],
-      companyName: [' ' , Validators.required],
+      companyName: ['' , Validators.required],
       identifier: ['', [Validators.required , Validators.pattern('^\\d{12}$')]],
       jobTitle: ['', Validators.required],
       postalCode: ['', Validators.required]
@@ -77,6 +89,53 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+
+
+    this.addressInfor.getCities()
+    .subscribe(data =>{
+      if(data){
+        this.citiesValue = data
+      }
+    })
+    this.addressInfor.getDistricts()
+    .subscribe(data =>{
+      if(data){
+        this.districtsValue = data
+      }
+    })
+    this.addressInfor.getWards()
+    .subscribe(data =>{
+      if(data){
+        this.wardsValue = data
+      }
+    })
+
+    this.userForm.get('city')?.valueChanges
+    .pipe(skip(1))
+    .subscribe(dataChange =>{
+      if(dataChange){
+        this.filterDistricts = this.districtsValue.filter(
+          d=> d.parrent_code === dataChange.code
+        );
+
+        this.userForm.get('districts')?.reset();
+        this.filterDistricts = []
+      }
+    })
+
+    this.userForm.get('districts')?.valueChanges
+    .pipe(skip(1))
+    .subscribe(dataChange =>{
+      if(dataChange){
+        this.filterWards = this.wardsValue.filter(
+          d=> d.parrent_code === dataChange.code
+        );
+
+        this.userForm.get('wards')?.reset();
+        this.wardsValue = []
+      }
+    })
+
     this.isLoading = true;
     const authInstance = getAuth();
     this.countries = this.getCountryList();
@@ -174,9 +233,15 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
           case 'dateOfBirth':
             this.userForm.get(key)?.setValue(formattedDOB);
             break;
-          case 'street':
-            this.userForm.get(key)?.setValue(address.street || '');
+          case 'details_address':
+            this.userForm.get(key)?.setValue(address.details_address || '');
             break;
+          case 'wards':
+              this.userForm.get(key)?.setValue(address.wards || '');
+              break;
+          case 'districts':
+            this.userForm.get(key)?.setValue(address.districts || '');
+            break;  
           case 'country':
             this.userForm.get(key)?.setValue(address.country || '');
             break;
@@ -312,7 +377,9 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       lastName: this.userForm.get('lastName')?.value?.trim(),
       phoneNumber: this.userForm.get('phoneNumber')?.value?.trim(),
       address: {
-        street: this.userForm.get('street')?.value?.trim(),
+        details_address: this.userForm.get('details_address')?.value?.trim(),
+        wards: this.userForm.get('wards')?.value?.trim(),
+        districts: this.userForm.get('districts')?.value?.trim(),
         city: this.userForm.get('city')?.value?.trim(),
         country: this.userForm.get('country')?.value?.trim()
       },
@@ -467,7 +534,9 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   get firstName() { return this.userForm.get('firstName'); }
   get lastName() { return this.userForm.get('lastName'); }
   get phoneNumber() { return this.userForm.get('phoneNumber'); }
-  get street() { return this.userForm.get('street'); }
+  get details_address() { return this.userForm.get('details_address'); }
+  get wards() { return this.userForm.get('wards'); }
+  get districts() { return this.userForm.get('districts'); }
   get country() { return this.userForm.get('country'); }
   get city() { return this.userForm.get('city'); }
   get email() {return this.userForm.get('email');}
