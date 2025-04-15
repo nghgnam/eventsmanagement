@@ -257,7 +257,7 @@
                     </button>
                 </div>
             </form>
-            <form [formGroup]="userForm" class="card" *ngIf="changeTab=== 'tab2'">
+            <form [formGroup]="changePasswordForm" class="card" *ngIf="changeTab=== 'tab2'">
                 <div class="alert alert-error" *ngIf="errorMessage">
                     {{ errorMessage }}
                 </div>
@@ -300,11 +300,11 @@
                             </div>
                             <div class="error-message" *ngIf="NewPassword?.invalid && NewPassword?.touched">
                                 <span *ngIf="NewPassword?.errors?.['required']">New password is required</span>
-                                <span *ngIf="userForm.get('password')?.value === userForm.get('NewPassword')?.value ">New password does not match</span>
+                                <span *ngIf="changePasswordForm.get('password')?.value === changePasswordForm.get('NewPassword')?.value ">New password does not match</span>
                             </div>
                         </div>
                         <div class="form-actions">
-                            <button type="submit" class="btn-primary" [disabled]="userForm.invalid || isSaving" (click)="updatePasswordHandler()">
+                            <button type="submit" class="btn-primary" [disabled]="changePasswordForm.invalid || isSaving" (click)="updatePasswordHandler()">
                                 <span class="button-content">
                                     <i class="button-icon">{{ isSaving ? '⏳' : '💾' }}</i>
                                     {{ isSaving ? 'Saving...' : 'Change password' }}
@@ -316,7 +316,7 @@
                 </div>
             </form>
             
-            <form [formGroup]="userForm" class="card" *ngIf="changeTab=== 'tab3'">
+            <form [formGroup]="OrganizerForm" class="card" *ngIf="changeTab=== 'tab3'">
                 <div class="alert alert-error" *ngIf="errorMessage">
                     {{ errorMessage }}
                 </div>
@@ -391,7 +391,7 @@
                         </div>
                     </div>
                     <div class="form-actions" *ngIf="activeOF">
-                        <button type="submit" class="btn-primary"  (click)="activeOrganizer()">
+                        <button type="submit" class="btn-primary"  (click)="activeOrganizer()" [disabled]="OrganizerForm.invalid || isSaving">
                             <span class="button-content">
                                 Active organizer
                             </span>
