@@ -20,7 +20,10 @@ export const routes: Routes = [
       { path: 'login', component: LoginActionDemoComponent },
       { path: 'register', component: RegisterActionDemoComponent },
       { path: 'body', component: BodyPageComponent },
-      { path: 'manage-events', component: ManageEventsComponent },
+      {
+        path: 'manage-events',
+        loadComponent: () => import ('./manage-events/manage-events.component').then(m => m.ManageEventsComponent)
+      },
       { path: 'userprofile/:id', component: UserInfomationComponent },
       {
         path: 'search-results',

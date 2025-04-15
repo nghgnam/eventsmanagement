@@ -1,12 +1,10 @@
 <div class="page-container">
-    <!-- Breadcrumb -->
     <div class="breadcrumb">
       <a routerLink="/home">Home</a>
       <span class="separator">/</span>
       <span class="current">Search Results</span>
     </div>
 
-    <!-- Page header with modern design -->
     <div class="page-header">
       <div class="title-container">
         <div class="page-title">
@@ -32,9 +30,9 @@
       </div>
     </div>
 
-    <!-- Main Content Layout -->
+
     <div class="main-layout">
-      <!-- Left Sidebar - Filters -->
+
       <div class="filters-sidebar" [class.show]="showFilters">
         <div class="filters-header">
           <h3>Filters</h3>
@@ -42,8 +40,7 @@
             <i class="material-icons">close</i>
           </button>
         </div>
-        
-        <!-- Tags filter -->
+
         <div class="filter-section">
           <h4>Tags</h4>
           <div class="tags-container">
@@ -59,8 +56,7 @@
             </div>
           </div>
         </div>
-        
-        <!-- Date filter -->
+
         <div class="filter-section">
           <h4>Date</h4>
           <div class="date-options">
@@ -102,8 +98,7 @@
             </div>
           </div>
         </div>
-        
-        <!-- Location type filter -->
+
         <div class="filter-section">
           <h4>Location Type</h4>
           <div class="location-options">
@@ -138,22 +133,20 @@
         </div>
       </div>
 
-      <!-- Center Content - Events List -->
+
       <div class="events-content">
-        <!-- Loading state -->
         <div class="loading-container" *ngIf="isLoading">
           <div class="spinner"></div>
           <p>Loading events...</p>
         </div>
         
-        <!-- No results state -->
+
         <div class="no-results" *ngIf="!isLoading && filteredEvents.length === 0">
           <i class="material-icons">search_off</i>
           <h2>No events found</h2>
           <p>Try adjusting your filters or search criteria</p>
         </div>
-        
-        <!-- Events list -->
+ 
         <div class="events-list" *ngIf="!isLoading && filteredEvents.length > 0">
           <div class="event-card" *ngFor="let event of filteredEvents" (click)="viewEventDetails(event.id)">
             <div class="event-image">
@@ -199,7 +192,6 @@
         </div>
       </div>
 
-      <!-- Right Sidebar - Map Preview -->
       <div class="map-sidebar">
         <div class="map-container">
           <div class="map-header">
@@ -222,7 +214,6 @@
     </div>
   </div>
 
-  <!-- Location Confirmation Dialog -->
   <div class="location-confirm-dialog" *ngIf="showLocationConfirm">
     <div class="dialog-content">
       <div class="dialog-header">
@@ -239,7 +230,6 @@
     </div>
   </div>
 
-  <!-- Full Map Modal -->
   <div class="full-map-modal" *ngIf="isFullMapOpen">
     <div class="full-map-container">
       <div class="full-map-header">
@@ -260,7 +250,6 @@
     </div>
   </div>
 
-  <!-- Info Window Template -->
   <ng-template #infoWindowTemplate>
     <div class="info-window">
       <h4>{{selectedEvent?.name}}</h4>

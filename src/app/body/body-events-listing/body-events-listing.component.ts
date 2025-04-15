@@ -66,7 +66,7 @@ export class BodyEventsListingComponent implements OnInit {
             this.currentUser = userData;
             // Format user address
             if (userData.address) {
-              this.userAddress = `${userData.address.street}, ${userData.address.city}, ${userData.address.country}`;
+              this.userAddress = `${userData.address.details_address},${userData.address.wards},${userData.address.districts}, ${userData.address.city}, ${userData.address.country}`;
             }
           }
         });

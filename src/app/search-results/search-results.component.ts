@@ -176,9 +176,9 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
     }
   }
 
-  // Calculate distance between user and event
   calculateDistance(event: EventList): number | null {
     if (!this.userLocation || !event.location?.coordinates) {
+      console.log("cannot get location")
       return null;
     }
     
@@ -186,8 +186,7 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
     const userLng = this.userLocation.longitude;
     const eventLat = event.location.coordinates.latitude;
     const eventLng = event.location.coordinates.longitude;
-    
-    // Haversine formula to calculate distance between two points on Earth
+
     const R = 6371; // Radius of the Earth in km
     const dLat = this.deg2rad(eventLat - userLat);
     const dLon = this.deg2rad(eventLng - userLng);
@@ -197,7 +196,7 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     const distance = R * c; // Distance in km
-    
+    console.log(distance)
     return distance;
   }
   
