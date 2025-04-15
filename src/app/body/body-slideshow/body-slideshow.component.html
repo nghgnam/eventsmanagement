@@ -6,12 +6,13 @@
     </div>
     
     <div class="slideshow-wrapper">
-      <div class="custom-slider">
+      <div class="custom-slider" (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">
         <!-- Main slide -->
         <div class="slide-container" #slideContainer>
           <div class="slide" [style.background-image]="'url(' + slides[currentSlideIndex].image + ')'">
             <div class="slide-content">
               <h3>{{ slides[currentSlideIndex].title }}</h3>
+              <p>{{ slides[currentSlideIndex].description }}</p>
             </div>
           </div>
           

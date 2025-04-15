@@ -14,15 +14,18 @@ export class BodySlideshowComponent implements OnInit, OnDestroy {
   slides = [
     {
       image: 'assets/images/images_1.jpg',
-      title: 'Blood Donation Drive - Save Lives Today'
+      title: 'Blood Donation Drive - Save Lives Today',
+      description: 'Join us in our mission to save lives through blood donation'
     },
     {
       image: 'assets/images/images_2.jpg',
-      title: 'Community Blood Bank Event'
+      title: 'Community Blood Bank Event',
+      description: 'Together we can make a difference in our community'
     },
     {
       image: 'assets/images/images_3.png',
-      title: 'Emergency Blood Donation Campaign'
+      title: 'Emergency Blood Donation Campaign',
+      description: 'Your donation can help someone in need'
     }
   ];
 
@@ -31,13 +34,14 @@ export class BodySlideshowComponent implements OnInit, OnDestroy {
   autoSlideTime = 5000; // 5 seconds
   isTransitioning = false;
   slideDirection: 'left' | 'right' = 'right';
+  isHovered = false;
 
   ngOnInit() {
     this.startAutoSlide();
   }
 
   ngAfterViewInit() {
-    // Thêm class để bắt đầu hiệu ứng
+    // Add class to start animation
     setTimeout(() => {
       if (this.slideContainer) {
         this.slideContainer.nativeElement.classList.add('initialized');
@@ -50,9 +54,11 @@ export class BodySlideshowComponent implements OnInit, OnDestroy {
   }
 
   startAutoSlide() {
-    this.autoSlideInterval = setInterval(() => {
-      this.nextSlide();
-    }, this.autoSlideTime);
+    if (!this.isHovered) {
+      this.autoSlideInterval = setInterval(() => {
+        this.nextSlide();
+      }, this.autoSlideTime);
+    }
   }
 
   stopAutoSlide() {
@@ -61,27 +67,37 @@ export class BodySlideshowComponent implements OnInit, OnDestroy {
     }
   }
 
+  onMouseEnter() {
+    this.isHovered = true;
+    this.stopAutoSlide();
+  }
+
+  onMouseLeave() {
+    this.isHovered = false;
+    this.startAutoSlide();
+  }
+
   nextSlide() {
     if (this.isTransitioning) return;
     
     this.slideDirection = 'right';
     this.isTransitioning = true;
     
-    // Thêm class để bắt đầu hiệu ứng
+    // Add class to start animation
     if (this.slideContainer) {
       this.slideContainer.nativeElement.classList.add('slide-right');
     }
     
-    // Đợi hiệu ứng hoàn thành
+    // Wait for animation to complete
     setTimeout(() => {
       this.currentSlideIndex = (this.currentSlideIndex + 1) % this.slides.length;
       this.isTransitioning = false;
       
-      // Xóa class hiệu ứng
+      // Remove animation class
       if (this.slideContainer) {
         this.slideContainer.nativeElement.classList.remove('slide-right');
       }
-    }, 500); // Thời gian phải khớp với thời gian transition trong CSS
+    }, 500); // Time must match CSS transition duration
   }
 
   prevSlide() {
@@ -90,21 +106,21 @@ export class BodySlideshowComponent implements OnInit, OnDestroy {
     this.slideDirection = 'left';
     this.isTransitioning = true;
     
-    // Thêm class để bắt đầu hiệu ứng
+    // Add class to start animation
     if (this.slideContainer) {
       this.slideContainer.nativeElement.classList.add('slide-left');
     }
     
-    // Đợi hiệu ứng hoàn thành
+    // Wait for animation to complete
     setTimeout(() => {
       this.currentSlideIndex = (this.currentSlideIndex - 1 + this.slides.length) % this.slides.length;
       this.isTransitioning = false;
       
-      // Xóa class hiệu ứng
+      // Remove animation class
       if (this.slideContainer) {
         this.slideContainer.nativeElement.classList.remove('slide-left');
       }
-    }, 500); // Thời gian phải khớp với thời gian transition trong CSS
+    }, 500); // Time must match CSS transition duration
   }
 
   goToSlide(index: number) {
@@ -113,23 +129,23 @@ export class BodySlideshowComponent implements OnInit, OnDestroy {
     this.slideDirection = index > this.currentSlideIndex ? 'right' : 'left';
     this.isTransitioning = true;
     
-    // Thêm class để bắt đầu hiệu ứng
+    // Add class to start animation
     if (this.slideContainer) {
       this.slideContainer.nativeElement.classList.add(
         this.slideDirection === 'right' ? 'slide-right' : 'slide-left'
       );
     }
     
-    // Đợi hiệu ứng hoàn thành
+    // Wait for animation to complete
     setTimeout(() => {
       this.currentSlideIndex = index;
       this.isTransitioning = false;
       
-      // Xóa class hiệu ứng
+      // Remove animation class
       if (this.slideContainer) {
         this.slideContainer.nativeElement.classList.remove('slide-right', 'slide-left');
       }
-    }, 500); // Thời gian phải khớp với thời gian transition trong CSS
+    }, 500); // Time must match CSS transition duration
   }
 
   // Pause auto-slide when user interacts with the slider
