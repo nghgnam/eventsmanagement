@@ -358,23 +358,26 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       }
     });
   }
+
   calculateAge(birthDate: Date): number {
     const currentDate = new Date();
     let age = currentDate.getFullYear() - birthDate.getFullYear();
     const month = currentDate.getMonth() - birthDate.getMonth();
   
-    
+    // Nếu chưa đến ngày sinh trong năm nay, giảm tuổi đi 1
     if (month < 0 || (month === 0 && currentDate.getDate() < birthDate.getDate())) {
       age--;
     }
   
     return age;
   }
-
+  
+  // Hàm kiểm tra và xử lý dữ liệu chuỗi
   getTrimmedString(value: any): string {
     return typeof value === 'string' ? value.trim() : '';
   }
-
+  
+  // Hàm kiểm tra và chuyển đổi ngày sinh
   convertDOB(dobValue: any): Timestamp | null {
     try {
       const convertedDOB = new Date(dobValue);
@@ -386,6 +389,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     }
     return null;
   }
+  
   onSubmit(): void {
     if (this.userForm.invalid) {
       this.errorMessage = 'Please fill in all required fields correctly';
@@ -421,7 +425,8 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       this.isSaving = false;
       return;
     }
-
+  
+    // Lấy giá trị từ form và trim
     const wards = this.getTrimmedString((this.userForm.get('wards')?.value).name);
     const districts = this.getTrimmedString((this.userForm.get('districts')?.value).name);
     const city = this.getTrimmedString((this.userForm.get('city')?.value).name);
@@ -600,4 +605,4 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   get identifier() {return this.OrganizerForm.get('identifier');}
   get jobTitle() {return this.OrganizerForm.get('jobTitle');}
   get postalCode() {return this.OrganizerForm.get('postalCode')}
-}
+}  
