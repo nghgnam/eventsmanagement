@@ -27,10 +27,11 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
   selectedTags: string[] = [];
   selectedLocationType: 'all' | 'online' | 'offline' = 'all';
   selectedDate: 'all' | 'today' | 'tomorrow' | 'week' = 'all';
-  map: L.Map | null = null;
-  markers: L.Marker[] = [];
-  userMarker: L.Marker | null = null;
+  private map: L.Map | undefined;
+  private markers: L.Marker[] = [];
+  private userMarker: L.Marker | null = null;
   userLocation: { latitude: number; longitude: number } | null = null;
+  isLocating = false;
   
   // Properties for filter UI
   showFilters: boolean = false;
@@ -38,14 +39,14 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
   filters = {
     tags: {} as { [key: string]: boolean },
     date: 'all',
-    locationType: 'all'
+    locationType: 'all',
+    maxDistance: 50 // Maximum distance in kilometers
   };
   
   // Properties for map functionality
   isFullMapOpen: boolean = false;
   showLocationConfirm: boolean = false;
   selectedEvent: EventList | null = null;
-  isLocating: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -70,46 +71,42 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
     this.subscription.unsubscribe();
     if (this.map) {
       this.map.remove();
-      this.map = null;
+      this.map = undefined;
     }
   }
 
   private initializeMap(): void {
-    if (this.mapContainer && !this.map) {
-      // Initialize map with default center (you can adjust these coordinates)
-      this.map = L.map(this.mapContainer.nativeElement).setView([51.505, -0.09], 13);
-      
-      // Add OpenStreetMap tile layer
+    if (this.mapContainer) {
+      this.map = L.map(this.mapContainer.nativeElement).setView([10.762622, 106.660172], 13);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
       }).addTo(this.map);
-
-      // Update markers when filtered events change
-      this.updateMarkers();
     }
   }
 
   private updateMarkers(): void {
-    if (!this.map) return;
+    const map = this.map;
+    if (!map) return;
 
     // Clear existing markers
     this.markers.forEach(marker => marker.remove());
     this.markers = [];
 
-    // Add markers for each event with location
+    // Add new markers
     this.filteredEvents.forEach(event => {
-      if (event.location && event.location.type === 'offline' && event.location.coordinates) {
+      if (event.location.type === 'offline' && event.location.coordinates) {
         const marker = L.marker([
           event.location.coordinates.latitude,
           event.location.coordinates.longitude
-        ]).addTo(this.map!);
+        ]).addTo(map);
 
-        // Add popup with event information
+        const startTime = event.date_time_options[0]?.start_time || 'TBD';
         marker.bindPopup(`
-          <div class="event-popup">
+          <div class="marker-popup">
             <h3>${event.name}</h3>
-            <p>${event.description}</p>
-            <button onclick="window.location.href='/event/${event.id}'">View Details</button>
+            <p>${event.location.address || 'No address provided'}</p>
+            <p>${event.event_type}</p>
+            <p>Start Time: ${startTime}</p>
           </div>
         `);
 
@@ -117,14 +114,40 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
       }
     });
 
-    // Fit map bounds to show all markers if there are any
+    // Fit bounds to markers if there are any
     if (this.markers.length > 0) {
       const bounds = L.latLngBounds(this.markers.map(marker => marker.getLatLng()));
-      this.map.fitBounds(bounds);
+      map.fitBounds(bounds, { padding: [50, 50] });
     }
   }
 
-  // Get user's current location
+  // searchAddress(address: string){
+  //   const encodedAddress = encodeURIComponent(address)
+  //   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}`;
+
+  //   fetch(url)
+  //   .then(res => res.json())
+  //   .then((data) => {
+  //     if (data && data.length > 0) {
+  //       const lat = parseFloat(data[0].lat);
+  //       const lon = parseFloat(data[0].lon);
+
+  //       // Di chuyển bản đồ tới vị trí tìm được
+  //       this.map.setView([lat, lon], 16);
+
+  //       // Thêm marker nếu muốn
+  //       L.marker([lat, lon]).addTo(this.map)
+  //         .bindPopup(address)
+  //         .openPopup();
+  //     } else {
+  //       alert("Không tìm thấy địa chỉ.");
+  //     }
+  //   })
+  //   .catch((err) => {
+  //     console.error("Geocoding error:", err);
+  //   });
+  // }
+  
   getUserLocation(): void {
     if (!this.map) return;
     
@@ -135,7 +158,7 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
         (position) => {
           const { latitude, longitude } = position.coords;
           this.userLocation = { latitude, longitude };
-          
+          console.log(this.userLocation)
           // Remove existing user marker if any
           if (this.userMarker) {
             this.userMarker.remove();
@@ -179,6 +202,8 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
   calculateDistance(event: EventList): number | null {
     if (!this.userLocation || !event.location?.coordinates) {
       console.log("cannot get location")
+      console.log(this.userLocation)
+      console.log(event.location?.coordinates)
       return null;
     }
     
@@ -313,56 +338,95 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   private filterEvents(): void {
-    let filtered = [...this.events];
+    this.filteredEvents = this.events.filter(event => {
+      // Filter by search query
+      if (this.searchQuery && !event.name.toLowerCase().includes(this.searchQuery.toLowerCase())) {
+        return false;
+      }
 
-    // Filter by search query
-    if (this.searchQuery) {
-      const query = this.searchQuery.toLowerCase();
-      filtered = filtered.filter(event =>
-        event.name.toLowerCase().includes(query) ||
-        event.description.toLowerCase().includes(query)
-      );
-    }
+      // Filter by tags
+      if (Object.keys(this.filters.tags).length > 0) {
+        const hasSelectedTag = Object.entries(this.filters.tags)
+          .filter(([_, checked]) => checked)
+          .some(([tag]) => event.tags?.includes(tag));
+        if (!hasSelectedTag) return false;
+      }
 
-    // Filter by tags
-    if (this.selectedTags.length > 0) {
-      filtered = filtered.filter(event =>
-        event.tags?.some(tag => this.selectedTags.includes(tag)) ?? false
-      );
-    }
-
-    // Filter by location type
-    if (this.selectedLocationType !== 'all') {
-      filtered = filtered.filter(event =>
-        event.location.type === this.selectedLocationType
-      );
-    }
-
-    // Filter by date
-    if (this.selectedDate !== 'all') {
-      const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const nextWeek = new Date(now);
-      nextWeek.setDate(nextWeek.getDate() + 7);
-
-      filtered = filtered.filter(event => {
+      // Filter by date
+      if (this.filters.date !== 'all') {
         const eventDate = new Date(event.date_time_options[0].start_time);
-        switch (this.selectedDate) {
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const nextWeek = new Date(today);
+        nextWeek.setDate(nextWeek.getDate() + 7);
+
+        switch (this.filters.date) {
           case 'today':
-            return eventDate.toDateString() === now.toDateString();
+            if (eventDate.toDateString() !== today.toDateString()) return false;
+            break;
           case 'tomorrow':
-            return eventDate.toDateString() === tomorrow.toDateString();
+            if (eventDate.toDateString() !== tomorrow.toDateString()) return false;
+            break;
           case 'week':
-            return eventDate >= now && eventDate <= nextWeek;
-          default:
-            return true;
+            if (eventDate < today || eventDate > nextWeek) return false;
+            break;
         }
+      }
+
+      // Filter by location type
+      if (this.filters.locationType !== 'all' && event.location.type !== this.filters.locationType) {
+        return false;
+      }
+
+      // Filter by distance if user location is available
+      if (this.userLocation && event.location.type === 'offline' && event.location.coordinates) {
+        const distance = this.calculateDistance(event);
+        if (distance === null || distance > this.filters.maxDistance) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Sort events by distance if user location is available
+    if (this.userLocation) {
+      this.filteredEvents.sort((a, b) => {
+        if (a.location.type === 'online' && b.location.type === 'offline') return 1;
+        if (a.location.type === 'offline' && b.location.type === 'online') return -1;
+        if (a.location.type === 'online' && b.location.type === 'online') return 0;
+        
+        const distanceA = this.calculateDistance(a);
+        const distanceB = this.calculateDistance(b);
+        
+        if (distanceA === null && distanceB === null) return 0;
+        if (distanceA === null) return 1;
+        if (distanceB === null) return -1;
+        
+        return distanceA - distanceB;
       });
     }
 
-    this.filteredEvents = filtered;
-    this.updateMarkers(); // Update markers when filtered events change
+    if (this.map && this.map instanceof L.Map) {
+      this.updateMarkers();
+    }
+  }
+
+  formatDistance(event: EventList): string {
+    if (!this.userLocation || event.location.type === 'online' || !event.location.coordinates) {
+      return '';
+    }
+
+    const distance = this.calculateDistance(event);
+    if (distance === null) {
+      return '';
+    }
+
+    if (distance < 1) {
+      return `${Math.round(distance * 1000)}m`;
+    }
+    return `${distance.toFixed(1)}km`;
   }
 
   onTagChange(tag: string, checked: boolean): void {
@@ -389,8 +453,7 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
       this.router.navigate(['/detail-event', eventId]);
     }
   }
-  
-  // Map related methods
+
   openFullMap(): void {
     this.isFullMapOpen = true;
     setTimeout(() => {
@@ -410,6 +473,6 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
   
   useGPSLocation(): void {
     this.showLocationConfirm = false;
-    // Implement GPS location functionality if needed
+    
   }
 } 

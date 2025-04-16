@@ -131,6 +131,19 @@
             </div>
           </div>
         </div>
+
+        <div class="filters-section">
+          <div class="filter-group">
+            <label>Distance</label>
+            <select [(ngModel)]="filters.maxDistance" (change)="applyFilters()">
+              <option [value]="5">Within 5km</option>
+              <option [value]="10">Within 10km</option>
+              <option [value]="20">Within 20km</option>
+              <option [value]="50">Within 50km</option>
+              <option [value]="100">Within 100km</option>
+            </select>
+          </div>
+        </div>
       </div>
 
 
@@ -152,9 +165,12 @@
             <div class="event-image">
               <img [src]="event.image_url" [alt]="event.name">
               <div class="event-type">{{ event.event_type }}</div>
-              <div class="event-distance" *ngIf="userLocation && event.location?.type === 'offline' && event.location?.coordinates">
-                <span class="material-icons">place</span>
-                {{ calculateDistance(event) | number:'1.1-1' }} km away
+              <div class="event-location">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>{{ event.location.type === 'online' ? 'Online Event' : event.location.address }}</span>
+                <span *ngIf="event.location.type === 'offline' && userLocation" class="distance-badge">
+                  {{ calculateDistance(event) | number:'1.1-1' }} km
+                </span>
               </div>
             </div>
             <div class="event-content">
