@@ -15,8 +15,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { finalize } from 'rxjs/operators';
 import { Timestamp } from 'firebase/firestore';
 import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { LocationService } from '../../service/location.service';
 import { skip } from 'rxjs/operators';
+import { AddressInformationService } from '../../service/addressInformation.service';
 
 
 interface CloudinaryResponse {
@@ -65,7 +65,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     private sanitizer: DomSanitizer,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private location: LocationService
+    private location: AddressInformationService
   ) {
     this.user$ = this.userService.users$;
     this.userForm = this.fb.group({
@@ -139,6 +139,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
         );
 
         this.userForm.get('wards')?.reset();
+        console.log(this.wardsWithDistricts)
       }
       else{
         this.wardsWithDistricts = [];
@@ -364,7 +365,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     let age = currentDate.getFullYear() - birthDate.getFullYear();
     const month = currentDate.getMonth() - birthDate.getMonth();
   
-    // Nếu chưa đến ngày sinh trong năm nay, giảm tuổi đi 1
+    
     if (month < 0 || (month === 0 && currentDate.getDate() < birthDate.getDate())) {
       age--;
     }
@@ -372,7 +373,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     return age;
   }
   
-  // Hàm kiểm tra và xử lý dữ liệu chuỗi
+  
   getTrimmedString(value: any): string {
     return typeof value === 'string' ? value.trim() : '';
   }

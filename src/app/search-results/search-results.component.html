@@ -1,275 +1,275 @@
 <div class="page-container">
-    <div class="breadcrumb">
-      <a routerLink="/home">Home</a>
-      <span class="separator">/</span>
-      <span class="current">Search Results</span>
-    </div>
+  <div class="breadcrumb">
+    <a routerLink="/home">Home</a>
+    <span class="separator">/</span>
+    <span class="current">Search Results</span>
+  </div>
 
-    <div class="page-header">
-      <div class="title-container">
-        <div class="page-title">
-          <span class="title-icon">
-            <i class="material-icons">{{searchQuery ? 'search' : 'event'}}</i>
-          </span>
-          <div class="title-text">
-            <h1>{{searchQuery ? 'Search Results for "' + searchQuery + '"' : 'Discover Events'}}</h1>
-            <p class="title-subtitle">{{filteredEvents.length}} events found</p>
-          </div>
+  <div class="page-header">
+    <div class="title-container">
+      <div class="page-title">
+        <span class="title-icon">
+          <i class="material-icons">{{searchQuery ? 'search' : 'event'}}</i>
+        </span>
+        <div class="title-text">
+          <h1>{{searchQuery ? 'Search Results for "' + searchQuery + '"' : 'Discover Events'}}</h1>
+          <p class="title-subtitle">{{filteredEvents.length}} events found</p>
         </div>
-        <div class="title-actions">
-          <button class="action-button" (click)="toggleFilters()">
-            <i class="material-icons">filter_list</i>
-            Filters
-            <span class="filter-badge" *ngIf="activeFilters > 0">{{activeFilters}}</span>
-          </button>
-          <button class="action-button" *ngIf="activeFilters > 0" (click)="resetFilters()">
-            <i class="material-icons">clear_all</i>
-            Clear All
-          </button>
-        </div>
+      </div>
+      <div class="title-actions">
+        <button class="action-button" (click)="toggleFilters()">
+          <i class="material-icons">filter_list</i>
+          Filters
+          <span class="filter-badge" *ngIf="activeFilters > 0">{{activeFilters}}</span>
+        </button>
+        <button class="action-button" *ngIf="activeFilters > 0" (click)="resetFilters()">
+          <i class="material-icons">clear_all</i>
+          Clear All
+        </button>
       </div>
     </div>
+  </div>
 
 
-    <div class="main-layout">
+  <div class="main-layout">
 
-      <div class="filters-sidebar" [class.show]="showFilters">
-        <div class="filters-header">
-          <h3>Filters</h3>
-          <button class="close-button" (click)="toggleFilters()">
-            <i class="material-icons">close</i>
-          </button>
-        </div>
+    <div class="filters-sidebar" [class.show]="showFilters">
+      <div class="filters-header">
+        <h3>Filters</h3>
+        <button class="close-button" (click)="toggleFilters()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
 
-        <div class="filter-section">
-          <h4>Tags</h4>
-          <div class="tags-container">
-            <div class="tag-item" *ngFor="let tag of availableTags">
-              <input type="checkbox" 
-                     [id]="'tag-' + tag"
-                     [(ngModel)]="filters.tags[tag]"
-                     (ngModelChange)="applyFilters()">
-              <label [for]="'tag-' + tag">
-                <i class="material-icons">{{getTagIcon(tag)}}</i>
-                {{tag}}
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div class="filter-section">
-          <h4>Date</h4>
-          <div class="date-options">
-            <div class="date-option">
-              <input type="radio" 
-                     id="date-all" 
-                     name="date" 
-                     value="all"
-                     [(ngModel)]="filters.date"
-                     (ngModelChange)="applyFilters()">
-              <label for="date-all">All Dates</label>
-            </div>
-            <div class="date-option">
-              <input type="radio" 
-                     id="date-today" 
-                     name="date" 
-                     value="today"
-                     [(ngModel)]="filters.date"
-                     (ngModelChange)="applyFilters()">
-              <label for="date-today">Today</label>
-            </div>
-            <div class="date-option">
-              <input type="radio" 
-                     id="date-tomorrow" 
-                     name="date" 
-                     value="tomorrow"
-                     [(ngModel)]="filters.date"
-                     (ngModelChange)="applyFilters()">
-              <label for="date-tomorrow">Tomorrow</label>
-            </div>
-            <div class="date-option">
-              <input type="radio" 
-                     id="date-weekend" 
-                     name="date" 
-                     value="weekend"
-                     [(ngModel)]="filters.date"
-                     (ngModelChange)="applyFilters()">
-              <label for="date-weekend">This Weekend</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="filter-section">
-          <h4>Location Type</h4>
-          <div class="location-options">
-            <div class="location-option">
-              <input type="radio" 
-                     id="location-all" 
-                     name="locationType" 
-                     value="all"
-                     [(ngModel)]="filters.locationType"
-                     (ngModelChange)="applyFilters()">
-              <label for="location-all">All Locations</label>
-            </div>
-            <div class="location-option">
-              <input type="radio" 
-                     id="location-online" 
-                     name="locationType" 
-                     value="online"
-                     [(ngModel)]="filters.locationType"
-                     (ngModelChange)="applyFilters()">
-              <label for="location-online">Online</label>
-            </div>
-            <div class="location-option">
-              <input type="radio" 
-                     id="location-offline" 
-                     name="locationType" 
-                     value="offline"
-                     [(ngModel)]="filters.locationType"
-                     (ngModelChange)="applyFilters()">
-              <label for="location-offline">Offline</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="filters-section">
-          <div class="filter-group">
-            <label>Distance</label>
-            <select [(ngModel)]="filters.maxDistance" (change)="applyFilters()">
-              <option [value]="5">Within 5km</option>
-              <option [value]="10">Within 10km</option>
-              <option [value]="20">Within 20km</option>
-              <option [value]="50">Within 50km</option>
-              <option [value]="100">Within 100km</option>
-            </select>
+      <div class="filter-section">
+        <h4>Tags</h4>
+        <div class="tags-container">
+          <div class="tag-item" *ngFor="let tag of availableTags">
+            <input type="checkbox" 
+                   [id]="'tag-' + tag"
+                   [(ngModel)]="filters.tags[tag]"
+                   (ngModelChange)="applyFilters()">
+            <label [for]="'tag-' + tag">
+              <i class="material-icons">{{getTagIcon(tag)}}</i>
+              {{tag}}
+            </label>
           </div>
         </div>
       </div>
 
-
-      <div class="events-content">
-        <div class="loading-container" *ngIf="isLoading">
-          <div class="spinner"></div>
-          <p>Loading events...</p>
-        </div>
-        
-
-        <div class="no-results" *ngIf="!isLoading && filteredEvents.length === 0">
-          <i class="material-icons">search_off</i>
-          <h2>No events found</h2>
-          <p>Try adjusting your filters or search criteria</p>
-        </div>
- 
-        <div class="events-list" *ngIf="!isLoading && filteredEvents.length > 0">
-          <div class="event-card" *ngFor="let event of filteredEvents" (click)="viewEventDetails(event.id)">
-            <div class="event-image">
-              <img [src]="event.image_url" [alt]="event.name">
-              <div class="event-type">{{ event.event_type }}</div>
-              <div class="event-location">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>{{ event.location.type === 'online' ? 'Online Event' : event.location.address }}</span>
-                <span *ngIf="event.location.type === 'offline' && userLocation" class="distance-badge">
-                  {{ calculateDistance(event) | number:'1.1-1' }} km
-                </span>
-              </div>
-            </div>
-            <div class="event-content">
-              <div class="event-header">
-                <h3>{{ event.name }}</h3>
-              </div>
-              <div class="event-meta">
-                <div class="meta-item">
-                  <span class="material-icons">event</span>
-                  <span>{{ event.date_time_options[0].start_time | date:'mediumDate' }}</span>
-                </div>
-                <div class="meta-item">
-                  <span class="material-icons">schedule</span>
-                  <span>{{ event.date_time_options[0].start_time | date:'shortTime' }} - {{ event.date_time_options[0].end_time | date:'shortTime' }}</span>
-                </div>
-                <div class="meta-item">
-                  <span class="material-icons">{{ event.location.type === 'online' ? 'computer' : 'place' }}</span>
-                  <span>{{ event.location.type === 'online' ? 'Online Event' : (event.location.address || 'Location TBA') }}</span>
-                </div>
-              </div>
-              <div class="event-tags" *ngIf="event.tags && event.tags.length > 0">
-                <div class="tag" *ngFor="let tag of event.tags">
-                  <span class="material-icons">{{ getTagIcon(tag) }}</span>
-                  <span>{{ tag }}</span>
-                </div>
-              </div>
-              <div class="event-actions">
-                <button class="view-details-btn">
-                  <span>View Details</span>
-                  <span class="material-icons">arrow_forward</span>
-                </button>
-              </div>
-            </div>
+      <div class="filter-section">
+        <h4>Date</h4>
+        <div class="date-options">
+          <div class="date-option">
+            <input type="radio" 
+                   id="date-all" 
+                   name="date" 
+                   value="all"
+                   [(ngModel)]="filters.date"
+                   (ngModelChange)="applyFilters()">
+            <label for="date-all">All Dates</label>
+          </div>
+          <div class="date-option">
+            <input type="radio" 
+                   id="date-today" 
+                   name="date" 
+                   value="today"
+                   [(ngModel)]="filters.date"
+                   (ngModelChange)="applyFilters()">
+            <label for="date-today">Today</label>
+          </div>
+          <div class="date-option">
+            <input type="radio" 
+                   id="date-tomorrow" 
+                   name="date" 
+                   value="tomorrow"
+                   [(ngModel)]="filters.date"
+                   (ngModelChange)="applyFilters()">
+            <label for="date-tomorrow">Tomorrow</label>
+          </div>
+          <div class="date-option">
+            <input type="radio" 
+                   id="date-weekend" 
+                   name="date" 
+                   value="weekend"
+                   [(ngModel)]="filters.date"
+                   (ngModelChange)="applyFilters()">
+            <label for="date-weekend">This Weekend</label>
           </div>
         </div>
       </div>
 
-      <div class="map-sidebar">
-        <div class="map-container">
-          <div class="map-header">
-            <div class="map-actions">
-              <button class="location-btn" (click)="getUserLocation()" [disabled]="isLocating">
-                <span class="material-icons">{{ isLocating ? 'hourglass_empty' : 'my_location' }}</span>
-                {{ isLocating ? 'Locating...' : 'My Location' }}
-              </button>
-              <button class="view-map-btn" (click)="openFullMap()">
-                <span class="material-icons">fullscreen</span>
-                View Full Map
+      <div class="filter-section">
+        <h4>Location Type</h4>
+        <div class="location-options">
+          <div class="location-option">
+            <input type="radio" 
+                   id="location-all" 
+                   name="locationType" 
+                   value="all"
+                   [(ngModel)]="filters.locationType"
+                   (ngModelChange)="applyFilters()">
+            <label for="location-all">All Locations</label>
+          </div>
+          <div class="location-option">
+            <input type="radio" 
+                   id="location-online" 
+                   name="locationType" 
+                   value="online"
+                   [(ngModel)]="filters.locationType"
+                   (ngModelChange)="applyFilters()">
+            <label for="location-online">Online</label>
+          </div>
+          <div class="location-option">
+            <input type="radio" 
+                   id="location-offline" 
+                   name="locationType" 
+                   value="offline"
+                   [(ngModel)]="filters.locationType"
+                   (ngModelChange)="applyFilters()">
+            <label for="location-offline">Offline</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="filters-section">
+        <div class="filter-group">
+          <label>Distance</label>
+          <select [(ngModel)]="filters.maxDistance" (change)="applyFilters()">
+            <option [value]="5">Within 5km</option>
+            <option [value]="10">Within 10km</option>
+            <option [value]="20">Within 20km</option>
+            <option [value]="50">Within 50km</option>
+            <option [value]="100">Within 100km</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="events-content">
+      <div class="loading-container" *ngIf="isLoading">
+        <div class="spinner"></div>
+        <p>Loading events...</p>
+      </div>
+      
+
+      <div class="no-results" *ngIf="!isLoading && filteredEvents.length === 0">
+        <i class="material-icons">search_off</i>
+        <h2>No events found</h2>
+        <p>Try adjusting your filters or search criteria</p>
+      </div>
+
+      <div class="events-list" *ngIf="!isLoading && filteredEvents.length > 0">
+        <div class="event-card" *ngFor="let event of filteredEvents" (click)="viewEventDetails(event.id)">
+          <div class="event-image">
+            <img [src]="event.image_url" [alt]="event.name">
+            <div class="event-type">{{ event.event_type }}</div>
+            <div class="event-location">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>{{ event.location.type === 'online' ? 'Online Event' : event.location.address }}</span>
+              <span *ngIf="event.location.type === 'offline' && userLocation" class="distance-badge">
+                {{ calculateDistance(event) | number:'1.1-1' }} km
+              </span>
+            </div>
+          </div>
+          <div class="event-content">
+            <div class="event-header">
+              <h3>{{ event.name }}</h3>
+            </div>
+            <div class="event-meta">
+              <div class="meta-item">
+                <span class="material-icons">event</span>
+                <span>{{ event.date_time_options[0].start_time | date:'mediumDate' }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="material-icons">schedule</span>
+                <span>{{ event.date_time_options[0].start_time | date:'shortTime' }} - {{ event.date_time_options[0].end_time | date:'shortTime' }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="material-icons">{{ event.location.type === 'online' ? 'computer' : 'place' }}</span>
+                <span>{{ event.location.type === 'online' ? 'Online Event' : (event.location.address || 'Location TBA') }}</span>
+              </div>
+            </div>
+            <div class="event-tags" *ngIf="event.tags && event.tags.length > 0">
+              <div class="tag" *ngFor="let tag of event.tags">
+                <span class="material-icons">{{ getTagIcon(tag) }}</span>
+                <span>{{ tag }}</span>
+              </div>
+            </div>
+            <div class="event-actions">
+              <button class="view-details-btn">
+                <span>View Details</span>
+                <span class="material-icons">arrow_forward</span>
               </button>
             </div>
           </div>
-          <div class="map-content">
-            <div id="mapContainer" #mapContainer></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="map-sidebar">
+      <div class="map-container">
+        <div class="map-header">
+          <div class="map-actions">
+            <button class="location-btn" (click)="getUserLocation()" [disabled]="isLocating">
+              <span class="material-icons">{{ isLocating ? 'hourglass_empty' : 'my_location' }}</span>
+              {{ isLocating ? 'Locating...' : 'My Location' }}
+            </button>
+            <button class="view-map-btn" (click)="openFullMap()">
+              <span class="material-icons">fullscreen</span>
+              View Full Map
+            </button>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="location-confirm-dialog" *ngIf="showLocationConfirm">
-    <div class="dialog-content">
-      <div class="dialog-header">
-        <span class="material-icons">location_searching</span>
-        <h3>Xác nhận vị trí</h3>
-      </div>
-      <div class="dialog-body">
-        <p>Địa chỉ của bạn có thể không chính xác. Bạn có muốn sử dụng vị trí GPS hiện tại không?</p>
-      </div>
-      <div class="dialog-actions">
-        <button class="btn-secondary" (click)="continueWithAddress()">Tiếp tục với địa chỉ hiện tại</button>
-        <button class="btn-primary" (click)="useGPSLocation()">Sử dụng vị trí GPS</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="full-map-modal" *ngIf="isFullMapOpen">
-    <div class="full-map-container">
-      <div class="full-map-header">
-        <h3>Event Locations</h3>
-        <div class="map-actions">
-          <button class="location-btn" (click)="getUserLocation()" [disabled]="isLocating">
-            <span class="material-icons">{{ isLocating ? 'hourglass_empty' : 'my_location' }}</span>
-            {{ isLocating ? 'Locating...' : 'My Location' }}
-          </button>
-          <button class="close-map-btn" (click)="closeFullMap()">
-            <span class="material-icons">close</span>
-          </button>
+        <div class="map-content">
+          <div id="mapContainer" #mapContainer></div>
         </div>
       </div>
-      <div class="full-map-content">
-        <div id="fullMapContainer" #mapContainer></div>
-      </div>
     </div>
   </div>
+</div>
 
-  <ng-template #infoWindowTemplate>
-    <div class="info-window">
-      <h4>{{selectedEvent?.name}}</h4>
-      <p>{{selectedEvent?.location?.address}}</p>
-      <button (click)="viewEventDetails(selectedEvent?.id)">View Details</button>
+<div class="location-confirm-dialog" *ngIf="showLocationConfirm">
+  <div class="dialog-content">
+    <div class="dialog-header">
+      <span class="material-icons">location_searching</span>
+      <h3>Xác nhận vị trí</h3>
     </div>
-  </ng-template>
+    <div class="dialog-body">
+      <p>Địa chỉ của bạn có thể không chính xác. Bạn có muốn sử dụng vị trí GPS hiện tại không?</p>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn-secondary" (click)="continueWithAddress()">Tiếp tục với địa chỉ hiện tại</button>
+      <button class="btn-primary" (click)="useGPSLocation()">Sử dụng vị trí GPS</button>
+    </div>
+  </div>
+</div>
+
+<div class="full-map-modal" *ngIf="isFullMapOpen">
+  <div class="full-map-container">
+    <div class="full-map-header">
+      <h3>Event Locations</h3>
+      <div class="map-actions">
+        <button class="location-btn" (click)="getUserLocation()" [disabled]="isLocating">
+          <span class="material-icons">{{ isLocating ? 'hourglass_empty' : 'my_location' }}</span>
+          {{ isLocating ? 'Locating...' : 'My Location' }}
+        </button>
+        <button class="close-map-btn" (click)="closeFullMap()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+    </div>
+    <div class="full-map-content">
+      <div id="fullMapContainer" #mapContainer></div>
+    </div>
+  </div>
+</div>
+
+<ng-template #infoWindowTemplate>
+  <div class="info-window">
+    <h4>{{selectedEvent?.name}}</h4>
+    <p>{{selectedEvent?.location?.address}}</p>
+    <button (click)="viewEventDetails(selectedEvent?.id)">View Details</button>
+  </div>
+</ng-template>

@@ -10,6 +10,12 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { EventList } from '../types/eventstype';
 import { EventsService } from '../service/events.service';
 import { CloudinaryService } from '../service/cloudinary.service';
+import { Observable } from 'rxjs';
+import { AddressInformationService } from '../service/addressInformation.service';
+import { getCountries, getCountryCallingCode } from 'libphonenumber-js';
+import * as countries from 'i18n-iso-countries';
+import en from 'i18n-iso-countries/langs/en.json';
+import { skip, distinctUntilChanged, debounceTime } from 'rxjs/operators';
 
 @Component({
   selector: 'app-manage-events',
@@ -31,29 +37,136 @@ export class ManageEventsComponent implements OnInit {
   imageError: string = '';
   imagePreviewUrl: string | null = null;
 
+  countries: { code: string, name: string }[] = [];
+  citiesValue: any[] =[];
+  districtsValue: any[] = [];
+  wardsValue:any[]  = [];
+
+  districtsWithCities:any[] = [];
+  wardsWithDistricts:any[] = [];
+
+  isOffline: boolean = false;
+  isHybird: boolean = false;
+
+  // Add cache for geocoding
+  private geocodingCache: Map<string, { lat: number, lon: number }> = new Map();
+  private lastGeocodingRequest: number = 0;
+  private readonly GEOCODING_DELAY = 1000; // 1 second delay between requests
+
   constructor(
     private usersService: UsersService,
     private router: Router,
     private sanitizer: DomSanitizer,
     private eventService: EventsService,
     private cloudinaryService: CloudinaryService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private location: AddressInformationService
   ) {
     this.eventForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
       startDate: ['', Validators.required],
+      // imagePreviewUrl: [Validators.required],
       endDate: ['', Validators.required],
-      location: ['', Validators.required],
+      details_address: ['', Validators.required],
+      wards: ['', [Validators.required]],
+      districts: ['', [Validators.required]],
+      country: ['', [Validators.required]],
+      city: ['', [Validators.required]],
       price: [0],
       maxAttendees: [100],
       tags: [''],
       eventType: ['offline', Validators.required]
+
+
     });
+    countries.registerLocale(en);
   }
 
+
+
+  get details_address() { return this.eventForm.get('details_address') }
+  get wards() { return this.eventForm.get('wards'); }
+  get districts() { return this.eventForm.get('districts'); }
+  get country() { return this.eventForm.get('country'); }
+  get city() { return this.eventForm.get('city'); }
+
   ngOnInit(): void {
+    this.location.getCities().subscribe(dataCities =>{
+      this.citiesValue = dataCities;      
+    })
+    this.location.getDistricts().subscribe(dataDistricts =>{
+      this.districtsValue = dataDistricts;
+    })
+    this.location.getWards().subscribe(dataWards =>{
+      this.wardsValue = dataWards;
+    })
+
+    this.eventForm.get('city')?.valueChanges
+    .pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    )
+    .subscribe(selectedCity =>{
+      console.log('Selected City:', selectedCity); // Debug log
+      if(selectedCity && selectedCity.code){
+        console.log('Filtering districts for city code:', selectedCity.code); // Debug log
+        this.districtsWithCities = this.districtsValue.filter(
+          district => district.parent_code === selectedCity.code
+        );
+        console.log('Filtered districts:', this.districtsWithCities); // Debug log
+        
+        this.eventForm.get('districts')?.reset();
+        this.eventForm.get('wards')?.reset();
+        this.wardsWithDistricts = [];
+        this.errorMessage = 'Please select a district';
+      }
+      else{
+        this.districtsWithCities = [];
+        this.wardsWithDistricts = [];
+        this.errorMessage = 'Please select a city';
+      }
+    })
+
+    this.eventForm.get('districts')?.valueChanges
+    .pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    )
+    .subscribe(selectedDistrict =>{
+      console.log('Selected District:', selectedDistrict); // Debug log
+      if(selectedDistrict && selectedDistrict.code){
+        console.log('Filtering wards for district code:', selectedDistrict.code); // Debug log
+        this.wardsWithDistricts = this.wardsValue.filter(
+          ward => ward.parent_code === selectedDistrict.code
+        );
+        console.log('Filtered wards:', this.wardsWithDistricts); // Debug log
+        
+        this.eventForm.get('wards')?.reset();
+        this.errorMessage = 'Please select a ward';
+      }
+      else{
+        this.wardsWithDistricts = [];
+        this.errorMessage = 'Please select a district';
+      }
+    })
+
+    this.eventForm.get('eventType')?.valueChanges.subscribe(value => {
+      this.isOffline = value === 'offline';
+      this.isHybird = value === 'hybrid'; 
+    });
+  
+    // Khởi tạo theo giá trị ban đầu nếu có
+    const value = this.eventForm.get('eventType')?.value;
+    this.isOffline = value === 'offline';
+    this.isHybird = value === 'hybrid';
+    
     this.loadUserData();
+
+
+    
+
+    this.countries = this.getCountryList();
   }
 
   loadUserData(): void {
@@ -108,28 +221,31 @@ export class ManageEventsComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      
+
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
         this.imageError = 'Image size should be less than 5MB';
         return;
       }
-      
+
       // Validate file type
       if (!file.type.match(/image\/(jpeg|png|gif|jpg)/)) {
         this.imageError = 'Only JPG, PNG and GIF images are allowed';
         return;
       }
-      
-      this.selectedImage = file;
-      this.imageError = '';
-      
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        this.imagePreviewUrl = (e.target?.result as string) || null;
+
+      // Validate image dimensions
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        if (img.width < 800 || img.height < 600) {
+          this.imageError = 'Image dimensions should be at least 800x600 pixels';
+          return;
+        }
+        this.selectedImage = file;
+        this.imageError = '';
+        this.imagePreviewUrl = URL.createObjectURL(file);
       };
-      reader.readAsDataURL(file);
     }
   }
 
@@ -153,7 +269,7 @@ export class ManageEventsComponent implements OnInit {
 
   async uploadImage(): Promise<string | null> {
     if (!this.selectedImage) return null;
-    
+
     try {
       return new Promise((resolve, reject) => {
         this.cloudinaryService.upLoadImage(this.selectedImage!).subscribe({
@@ -174,11 +290,24 @@ export class ManageEventsComponent implements OnInit {
     }
   }
 
+  getCountryList(): { code: string, name: string }[] {
+    try {
+      const countryObj = countries.getNames("en", { select: "official" }) || {};
+      return Object.entries(countryObj).map(([code, name]) => ({
+        code,
+        name
+      }));
+    } catch (error) {
+      console.error('Error getting country list:', error);
+      return [];
+    }
+  }
+
   async onSubmit(): Promise<void> {
     if (this.eventForm.valid) {
       this.isLoading = true;
       const formData = this.eventForm.value;
-      
+
       // Upload image if selected
       let imageUrl = null;
       if (this.selectedImage) {
@@ -188,7 +317,23 @@ export class ManageEventsComponent implements OnInit {
           return;
         }
       }
+
       
+      
+
+      const wards = this.getTrimmedString((this.eventForm.get('wards')?.value).name);
+      const districts = this.getTrimmedString((this.eventForm.get('districts')?.value).name);
+      const city = this.getTrimmedString((this.eventForm.get('city')?.value).name);
+      const country =this.eventForm.get('country')?.value;
+      const addressDetails = `${formData.details_address}, ${wards} ,${districts}, ${city}, ${country}`
+      const location = await this.getLanLongFromAddress(addressDetails);
+      if (!location) {
+        this.isLoading = false;
+        this.errorMessage = 'Không tìm thấy vị trí từ địa chỉ.';
+        return;
+      }
+      const lat = location.lat;
+      const lon = location.lon;
       const newEvent: Partial<EventList> = {
         name: formData.name,
         description: formData.description,
@@ -200,9 +345,13 @@ export class ManageEventsComponent implements OnInit {
         }],
         location: {
           type: formData.eventType,
-          address: formData.location
+          address: addressDetails,
+          coordinates: {
+            latitude: lat,
+            longitude: lon
+          }
         },
-        image_url: imageUrl || 'https://via.placeholder.com/300x200?text=No+Image',
+        image_url: imageUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg',
         price: formData.price,
         max_attendees: formData.maxAttendees,
         tags: formData.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag),
@@ -211,7 +360,7 @@ export class ManageEventsComponent implements OnInit {
           id: String(this.currentUser?.id || '0'),
           name: this.currentUser?.fullName || '',
           followers: 0,
-          profileImage: this.currentUser?.profileImage || 'https://via.placeholder.com/150x150?text=No+Image'
+          profileImage: this.currentUser?.profileImage || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'
         }
       };
 
@@ -313,12 +462,12 @@ export class ManageEventsComponent implements OnInit {
   // Filter events based on active tab
   getFilteredEvents(): EventList[] {
     if (!this.currentOrganizerEvent.length) return [];
-    
+
     const today = new Date();
     return this.currentOrganizerEvent.filter(event => {
       const startDate = new Date(event.date_time_options[0].start_time);
       const endDate = new Date(event.date_time_options[0].end_time);
-      
+
       if (this.activeTab === 'upcoming') {
         return startDate > today;
       } else if (this.activeTab === 'past') {
@@ -328,6 +477,48 @@ export class ManageEventsComponent implements OnInit {
       }
     });
   }
+
+  getTrimmedString(value: any): string {
+    return typeof value === 'string' ? value.trim() : '';
+  }
+
+  async getLanLongFromAddress(address: string): Promise<{ lat: number, lon: number } | null> {
+    // Check cache first
+    if (this.geocodingCache.has(address)) {
+      const cachedResult = this.geocodingCache.get(address);
+      return cachedResult ? cachedResult : null;
+    }
+
+    // Rate limiting
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastGeocodingRequest;
+    if (timeSinceLastRequest < this.GEOCODING_DELAY) {
+      await new Promise(resolve => setTimeout(resolve, this.GEOCODING_DELAY - timeSinceLastRequest));
+    }
+
+    const encodedAddress = encodeURIComponent(address);
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      this.lastGeocodingRequest = Date.now();
+
+      if (data && data.length > 0) {
+        const result = {
+          lat: parseFloat(data[0].lat),
+          lon: parseFloat(data[0].lon)
+        };
+        // Cache the result
+        this.geocodingCache.set(address, result);
+        return result;
+      } else {
+        console.warn("Address not found:", address);
+        return null;
+      }
+    } catch (error) {
+      console.error("Geocoding error:", error);
+      return null;
+    }
+  }
 }
-
-
