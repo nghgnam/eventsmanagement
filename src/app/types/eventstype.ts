@@ -11,7 +11,11 @@ export type EventList = {
     }[];
     location: {
         type: 'online' | 'offline';
-        address?: string; 
+        address?: string;
+        coordinates?: {
+            latitude: number;
+            longitude: number;
+        };
     };
     image_url: string;
     price?: number ;

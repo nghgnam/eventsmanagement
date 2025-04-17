@@ -1,10 +1,10 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
 import { Organizer, User, UserType } from '../../types/userstype';
 import { UsersService } from '../../service/users.service';
 import { CommonModule } from '@angular/common';
 import { auth } from '../../config/firebase.config';
-import { getAuth , updatePassword} from 'firebase/auth';
+import { getAuth, updatePassword } from 'firebase/auth';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CloudinaryService } from '../../service/cloudinary.service';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
@@ -15,8 +15,10 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { finalize } from 'rxjs/operators';
 import { Timestamp } from 'firebase/firestore';
 import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { AddressInformationService } from '../../service/addressInformation.service';
 import { skip } from 'rxjs/operators';
+import { AddressInformationService } from '../../service/addressInformation.service';
+
+
 interface CloudinaryResponse {
   secure_url: string;
 }
@@ -34,6 +36,8 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   imageUrl: string | undefined;
   private subscriptions: Subscription[] = [];
   userForm: FormGroup;
+  changePasswordForm: FormGroup;
+  OrganizerForm: FormGroup;
   isLoading = false;
   isSaving = false;
   errorMessage = '';
@@ -44,14 +48,15 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   getCountryCallingCodes: { code: string, dialCode: string }[] = [];
   currentRole: string ='';
   activeOF: boolean =  false;
-  wardsValue:any[] = [];
-  districtsValue:any[] =[];
-  citiesValue:any[]= [];
+  citiesValue: any[] =[];
+  districtsValue: any[] = [];
+  wardsValue:any[]  = [];
 
-  filterDistricts:any[]= [];
-  filterWards:any[] =[];
+  districtsWithCities:any[] = [];
+  wardsWithDistricts:any[] = [];
+  currentCity: string ="";
 
-  
+
   constructor(
     private userService: UsersService, 
     private router: Router, 
@@ -60,7 +65,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     private sanitizer: DomSanitizer,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private addressInfor: AddressInformationService
+    private location: AddressInformationService
   ) {
     this.user$ = this.userService.users$;
     this.userForm = this.fb.group({
@@ -71,71 +76,79 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       details_address: ['', [Validators.required]],
       wards: ['', [Validators.required]],
       districts: ['', [Validators.required]],
+
       country: ['', [Validators.required]],
       city: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       dateOfBirth: ['', [Validators.required]],
+
+      profileImage: ['']
+
+    });
+
+    this.changePasswordForm = this.fb.group({
       password: ['', Validators.required],
       NewPassword: ['', [Validators.required, Validators.minLength(6)]],
-      profileImage: [''],
+    })
+
+    this.OrganizerForm = this.fb.group({
       companyName: ['' , Validators.required],
       identifier: ['', [Validators.required , Validators.pattern('^\\d{12}$')]],
       jobTitle: ['', Validators.required],
       postalCode: ['', Validators.required]
-    });
+    })
     countries.registerLocale(en);
 
     
   }
 
   ngOnInit(): void {
-
-
-    this.addressInfor.getCities()
-    .subscribe(data =>{
-      if(data){
-        this.citiesValue = data
-      }
+    this.location.getCities().subscribe(dataCities =>{
+      this.citiesValue = dataCities;      
     })
-    this.addressInfor.getDistricts()
-    .subscribe(data =>{
-      if(data){
-        this.districtsValue = data
-      }
+    this.location.getDistricts().subscribe(dataDistricts =>{
+      this.districtsValue = dataDistricts;
     })
-    this.addressInfor.getWards()
-    .subscribe(data =>{
-      if(data){
-        this.wardsValue = data
-      }
+    this.location.getWards().subscribe(dataWards =>{
+      this.wardsValue = dataWards;
     })
 
     this.userForm.get('city')?.valueChanges
     .pipe(skip(1))
-    .subscribe(dataChange =>{
-      if(dataChange){
-        this.filterDistricts = this.districtsValue.filter(
-          d=> d.parrent_code === dataChange.code
+    .subscribe(selectedCity =>{
+      if(selectedCity){
+        this.districtsWithCities = this.districtsValue.filter(
+          d => d.parent_code === selectedCity.code
         );
 
         this.userForm.get('districts')?.reset();
-        this.filterDistricts = []
+        this.wardsWithDistricts = []
+      }
+      else{
+        this.districtsWithCities = [];
+        this.wardsWithDistricts = [];
+
       }
     })
 
     this.userForm.get('districts')?.valueChanges
     .pipe(skip(1))
-    .subscribe(dataChange =>{
-      if(dataChange){
-        this.filterWards = this.wardsValue.filter(
-          d=> d.parrent_code === dataChange.code
+    .subscribe(selectedDistricts =>{
+      if(selectedDistricts){
+        this.wardsWithDistricts = this.wardsValue.filter(
+          d => d.parent_code === selectedDistricts.code
         );
 
         this.userForm.get('wards')?.reset();
-        this.wardsValue = []
+        console.log(this.wardsWithDistricts)
+      }
+      else{
+        this.wardsWithDistricts = [];
       }
     })
+    
 
+    
     this.isLoading = true;
     const authInstance = getAuth();
     this.countries = this.getCountryList();
@@ -237,11 +250,11 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
             this.userForm.get(key)?.setValue(address.details_address || '');
             break;
           case 'wards':
-              this.userForm.get(key)?.setValue(address.wards || '');
-              break;
+            this.userForm.get(key)?.setValue(address.wards || '');
+            break;
           case 'districts':
             this.userForm.get(key)?.setValue(address.districts || '');
-            break;  
+            break;
           case 'country':
             this.userForm.get(key)?.setValue(address.country || '');
             break;
@@ -253,7 +266,15 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
             break;
           case 'password':
             this.userForm.get(key)?.setValue('');  
-            break;
+            break;   
+        }
+      } catch (error) {
+        console.error(`Error setting value for ${key}:`, error);
+      }
+    });
+    Object.keys(this.OrganizerForm.controls).forEach(key => {
+      try {
+        switch(key) {
           case 'companyName'  :
             this.userForm.get(key)?.setValue(organization?.companyName || '');
             break;
@@ -340,60 +361,98 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     });
   }
 
+  calculateAge(birthDate: Date): number {
+    const currentDate = new Date();
+    let age = currentDate.getFullYear() - birthDate.getFullYear();
+    const month = currentDate.getMonth() - birthDate.getMonth();
+  
+    
+    if (month < 0 || (month === 0 && currentDate.getDate() < birthDate.getDate())) {
+      age--;
+    }
+  
+    return age;
+  }
+  
+  
+  getTrimmedString(value: any): string {
+    return typeof value === 'string' ? value.trim() : '';
+  }
+  
+  // Hàm kiểm tra và chuyển đổi ngày sinh
+  convertDOB(dobValue: any): Timestamp | null {
+    try {
+      const convertedDOB = new Date(dobValue);
+      if (!isNaN(convertedDOB.getTime())) {
+        return Timestamp.fromDate(convertedDOB);
+      }
+    } catch (error) {
+      console.error('Error converting date:', error);
+    }
+    return null;
+  }
+  
   onSubmit(): void {
     if (this.userForm.invalid) {
       this.errorMessage = 'Please fill in all required fields correctly';
       return;
     }
-
+  
     if (!this.currentUser?.id) {
       this.errorMessage = 'No user data available';
       return;
     }
-
+  
     this.isSaving = true;
     this.errorMessage = '';
     this.successMessage = '';
-
+  
     const dobValue = this.userForm.get('dateOfBirth')?.value;
     let updatedDOB;
-    
+    let age;
+  
     if (dobValue) {
-      try {
-        const convertedDOB = new Date(dobValue);
-        if (!isNaN(convertedDOB.getTime())) {
-          updatedDOB = Timestamp.fromDate(convertedDOB);
-        }
-      } catch (error) {
-        console.error('Error converting date:', error);
+      const birthDate = new Date(dobValue);
+      age = this.calculateAge(birthDate);
+      updatedDOB = this.convertDOB(dobValue);
+  
+      if (!updatedDOB) {
         this.errorMessage = 'Invalid date format';
         this.isSaving = false;
         return;
       }
+  
+    } else {
+      this.errorMessage = 'Invalid date format';
+      this.isSaving = false;
+      return;
     }
-
+  
+    // Lấy giá trị từ form và trim
+    const wards = this.getTrimmedString((this.userForm.get('wards')?.value).name);
+    const districts = this.getTrimmedString((this.userForm.get('districts')?.value).name);
+    const city = this.getTrimmedString((this.userForm.get('city')?.value).name);
+    const firstName = this.getTrimmedString(this.userForm.get('firstName')?.value);
+    const lastName = this.getTrimmedString(this.userForm.get('lastName')?.value);
+  
     const updatedUser: Partial<User> = {
-      firstName: this.userForm.get('firstName')?.value?.trim(),
-      lastName: this.userForm.get('lastName')?.value?.trim(),
-      phoneNumber: this.userForm.get('phoneNumber')?.value?.trim(),
+      firstName,
+      lastName,
+      fullName: `${firstName} ${lastName}`,
+      age,
+      phoneNumber: this.getTrimmedString(this.userForm.get('phoneNumber')?.value),
       address: {
-        details_address: this.userForm.get('details_address')?.value?.trim(),
-        wards: this.userForm.get('wards')?.value?.trim(),
-        districts: this.userForm.get('districts')?.value?.trim(),
-        city: this.userForm.get('city')?.value?.trim(),
-        country: this.userForm.get('country')?.value?.trim()
+        details_address: this.getTrimmedString(this.userForm.get('details_address')?.value),
+        wards,
+        districts,
+        city,
+        country: this.getTrimmedString(this.userForm.get('country')?.value)
       },
       profileImage: this.userForm.get('profileImage')?.value,
       email: this.userForm.get('email')?.value,
-      dateOfBirth: updatedDOB,
-      password: this.userForm.get('NewPassword')?.value
+      dateOfBirth: updatedDOB
     };
-
-    const newPassword = this.userForm.get('NewPassword')?.value?.trim();
-    if (newPassword) {
-      updatedUser.password = newPassword;
-    }
-
+  
     this.userService.updateUserProfile(String(this.currentUser.id), updatedUser)
       .pipe(finalize(() => {
         this.isSaving = false;
@@ -437,10 +496,10 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     }
 
     if(this.activeOF === true) {
-      const companyName = this.userForm.get('companyName')?.value;
-      const identifier = this.userForm.get('identifier')?.value;
-      const jobTitle = this.userForm.get('jobTitle')?.value;
-      const postalCode = this.userForm.get('postalCode')?.value;
+      const companyName = this.OrganizerForm.get('companyName')?.value;
+      const identifier = this.OrganizerForm.get('identifier')?.value;
+      const jobTitle = this.OrganizerForm.get('jobTitle')?.value;
+      const postalCode = this.OrganizerForm.get('postalCode')?.value;
 
       if (!companyName || !identifier || !jobTitle || !postalCode) {
         this.errorMessage = 'Please fill in all organization details';
@@ -480,6 +539,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       });
   }
 
+ 
   onChangeType():void{
     this.activeOF =! this.activeOF
     console.log(this.activeOF)
@@ -497,8 +557,8 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       return;
     }
   
-    const currentPassword = this.userForm.get('password')?.value;
-    const newPassword = this.userForm.get('NewPassword')?.value;
+    const currentPassword = this.changePasswordForm.get('password')?.value;
+    const newPassword = this.changePasswordForm.get('NewPassword')?.value;
   
     if (!currentPassword || !newPassword) {
       this.errorMessage = 'Please fill in both current and new password';
@@ -534,17 +594,17 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   get firstName() { return this.userForm.get('firstName'); }
   get lastName() { return this.userForm.get('lastName'); }
   get phoneNumber() { return this.userForm.get('phoneNumber'); }
-  get details_address() { return this.userForm.get('details_address'); }
-  get wards() { return this.userForm.get('wards'); }
+  get details_address() { return this.userForm.get('details_address')}
+  get wards() { return this.userForm.get('wards')} 
   get districts() { return this.userForm.get('districts'); }
   get country() { return this.userForm.get('country'); }
   get city() { return this.userForm.get('city'); }
   get email() {return this.userForm.get('email');}
   get dateOfBirth() {return this.userForm.get('dateOfBirth');}
-  get password() {return this.userForm.get('password');}
-  get NewPassword() {return this.userForm.get('NewPassword')}
-  get companyName() {return this.userForm.get('companyName');}
-  get identifier() {return this.userForm.get('identifier');}
-  get jobTitle() {return this.userForm.get('jobTitle');}
-  get postalCode() {return this.userForm.get('postalCode')}
-}
+  get password() {return this.changePasswordForm.get('password');}
+  get NewPassword() {return this.changePasswordForm.get('NewPassword')}
+  get companyName() {return this.OrganizerForm.get('companyName');}
+  get identifier() {return this.OrganizerForm.get('identifier');}
+  get jobTitle() {return this.OrganizerForm.get('jobTitle');}
+  get postalCode() {return this.OrganizerForm.get('postalCode')}
+}  
