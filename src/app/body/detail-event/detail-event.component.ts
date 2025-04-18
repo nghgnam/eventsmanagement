@@ -4,6 +4,8 @@ import { EventsService } from '../../service/events.service';
 import { EventList } from '../../types/eventstype';
 import { CommonModule } from '@angular/common';
 import { Observable } from 'rxjs';
+import { SafeUrlService } from '../../service/santizer.service';
+import { SafeUrl } from '@angular/platform-browser';
 @Component({
   selector: 'app-detail-event',
   standalone: true,
@@ -21,8 +23,10 @@ export class DetailEventComponent implements OnInit {
   totalTicket =1 ;
   isHidden: boolean = true;
   totalPrice :number | null = null;
+  
+  
 
-  constructor(private route: ActivatedRoute, private eventsService: EventsService , private router: Router) {
+  constructor(private route: ActivatedRoute, private eventsService: EventsService , private router: Router, private sanitizer: SafeUrlService) {
     this.events$ = this.eventsService.events$;
   }
   ngOnInit() {
@@ -46,6 +50,11 @@ export class DetailEventComponent implements OnInit {
     }
   }
   
+  getSafeUrl(url: string | undefined): SafeUrl| undefined{
+    
+    return this.sanitizer.sanitizeImageUrl(url);
+
+  }
 
   getDatetimeClick(index: number) {
     this.isClickActive = index;

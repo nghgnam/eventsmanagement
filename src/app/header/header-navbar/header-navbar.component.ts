@@ -19,15 +19,16 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 })
 export class HeaderNavbarComponent implements OnInit {
   user: User | undefined;
-  user$ : Observable<User[]> | undefined
-  userCurrentId: string | undefined
-  userCurrentname : string | undefined
-  userCurrentImage : string | undefined
-  userCurrentEmail : string | undefined
-  isDropdownOpen : boolean = false;
+  user$: Observable<User[]> | undefined;
+  userCurrentId: string | undefined;
+  userCurrentname: string | undefined;
+  userCurrentImage: string | undefined;
+  userCurrentEmail: string | undefined;
+  isDropdownOpen: boolean = false;
   auth = getAuth();
+  currentUserType: string | undefined;
   
-  checkingForLogin: boolean = false
+  checkingForLogin: boolean = false;
   users: User[] = [];
 
   constructor(private sharedService: SharedService, private authService : AuthService, private router: Router, private usersService: UsersService, private sanitizer: DomSanitizer) {
@@ -44,6 +45,7 @@ export class HeaderNavbarComponent implements OnInit {
           this.userCurrentname = userData?.fullName ;
           this.userCurrentImage = userData?.profileImage || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'
           this.userCurrentEmail = userData?.email ;
+          this.currentUserType = userData?.type
         } )
       }
     })
@@ -68,8 +70,19 @@ export class HeaderNavbarComponent implements OnInit {
   goToManageEvent(): void{
     console.log('goToManageEvent clicked');
     if(this.userCurrentId){
-      this.router.navigate(['/manage-events']);
-      console.log('navigating to manage-events');
+
+
+      if(this.currentUserType === 'organizer'){
+        this.router.navigate(['/manage-events']);
+        console.log('navigating to manage-events');
+      }
+      else{
+        console.log(this.currentUserType)
+        this.router.navigate(['/userprofile', this.userCurrentId], {queryParams: {changeTab: 'tab3'}})
+        
+      }
+
+      
     } else {
       console.log('User not logged in, redirecting to login');
       this.router.navigate(['/login']);

@@ -24,7 +24,7 @@
         <div class="events-grid" *ngIf="!isLoading && displayedEvents.length > 0">
             <div class="event-card" *ngFor="let event of displayedEvents" (click)="goToDetail(event.id)">
                 <div class="event-image">
-                    <img [src]="event.image_url" [alt]="event.name">
+                    <img *ngIf="getSafeUrl(event.image_url) as SafeUrl" [src]="SafeUrl" [alt]="event.name">
                     <div class="event-date-badge">
                         <span class="day">{{ event.date_time_options[0].start_time | date: 'dd' }}</span>
                         <span class="month">{{ event.date_time_options[0].start_time | date: 'MMM' }}</span>
@@ -58,7 +58,7 @@
                             <span>{{ event.price ? (event.price + ' ' + (event.currency || 'USD')) : 'Free' }}</span>
                         </div>
                         <div class="event-organizer">
-                            <img [src]="event.organizer.profileImage || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'" alt="Organizer avatar" class="organizer-avatar">
+                            <img *ngIf="getSafeUrl(event.organizer.profileImage) as SafeUrl" [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'" alt="Organizer avatar" class="organizer-avatar">
                             <span>{{ event.organizer.name }}</span>
                         </div>
                     </div>

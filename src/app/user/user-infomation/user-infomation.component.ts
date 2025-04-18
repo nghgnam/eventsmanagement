@@ -103,6 +103,15 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+
+    this.route.queryParams.subscribe(tab =>{
+      {
+        this.changeTab  = tab['changeTab']
+        this.errorMessage = "Please become Organizer to active"
+      }
+    })
+
+
     this.location.getCities().subscribe(dataCities =>{
       this.citiesValue = dataCities;      
     })
@@ -176,9 +185,9 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
           .subscribe({
             next: (dataUser) => {
               if (dataUser) {
-                console.log('User data received:', dataUser);
+                
                 this.currentRole = dataUser.type
-          this.currentUser = dataUser;
+                this.currentUser = dataUser;
                 this.imageUrl = dataUser.profileImage;           
                 this.updateFormWithUserData(dataUser);
                 this.cdr.detectChanges();
@@ -206,7 +215,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   }
 
   private updateFormWithUserData(user: User): void {   
-    console.log('Updating form with user data:', user);
+    
     let formattedDOB = '';
     if (user.dateOfBirth) {
       try {
