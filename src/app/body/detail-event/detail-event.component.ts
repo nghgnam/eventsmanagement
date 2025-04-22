@@ -35,19 +35,22 @@ export class DetailEventComponent implements OnInit {
       
     });
     
-    const eventId = this.route.snapshot.paramMap.get('id');
-    console.log(eventId)
-    if (eventId) {
-      this.eventsService.getEventById(eventId).subscribe(event => {
-        this.event = event;
-        
-        if (this.showStartTime == null && this.showEndTime == null) {
-          this.showStartTime = this.event?.date_time_options[0].start_time;
-          this.showEndTime = this.event?.date_time_options[0].end_time;
-          this.totalPrice = (this.event?.price ?? 0) * 1;
-        }
-      });
-    }
+    this.route.paramMap.subscribe(params=>{
+      const eventId = params.get('id');
+      if (eventId) {
+        this.eventsService.getEventById(eventId).subscribe(event => {
+          this.event = event;
+          
+          if (this.showStartTime == null && this.showEndTime == null) {
+            this.showStartTime = this.event?.date_time_options[0].start_time;
+            this.showEndTime = this.event?.date_time_options[0].end_time;
+            this.totalPrice = (this.event?.price ?? 0) * 1;
+          }
+        });
+      }
+
+    })
+    
   }
   
   getSafeUrl(url: string | undefined): SafeUrl| undefined{
@@ -65,8 +68,6 @@ export class DetailEventComponent implements OnInit {
 
   goToDetail(eventId: string | undefined) {
     this.router.navigate(['/detail', eventId]);  
-    console.log(eventId)
-    console.log(this.events$)
   }
   inCreaseTicket(){
     this.totalTicket += 1;

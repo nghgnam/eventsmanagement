@@ -1,7 +1,7 @@
 .details_container {
-    max-width: 1270px;
+    /* max-width: 1270px; */
     margin: 0 auto;
-    padding: 20px;
+    /* padding: 20px; */
     font-family: 'Roboto', Arial, sans-serif;
 }
 
@@ -9,36 +9,44 @@
 .events_background {
     position: relative;
     width: 100%;
-    height: 400px;
+    height: 500px;
     margin-bottom: 40px;
     border-radius: 12px;
     overflow: hidden;
+    background-image: url('data:image/svg+xml;charset=utf8,%3Csvg%20width%3D%221676%22%20height%3D%22430%22%20viewBox%3D%220%200%201676%20430%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20clip-path%3D%22url(%23clip0_3405_50198)%22%3E%3Cpath%20d%3D%22M1669.31%20-124.702C1704.63%20-198.281%201599.75%20-278.89%201440.21%20-219.509C1280.67%20-160.128%201138.67%20-174.472%20940.588%20-234.668C588.163%20-341.792%20438.492%20-309.897%20215.804%20-220.763C150.423%20-195.199%2015.9418%20-122.33%200.814447%20-35.3897C-18.0424%2073.26%20298.334%2062.7189%20143.288%20203.358C-11.7568%20343.996%2026.7216%20552.457%20835.628%20313.658C939.215%20283.079%201109.58%20269.122%201259.68%20366.729C1409.78%20464.336%201549.16%20434.834%201602.55%20362.937C1716.96%20208.836%201609.92%20-1.08292%201669.31%20-124.702Z%22%20fill%3D%22%23EDF1FC%22%2F%3E%3C/g%3E%3Cdefs%3E%3CclipPath%20id%3D%22clip0_3405_50198%22%3E%3Crect%20width%3D%221676%22%20height%3D%22430%22%20fill%3D%22white%22%2F%3E%3C/clipPath%3E%3C/defs%3E%3C/svg%3E');
 }
 
 .events_background2 {
     position: absolute;
     top: 0;
-    left: 0;
-    width: 100%;
+    left: 15%;
+    width: 1300px;
     height: 100%;
     background-size: cover;
     background-position: center;
-    filter: blur(20px);
-    transform: scale(1.1);
+    filter: blur(25px);
+    z-index: 2;
+    border-radius: 10%;
 }
 
 .background_details {
-    position: relative;
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    width: 1100px;
+    height: 480px;
     object-fit: cover;
+    z-index: 2;
+    left: 20%;
+    top: 4%;
+    border-radius: 20px;
 }
 
 /* Main Content */
 .events_details {
+    max-width: 1270px;
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 40px;
+    margin: auto;
 }
 
 /* Event Information */
@@ -262,7 +270,8 @@
     border-bottom: 1px solid #e9ecef;
 }
 
-.date_day, .date_month {
+.date_day,
+.date_month {
     font-size: 1rem;
     color: #495057;
     font-weight: 500;
@@ -442,6 +451,11 @@
     padding: 16px;
 }
 
+.event_other {
+    border: 1px solid #ebebeb;
+    border-radius: 30px;
+}
+
 .event_other_title {
     font-weight: 600;
     margin-bottom: 8px;
@@ -547,10 +561,10 @@
 
 .reserve_a_spot {
     width: 100%;
-    padding: 16px;
+    /* padding: 16px; */
     border: none;
     border-radius: 8px;
-    background: #1976d2;
+    background: #c92351;
     color: white;
     font-weight: 600;
     cursor: pointer;
@@ -558,7 +572,7 @@
 }
 
 .reserve_a_spot:hover {
-    background: #1565c0;
+    background: #890814;
 }
 
 /* Responsive Design */
@@ -588,25 +602,25 @@
     .section_title h2 {
         font-size: 1.5rem;
     }
-    
+
     .event_date_time_options {
         padding: 1rem;
     }
-    
+
     .selected_date_and_time {
         flex-direction: column;
         text-align: center;
         gap: 1rem;
     }
-    
+
     .date_time_options_grid {
         grid-template-columns: 1fr;
     }
-    
+
     .date_time_card {
         padding: 0.8rem;
     }
-    
+
     .date_number {
         font-size: 1.5rem;
     }

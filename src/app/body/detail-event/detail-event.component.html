@@ -175,7 +175,12 @@
                     </div>
                 </div>
             </div>
-            <button class="reserve_a_spot">Reserve a spot</button>
+            <button class="reserve_a_spot" >
+                <p *ngIf="totalPrice">Reserve a spot</p>
+                <p *ngIf="!totalPrice">Subscriptions</p>
+            </button>
+            
+            
         </div>
     </div>
 </div>
