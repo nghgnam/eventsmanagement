@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { Observable } from 'rxjs';
 import { SafeUrlService } from '../../service/santizer.service';
 import { SafeUrl } from '@angular/platform-browser';
+import { SubscriptionService } from '../../service/subscription.service';
 @Component({
   selector: 'app-detail-event',
   standalone: true,
@@ -23,10 +24,16 @@ export class DetailEventComponent implements OnInit {
   totalTicket =1 ;
   isHidden: boolean = true;
   totalPrice :number | null = null;
-  
+  subscribers: number | null = null;
   
 
-  constructor(private route: ActivatedRoute, private eventsService: EventsService , private router: Router, private sanitizer: SafeUrlService) {
+  constructor(
+    private route: ActivatedRoute, 
+    private eventsService: EventsService , 
+    private router: Router, 
+    private sanitizer: SafeUrlService,
+    private subscript: SubscriptionService
+  ) {
     this.events$ = this.eventsService.events$;
   }
   ngOnInit() {
@@ -49,6 +56,10 @@ export class DetailEventComponent implements OnInit {
         });
       }
 
+    })
+
+    this.subscript.eventSubscriptions$.subscribe(subs=>{
+      this.subscribers = subs.length
     })
     
   }

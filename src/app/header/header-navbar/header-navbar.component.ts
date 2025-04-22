@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { User } from '../../types/userstype';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-
+import { SafeUrlService } from '../../service/santizer.service';
 @Component({
   selector: 'app-header-navbar',
   standalone: true,
