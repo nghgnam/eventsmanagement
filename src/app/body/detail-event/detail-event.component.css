@@ -130,14 +130,18 @@
 
 .organizer_follow {
     margin-left: auto;
-    padding: 8px 16px;
+    padding: 12px 24px;
     border: none;
     border-radius: 20px;
-    background: #1976d2;
+    background: #000000;
     color: white;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s
+}
+
+.organizer_follow> p{
+    margin: 2px;
 }
 
 .organizer_follow:hover {

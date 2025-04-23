@@ -34,7 +34,10 @@
                     <p>{{ event.organizer.followers }}</p>
                     <span style="    font-weight: 600;">followers</span>
                 </div>
-                <button class="organizer_follow">Follow</button>
+                <button class="organizer_follow" >
+                    <p *ngIf="!hasFollow">follow</p>
+                    <p *ngIf="hasFollow">registered</p>
+                </button>
             </div>
 
             <!-- Event Description -->
@@ -154,7 +157,7 @@
         </div>
 
         <!-- Ticket Purchase Section -->
-        <div class="get_ticket">
+        <div class="get_ticket" *ngIf="!hasSubscribes">
             <div class="ticket_info">
                 <div class="ticket_quantity">
                     <span>General Admission</span>
@@ -177,7 +180,7 @@
             </div>
             <button class="reserve_a_spot" >
                 <p *ngIf="totalPrice">Reserve a spot</p>
-                <p *ngIf="!totalPrice">Subscriptions</p>
+                <p *ngIf="!totalPrice" (click)="actionSubscribe()">Subscriptions</p>
             </button>
             
             

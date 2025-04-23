@@ -7,6 +7,8 @@ import { Observable } from 'rxjs';
 import { SafeUrlService } from '../../service/santizer.service';
 import { SafeUrl } from '@angular/platform-browser';
 import { SubscriptionService } from '../../service/subscription.service';
+import { getAuth } from 'firebase/auth';
+import { error } from 'console';
 @Component({
   selector: 'app-detail-event',
   standalone: true,
@@ -25,6 +27,9 @@ export class DetailEventComponent implements OnInit {
   isHidden: boolean = true;
   totalPrice :number | null = null;
   subscribers: number | null = null;
+  hasSubscribes: boolean = false;
+  hasFollow: boolean = false;
+  auth = getAuth();
   
 
   constructor(
@@ -44,23 +49,36 @@ export class DetailEventComponent implements OnInit {
     
     this.route.paramMap.subscribe(params=>{
       const eventId = params.get('id');
+      const userId = this.auth.currentUser?.uid;
+
       if (eventId) {
-        this.eventsService.getEventById(eventId).subscribe(event => {
-          this.event = event;
+        if(userId){
+          this.eventsService.getEventById(eventId).subscribe(event => {
+            this.event = event;
+            
+            if (this.showStartTime == null && this.showEndTime == null) {
+              this.showStartTime = this.event?.date_time_options[0].start_time;
+              this.showEndTime = this.event?.date_time_options[0].end_time;
+              this.totalPrice = (this.event?.price ?? 0) * 1;
+            }
+          });
+
+          this.subscript.getEventAndUserHasSubs(userId, eventId);
+          this.subscript.getCurrentSub$.subscribe(sub=>{
+            const value = sub;
+            if(value && value.length >0){
+              this.hasSubscribes = true; 
+            }
+            else{
+              this.hasSubscribes = false;
+            }
+          }, error => console.log(error))
           
-          if (this.showStartTime == null && this.showEndTime == null) {
-            this.showStartTime = this.event?.date_time_options[0].start_time;
-            this.showEndTime = this.event?.date_time_options[0].end_time;
-            this.totalPrice = (this.event?.price ?? 0) * 1;
-          }
-        });
+        }
       }
 
     })
-
-    this.subscript.eventSubscriptions$.subscribe(subs=>{
-      this.subscribers = subs.length
-    })
+   
     
   }
   
@@ -97,6 +115,21 @@ export class DetailEventComponent implements OnInit {
   
   isChecked() {
     this.isHidden = !this.isHidden;
+  }
+
+  actionSubscribe(){
+    const userId = this.auth.currentUser?.uid;
+    const eventId = this.event?.id;
+
+    this.subscript.addSubscibeAction(userId, eventId).subscribe({
+      next: () =>{
+        this.hasSubscribes = true;
+        console.log('Success subscribes event')
+      },
+      error: (error:any) =>{
+        console.error('Error subscribes event');
+      }
+    })
   }
   
 }

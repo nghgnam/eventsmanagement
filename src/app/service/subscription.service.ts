@@ -25,6 +25,9 @@ export class SubscriptionService {
   private userSubscriptionsSubject = new BehaviorSubject<Subscriptions[]>([]);
   userSubscriptions$ = this.userSubscriptionsSubject.asObservable();
 
+  private CurrentSubSubject = new BehaviorSubject<Subscriptions[]>([]);
+  getCurrentSub$ = this.CurrentSubSubject.asObservable();
+
 
   getSubscriptionsByEvent(eventId: string): void{
     const q = query(this.subscriptionsCollection, where('event_id' , '==' , eventId), where('status' , '==' , 'active'))
@@ -51,4 +54,36 @@ export class SubscriptionService {
     }
   )
   }
+
+
+
+  getEventAndUserHasSubs(userId: string, eventId: string): void {
+    const q =query(this.subscriptionsCollection, where('user_id', '==', userId), where('event_id' , '==' , eventId), where('status' , '==' , 'active'))
+
+    onSnapshot(q, (snapshot)=>{
+      const subscriptions = snapshot.docs.map(doc => ({id: doc.id, ...doc.data})) as unknown as Subscriptions[];
+      this.CurrentSubSubject.next(subscriptions);
+    }, error => {
+      console.error("Lỗi khi fetch subscriptions:", error);
+      this.CurrentSubSubject.error(error);
+    }
+  )
+  }
+
+  addSubscibeAction(userId: string | undefined, eventId: string | undefined): Observable<any>{
+    return from(
+      addDoc(this.subscriptionsCollection, {
+      user_id: userId,
+      event_id: eventId,
+      status: 'active',
+      start_date: new Date()
+    }).then(() =>{
+      console.log('Subscribes succesful')
+    }).catch(error =>{
+      console.error('Error subscribe', error);
+      throw error
+    })
+  )
+  }
+
 }
