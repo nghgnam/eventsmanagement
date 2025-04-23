@@ -130,22 +130,34 @@
 
 .organizer_follow {
     margin-left: auto;
-    padding: 12px 24px;
+    padding: 8px 16px;
     border: none;
     border-radius: 20px;
-    background: #000000;
+    background: #1976d2;
     color: white;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s
-}
-
-.organizer_follow> p{
-    margin: 2px;
+    transition: all 0.3s ease;
 }
 
 .organizer_follow:hover {
     background: #1565c0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.organizer_follow.followed {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.organizer_follow.followed:hover {
+    background: #d0d0d0;
+}
+
+.organizer_follow p {
+    margin: 0;
+    font-size: 14px;
 }
 
 /* Event Description */

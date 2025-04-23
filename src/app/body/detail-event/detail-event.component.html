@@ -28,15 +28,14 @@
                     <img *ngIf="getSafeUrl(event.organizer.profileImage) as SafeUrl" [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'"  [alt]="event.organizer.name">
                 </div>
                 <div class="organizer_info">
-                    <span style="    font-weight: 600;">By</span>
+                    <span style="font-weight: 600;">By</span>
                     <p>{{ event.organizer.name }}</p>
                     <span>-</span>
                     <p>{{ event.organizer.followers }}</p>
-                    <span style="    font-weight: 600;">followers</span>
+                    <span style="font-weight: 600;">followers</span>
                 </div>
-                <button class="organizer_follow" >
-                    <p *ngIf="!hasFollow">follow</p>
-                    <p *ngIf="hasFollow">registered</p>
+                <button class="organizer_follow" *ngIf="!isOrangizer" (click)="actionFollow()" [ngClass]="{'followed': hasFollow}">
+                    <p>{{ hasFollow ? 'Unfollow' : 'Follow' }}</p>
                 </button>
             </div>
 
@@ -157,7 +156,7 @@
         </div>
 
         <!-- Ticket Purchase Section -->
-        <div class="get_ticket" *ngIf="!hasSubscribes">
+        <div class="get_ticket" *ngIf="!hasSubscribes" >
             <div class="ticket_info">
                 <div class="ticket_quantity">
                     <span>General Admission</span>
