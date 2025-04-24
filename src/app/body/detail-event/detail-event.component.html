@@ -156,33 +156,54 @@
         </div>
 
         <!-- Ticket Purchase Section -->
-        <div class="get_ticket" *ngIf="!hasSubscribes" >
-            <div class="ticket_info">
-                <div class="ticket_quantity">
-                    <span>General Admission</span>
-                    <div class="quantity_controls">
-                        <button class="decrease" (click)="deCreaseTicket()">-</button>
-                        <p class="total_ticket">{{totalTicket}}</p>
-                        <button class="increase" (click)="inCreaseTicket()">+</button>
+        <div class="event_ticket" *ngIf="!isOrangizer">
+            <div class="ticket_card">
+                <div class="ticket_header">
+                    <div class="ticket_title">
+                        <i class="fa-solid fa-ticket"></i>
+                        <h3>Thông tin vé</h3>
+                    </div>
+                    <div class="ticket_price">
+                        <span class="price_value">{{ event.price ? (event.price | currency) : 'Miễn phí' }}</span>
+                        <span class="price_label">/ vé</span>
                     </div>
                 </div>
-                <div class="ticket_price">
-                    <div class="price" *ngIf="totalPrice; else freeText">{{totalPrice | currency}}</div>
-                    <ng-template #freeText>Free</ng-template>
-                    <div class="ticket_status">
-                        <i class="fa-solid fa-circle-exclamation" (click)="isChecked()"></i>
-                        <p class="ticket_status_info" [ngClass]="{ 'hidden': isHidden, 'show': !isHidden }">
-                            Sale ends on {{showEndTime | date: "MMMM d yyyy"}}
-                        </p>
+                
+                <div class="ticket_separator"></div>
+                
+                <div class="ticket_actions">
+                    <div class="ticket_quantity_section" *ngIf="!hasSubscribes">
+                        <div class="quantity_label">Số lượng vé</div>
+                        <div class="ticket_quantity">
+                            <button class="quantity_btn" (click)="deCreaseTicket()">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
+                            <span class="quantity_value">{{ totalTicket }}</span>
+                            <button class="quantity_btn" (click)="inCreaseTicket()">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
                     </div>
+                    
+                    <div class="total_price_section" *ngIf="!hasSubscribes">
+                        <div class="total_price_label">Tổng tiền</div>
+                        <div class="total_price_value">{{ totalPrice | currency }}</div>
+                    </div>
+                    
+                    <button class="subscribe_btn" 
+                            [ngClass]="{'subscribed': hasSubscribes}"
+                            (click)="hasSubscribes ? actionUnsubscribe() : actionSubscribe()">
+                        <i class="fa-solid" [ngClass]="{'fa-check': hasSubscribes, 'fa-ticket': !hasSubscribes}"></i>
+                        <span>{{ hasSubscribes ? 'Đã đăng ký' : 'Đăng ký ngay' }}</span>
+                    </button>
                 </div>
             </div>
-            <button class="reserve_a_spot" >
-                <p *ngIf="totalPrice">Reserve a spot</p>
-                <p *ngIf="!totalPrice" (click)="actionSubscribe()">Subscriptions</p>
-            </button>
-            
-            
         </div>
     </div>
 </div>
+
+<app-notification
+  [message]="notificationMessage"
+  [type]="notificationType"
+  [isVisible]="showNotification"
+></app-notification>
