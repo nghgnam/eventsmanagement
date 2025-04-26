@@ -146,6 +146,56 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+.confirmation_dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.dialog_content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dialog_content p {
+  margin-bottom: 20px;
+  font-size: 16px;
+  color: #333;
+}
+
+.dialog_actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.dialog_btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dialog_btn.confirm {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.dialog_btn.cancel {
+  background: #bdc3c7;
+  color: #333;
+}
+
 .organizer_follow.followed {
     background: #e0e0e0;
     color: #333;
@@ -809,6 +859,20 @@
     transition: all 0.3s ease;
     margin-top: 10px;
 }
+.subscribe_btn.full {
+    background-color: #e74c3c;
+    color: #fff;
+    cursor: not-allowed;
+  }
+  
+  .subscribe_btn.subscribed {
+    background-color: #2ecc71; 
+    color: #fff;
+  }
+  
+  .subscribe_btn i {
+    font-size: 18px;
+  }
 
 .subscribe_btn i {
     font-size: 18px;

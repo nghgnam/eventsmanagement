@@ -3,13 +3,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { EventsService } from '../../service/events.service';
 import { EventList } from '../../types/eventstype';
 import { CommonModule } from '@angular/common';
-import { Observable, Subject, Subscription } from 'rxjs';
+import { forkJoin, Observable, Subject, Subscription } from 'rxjs';
 import { SafeUrlService } from '../../service/santizer.service';
 import { SafeUrl } from '@angular/platform-browser';
 import { SubscriptionService } from '../../service/subscription.service';
 import { getAuth } from 'firebase/auth';
 import { NotificationComponent } from '../../shared/components/notification/notification.component';
-import { takeUntil } from 'rxjs/operators';
+import { finalize, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-detail-event',
@@ -31,97 +31,116 @@ export class DetailEventComponent implements OnInit, OnDestroy {
   subscribers: number | null = null;
   hasSubscribes: boolean = false;
   hasFollow: boolean = false;
-  isOrangizer: boolean = false;
-  userId: string = ''; 
+  isOrganizer: boolean = false;
+  userId: string = '';
   organizerId: string = '';
+  isEventFull: boolean = false;
   auth = getAuth();
   private destroy$ = new Subject<void>();
-  
+  showUnsubscribeDialog: boolean = false;
+
   // Notification state
   showNotification: boolean = false;
   notificationMessage: string = '';
   notificationType: 'success' | 'error' = 'success';
-  
+
   private subscriptions: Subscription[] = [];
 
   constructor(
-    private route: ActivatedRoute, 
-    private eventsService: EventsService, 
-    private router: Router, 
+    private route: ActivatedRoute,
+    private eventsService: EventsService,
+    private router: Router,
     private sanitizer: SafeUrlService,
     private subscript: SubscriptionService
   ) {
     this.events$ = this.eventsService.events$;
   }
 
+
   ngOnInit() {
-    this.eventsService.fetchEvents();
-    
+
     const routeSub = this.route.paramMap.pipe(
       takeUntil(this.destroy$)
     ).subscribe(params => {
       const eventId = params.get('id');
       const userId = this.auth.currentUser?.uid;
-      
+
       if (eventId && userId) {
         const eventSub = this.eventsService.getEventById(eventId).subscribe({
           next: (event) => {
             this.event = event;
             const organizerId = event?.organizer?.id;
+
+            this.subscript.checkEventFull(eventId).subscribe(isFull => {
+              this.isEventFull = isFull;
+              console.log('Event full status:', isFull);
+              if (isFull) {
+                this.showNotification = true;
+                this.notificationMessage = 'Sự kiện đã đủ người tham dự!';
+                this.notificationType = 'error';
+                setTimeout(() => this.showNotification = false, 3000);
+              }
+            });
+
             
-            if (this.showStartTime == null && this.showEndTime == null) {
+            if (!this.showStartTime && !this.showEndTime) {
               this.showStartTime = this.event?.date_time_options[0]?.start_time;
               this.showEndTime = this.event?.date_time_options[0]?.end_time;
               this.totalPrice = (this.event?.price ?? 0) * 1;
             }
 
-            if (organizerId?.trim() === userId.trim()) {
-              this.hasSubscribes = true;
-              this.hasFollow = true;
-              this.isOrangizer = true;
-            } else {
-              this.subscript.getEventAndUserHasSubs(userId, eventId);
-              const currentSubSub = this.subscript.getCurrentSub$.subscribe({
-                next: (sub) => {
-                  this.hasSubscribes = sub && sub.length > 0;
-                  console.log('Subscription status:', this.hasSubscribes);
+            
+            if (organizerId && userId) {
+              this.subscript.checkFollowStatus(userId, organizerId).subscribe(isFollowing => {
+                this.hasFollow = isFollowing;
+                console.log('Follow status:', isFollowing);
+              });
+
+              
+              forkJoin({
+                subscriberCount: this.subscript.getSubscriberCount(eventId),
+                followerCount: this.subscript.getAllFollower(userId, organizerId)
+              }).subscribe({
+                next: ({ subscriberCount, followerCount }) => {
+                  if (subscriberCount !== -1) {
+                    this.subscribers = subscriberCount;
+                    console.log('Subscriber count:', subscriberCount);
+                  } else {
+                    console.warn('Unable to fetch subscriber count');
+                  }
+
+                  if (followerCount !== -1) {
+                    if (this.event?.organizer) {
+                      this.event.organizer.followers = followerCount;
+                      this.hasFollow = followerCount > 0;
+                    }
+                  } else {
+                    console.warn('Unable to fetch follower count');
+                  }
                 },
                 error: (error) => {
-                  console.error('Error checking subscription:', error);
+                  console.error('Error fetching subscriber or follower count:', error);
+                }
+              });
+
+              
+              this.subscript.getEventAndUserHasSubs(userId, eventId);
+              const currentSubSub = this.subscript.getCurrentSub$.pipe(takeUntil(this.destroy$)).subscribe({
+                next: (sub) => {
+                  console.log('Received subscription data:', sub);
+                  this.hasSubscribes = Array.isArray(sub) && sub.length > 0;
+                  console.log('Updated subscription status:', this.hasSubscribes);
+                },
+                error: (error) => {
+                  console.error('Subscription error:', error);
                   this.hasSubscribes = false;
                 }
               });
               this.subscriptions.push(currentSubSub);
             }
-
-            if (organizerId) {
-              setTimeout(() => {
-                this.subscript.getUserAndOrganizer(userId, organizerId);
-                const followSub = this.subscript.follows$.subscribe({
-                  next: (follows) => {
-                    if (Array.isArray(follows)) {
-                      follows.forEach(f => {
-
-                      });
-                      this.hasFollow = follows.some(f => f.status?.trim().toLowerCase() === 'active');
-                    } else {
-                      console.error('Follows is not an array or is empty:', follows);
-                      this.hasFollow = false;
-                    }
-                  },
-                error: (error) => {
-                  console.error('Error checking follow status:', error);
-                  this.hasFollow = false;
-                }
-              });
-              this.subscriptions.push(followSub);
-              }, 500);
-              
-            }
           },
           error: (error) => {
-            console.error('Error fetching event:', error);
-            this.router.navigate(['/home']);
+            console.error('Error fetching event details:', error);
           }
         });
         this.subscriptions.push(eventSub);
@@ -132,8 +151,6 @@ export class DetailEventComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   getSafeUrl(url: string | undefined): SafeUrl | undefined {
@@ -164,126 +181,155 @@ export class DetailEventComponent implements OnInit, OnDestroy {
       this.totalPrice = (this.event?.price ?? 0) * this.totalTicket;
     }
   }
-  
+
   isChecked() {
     this.isHidden = !this.isHidden;
   }
 
+  
+
   actionSubscribe() {
     const userId = this.auth.currentUser?.uid;
     const eventId = this.event?.id;
-
-    if (userId && eventId) {
-      this.subscript.addSubscibeAction(userId, eventId, this.showStartTime, this.showEndTime, this.totalPrice).subscribe({
-        next: () => {
-          this.hasSubscribes = true;
-          this.showNotification = true;
-          this.notificationMessage = 'Đăng ký sự kiện thành công!';
-          this.notificationType = 'success';
-        },
-        error: (error) => {
-          console.error('Error subscribing to event:', error);
-          this.hasSubscribes = false;
-          this.showNotification = true;
-          this.notificationMessage = 'Có lỗi xảy ra khi đăng ký sự kiện';
-          this.notificationType = 'error';
-        }
-      });
+  
+    if (!userId || !eventId) {
+      this.showError('Không thể thực hiện hành động này');
+      return;
     }
+  
+    
+    if (this.isEventFull) {
+      this.showError('Sự kiện đã đủ người tham dự!');
+      return;
+    }
+  
+    this.subscript.addSubscription(
+      userId,
+      eventId,
+      this.showStartTime ?? '',
+      this.showEndTime ?? '',
+      this.totalPrice ?? 0
+    ).subscribe({
+      next: () => {
+        this.hasSubscribes = true; 
+        this.subscript.updateAttendeeCount(eventId, 1).subscribe(() => {
+          
+          this.subscript.checkEventFull(eventId).subscribe(isFull => {
+            this.isEventFull = isFull;
+          });
+        });
+        this.showNotification = true;
+        this.notificationMessage = 'Đăng ký sự kiện thành công!';
+        this.notificationType = 'success';
+      },
+      error: (error) => {
+        console.error('Error subscribing to event:', error);
+        this.showNotification = true;
+        this.notificationMessage = 'Có lỗi xảy ra khi đăng ký sự kiện';
+        this.notificationType = 'error';
+      }
+    });
   }
-
+  
   actionUnsubscribe() {
     const userId = this.auth.currentUser?.uid;
     const eventId = this.event?.id;
-
-    if (userId && eventId) {
-      this.subscript.unsubscribeAction(userId, eventId).subscribe({
-        next: () => {
-          this.hasSubscribes = false;
-          this.showNotification = true;
-          this.notificationMessage = 'Hủy đăng ký sự kiện thành công!';
-          this.notificationType = 'success';
-        },
-        error: (error) => {
-          console.error('Error unsubscribing from event:', error);
-          this.showNotification = true;
-          this.notificationMessage = 'Có lỗi xảy ra khi hủy đăng ký sự kiện';
-          this.notificationType = 'error';
-        }
-      });
+  
+    if (!userId || !eventId) {
+      this.showError('Không thể thực hiện hành động này');
+      return;
     }
+  
+    this.subscript.unsubscribeAction(userId, eventId).subscribe({
+      next: () => {
+        this.hasSubscribes = false; 
+        this.subscript.updateAttendeeCount(eventId, -1).subscribe();
+        this.showNotification = true;
+        this.notificationMessage = 'Hủy đăng ký sự kiện thành công!';
+        this.notificationType = 'success';
+      },
+      error: (error) => {
+        console.error('Error unsubscribing from event:', error);
+        this.showNotification = true;
+        this.notificationMessage = 'Có lỗi xảy ra khi hủy đăng ký sự kiện';
+        this.notificationType = 'error';
+      }
+    });
   }
+  isFollowLoading = false;
 
   actionFollow() {
-    if (!this.event?.organizer?.id) {
-      this.showNotification = true;
-      this.notificationMessage = 'Không thể thực hiện hành động này';
-      this.notificationType = 'error';
-      setTimeout(() => {
-        this.showNotification = false;
-      }, 3000);
-      return;
-    }
+    if (this.isFollowLoading) return;
+  
+    this.isFollowLoading = true;
   
     const currentUserId = this.auth.currentUser?.uid;
-    if (!currentUserId) {
-      this.showNotification = true;
-      this.notificationMessage = 'Vui lòng đăng nhập để thực hiện hành động này';
-      this.notificationType = 'error';
-      setTimeout(() => {
-        this.showNotification = false;
-      }, 3000);
+    const organizerId = this.event?.organizer?.id;
+  
+    if (!currentUserId || !organizerId) {
+      this.showError('Không thể thực hiện hành động này');
+      this.isFollowLoading = false;
       return;
     }
   
-    if (!this.hasFollow) {
-      this.subscript.addFollowAction(currentUserId, this.event.organizer.id, this.event?.id).subscribe({
-        next: () => {
-          this.hasFollow = true;
-          if (this.event?.organizer) {
-            this.event.organizer.followers++;
+    const action = !this.hasFollow
+      ? this.subscript.addFollow(currentUserId, organizerId, this.event?.id)
+      : this.subscript.toggleFollowStatus(currentUserId, organizerId, this.event?.id);
+  
+    action.pipe(finalize(() => this.isFollowLoading = false)).subscribe({
+      next: () => {
+        this.hasFollow = !this.hasFollow; // Cập nhật trạng thái follow
+        console.log(`Follow status updated: ${this.hasFollow}`);
+  
+        // Cập nhật số lượng followers
+        this.subscript.getAllFollower(currentUserId, organizerId).subscribe(followerCount => {
+          if (followerCount !== -1 && this.event?.organizer) {
+            this.event.organizer.followers = followerCount;
+            console.log('Updated follower count:', followerCount);
           }
-          this.showNotification = true;
-          this.notificationMessage = 'Đã theo dõi người tổ chức thành công';
-          this.notificationType = 'success';
-          setTimeout(() => {
-            this.showNotification = false;
-          }, 3000);
-        },
-        error: (error: Error) => {
-          console.error('Error following user:', error);
-          this.showNotification = true;
-          this.notificationMessage = 'Có lỗi xảy ra khi theo dõi';
-          this.notificationType = 'error';
-          setTimeout(() => {
-            this.showNotification = false;
-          }, 3000);
-        }
-      });
-    } else {
-      this.subscript.addFollowAction(currentUserId, this.event.organizer.id, this.event?.id).subscribe({
-        next: () => {
-          this.hasFollow = false;
-          if (this.event?.organizer) {
-            this.event.organizer.followers--;
-          }
-          this.showNotification = true;
-          this.notificationMessage = 'Đã hủy theo dõi người tổ chức';
-          this.notificationType = 'success';
-          setTimeout(() => {
-            this.showNotification = false;
-          }, 3000);
-        },
-        error: (error: Error) => {
-          console.error('Error unfollowing user:', error);
-          this.showNotification = true;
-          this.notificationMessage = 'Có lỗi xảy ra khi hủy theo dõi';
-          this.notificationType = 'error';
-          setTimeout(() => {
-            this.showNotification = false;
-          }, 3000);
-        }
-      });
-    }
+        });
+  
+        this.showSuccess(
+          this.hasFollow
+            ? 'Đã theo dõi người tổ chức thành công'
+            : 'Đã hủy theo dõi người tổ chức'
+        );
+      },
+      error: (error: any) => {
+        console.error('Follow action failed:', error);
+        this.showError('Có lỗi xảy ra khi thực hiện hành động');
+      }
+    });
   }
+  
+  private showError(message: string) {
+    this.showNotification = true;
+    this.notificationMessage = message;
+    this.notificationType = 'error';
+    setTimeout(() => this.showNotification = false, 3000);
+  }
+
+  private showSuccess(message: string) {
+    this.showNotification = true;
+    this.notificationMessage = message;
+    this.notificationType = 'success';
+    setTimeout(() => this.showNotification = false, 3000);
+  }
+
+  openUnsubscribeDialog() {
+    this.showUnsubscribeDialog = true;
+  }
+
+  
+  closeUnsubscribeDialog() {
+    this.showUnsubscribeDialog = false;
+  }
+
+  
+  confirmUnsubscribe() {
+    this.closeUnsubscribeDialog(); 
+    this.actionUnsubscribe(); 
+  }
+
+  
 }

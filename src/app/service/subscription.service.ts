@@ -5,7 +5,7 @@ import { EventList } from "../types/eventstype";
 import { auth, db } from "../config/firebase.config";
 import { collection, getDocs, onSnapshot, query, where, addDoc, updateDoc, Timestamp, increment } from 'firebase/firestore';
 import { doc, getDoc } from "firebase/firestore";
-import { map } from "rxjs/operators";
+import { catchError, distinctUntilChanged, map, switchMap, tap } from "rxjs/operators";
 import { Subscriptions } from "../types/subscriptionstype";
 import { Follows } from "../types/followtype";
 @Injectable({
@@ -22,64 +22,95 @@ export class SubscriptionService {
   //   }, error => observer.error( error))
   // })
   
-  private eventSubscriptionsSubject = new BehaviorSubject<Subscriptions[]>([]);
-  eventSubscriptions$ = this.eventSubscriptionsSubject.asObservable();
+  private readonly eventSubscriptionsSubject = new BehaviorSubject<Subscriptions[]>([]);
+  readonly eventSubscriptions$ = this.eventSubscriptionsSubject.asObservable();
 
-  private userSubscriptionsSubject = new BehaviorSubject<Subscriptions[]>([]);
-  userSubscriptions$ = this.userSubscriptionsSubject.asObservable();
+  private readonly userSubscriptionsSubject = new BehaviorSubject<Subscriptions[]>([]);
+  readonly userSubscriptions$ = this.userSubscriptionsSubject.asObservable();
 
-  private CurrentSubSubject = new BehaviorSubject<Subscriptions[]>([]);
-  getCurrentSub$ = this.CurrentSubSubject.asObservable();
+  private readonly CurrentSubSubject = new BehaviorSubject<Subscriptions[]>([]);
+  readonly getCurrentSub$ = this.CurrentSubSubject.asObservable().pipe(
+  distinctUntilChanged((prev, curr) => 
+    JSON.stringify(prev) === JSON.stringify(curr)
+  )
+  );
 
-  private followSubject = new BehaviorSubject<Follows[]>([]);
-  follows$ = this.followSubject.asObservable();
+  private readonly followSubject = new BehaviorSubject<Follows[]>([]);
+  readonly follows$ = this.followSubject.asObservable();
 
-  private countFollowSubject = new BehaviorSubject<EventList[]>([]);
-  countFollow$ = this.countFollowSubject.asObservable();
+  private readonly countFollowSubject = new BehaviorSubject<EventList[]>([]);
+  readonly countFollow$ = this.countFollowSubject.asObservable();
 
-  private countAttendSubject = new BehaviorSubject<EventList[]>([]);
-  countAttend$ = this.countAttendSubject.asObservable();
+  private readonly countAttendSubject = new BehaviorSubject<EventList[]>([]);
+  readonly countAttend$ = this.countAttendSubject.asObservable();
 
 
-  getSubscriptionsByEvent(eventId: string): void{
-    const q = query(this.subscriptionsCollection, where('event_id' , '==' , eventId), where('status' , '==' , 'active'))
-
-    onSnapshot(q, (snapshot)=>{
-      const subscriptions = snapshot.docs.map(doc => ({id: doc.id, ...doc.data})) as unknown as Subscriptions[];
+  getSubscriptionsByEvent(eventId: string): void {
+    if (!eventId) {
+      console.error('Event ID is undefined');
+      this.eventSubscriptionsSubject.next([]); 
+      return;
+    }
+  
+    const q = query(
+      this.subscriptionsCollection,
+      where('event_id', '==', eventId),
+      where('status', '==', 'active')
+    );
+  
+    onSnapshot(q, (snapshot) => {
+      const subscriptions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as unknown as Subscriptions[];
       this.eventSubscriptionsSubject.next(subscriptions);
     }, error => {
-      console.error("Lỗi khi fetch subscriptions:", error);
+      console.error('Error fetching subscriptions:', error);
       this.eventSubscriptionsSubject.error(error);
-    }
-  )
+    });
   }
 
-  getAllEventsHasSubscriptions(userId: string):void {
-    const q =query(this.subscriptionsCollection, where('user_id', '==', userId))
-
-    onSnapshot(q, (snapshot)=>{
-      const subscriptions = snapshot.docs.map(doc => ({id: doc.id, ...doc.data})) as unknown as Subscriptions[];
+  getAllEventsHasSubscriptions(userId: string): void {
+    if (!userId) {
+      console.error('User ID is undefined');
+      this.userSubscriptionsSubject.next([]); 
+      return;
+    }
+  
+    const q = query(this.subscriptionsCollection, where('user_id', '==', userId));
+  
+    onSnapshot(q, (snapshot) => {
+      const subscriptions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as unknown as Subscriptions[];
       this.userSubscriptionsSubject.next(subscriptions);
     }, error => {
-      console.error("Lỗi khi fetch subscriptions:", error);
+      console.error('Error fetching subscriptions:', error);
       this.userSubscriptionsSubject.error(error);
-    }
-  )
+    });
   }
 
 
 
   getEventAndUserHasSubs(userId: string, eventId: string): void {
-    const q =query(this.subscriptionsCollection, where('user_id', '==', userId), where('event_id' , '==' , eventId), where('status' , '==' , 'active'))
-
-    onSnapshot(q, (snapshot)=>{
-      const subscriptions = snapshot.docs.map(doc => ({id: doc.id, ...doc.data})) as unknown as Subscriptions[];
-      this.CurrentSubSubject.next(subscriptions);
-    }, error => {
-      console.error("Lỗi khi fetch subscriptions:", error);
-      this.CurrentSubSubject.error(error);
-    }
-  )
+    const q = query(
+      this.subscriptionsCollection,
+      where('user_id', '==', userId),
+      where('event_id', '==', eventId),
+      where('status', '==', 'active')
+    );
+  
+    from(getDocs(q).then(snapshot => {
+      try {
+        const subscriptions = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as unknown as Subscriptions));
+        console.log('Found subscriptions:', subscriptions);
+        this.CurrentSubSubject.next(subscriptions);
+      } catch (error) {
+        console.error('Error processing subscription data:', error);
+        this.CurrentSubSubject.next([]);
+      }
+    }).catch(error => {
+      console.error('Error fetching subscriptions:', error);
+      this.CurrentSubSubject.next([]);
+    }));
   }
 
   getUserAndOrganizer(userId: string, organizerId: string): void {
@@ -91,55 +122,73 @@ export class SubscriptionService {
           id: doc.id,
           user_id: data["user_id"] || undefined,
           organizer_id: data["organizer_id"] || undefined,
-          status: data["status"] || '' // Đảm bảo status luôn có giá trị
+          status: data["status"] || '' 
         } as Follows;
       });
 
       this.followSubject.next(follows);
     }, error => {
       console.error('Error fetching follows:', error);
-      this.followSubject.next([]); // Phát ra mảng rỗng nếu có lỗi
+      this.followSubject.next([]); 
     });
   }
 
-  addSubscibeAction(userId: string | undefined, eventId: string | undefined, start_date: string | undefined, end_date: string | undefined, price: number | null): Observable<void>{
-
-    const q =query(this.subscriptionsCollection, where('user_id', '==', userId), where('event_id' , '==' , eventId))
-
+  addSubscription(userId: string, eventId: string, start_date: string, end_date: string, price: number): Observable<void> {
     return from(
-      getDocs(q).then(snapshot =>{
-        if(snapshot.empty){
-          
-            addDoc(this.subscriptionsCollection, {
-            user_id: userId,
-            event_id: eventId,
-            status: 'active',
-            start_date: start_date,
-            end_date: end_date,
-            price: price
-          }).then(() =>{
-            this.updateAttendCount(eventId, 1);
-            console.log('Subscribes succesful')
-          }).catch(error =>{
-            console.error('Error subscribe', error);
-            throw error
-          })
-        
-        }
-        else {
-          const docId = snapshot.docs[0].id;
-          updateDoc(doc(this.subscriptionsCollection, docId), {
-            status: 'inactive'
-          }).then(() => {
-            console.log('Unsubscribed successfully');
-          });
-        }
+      addDoc(this.subscriptionsCollection, {
+        user_id: userId,
+        event_id: eventId,
+        status: 'active',
+        start_date: start_date,
+        end_date: end_date,
+        price: price
       })
-      
-    )
+    ).pipe(
+      map(() => void 0), 
+      tap(() => {
+        console.log('Subscribed successfully');
+        this.getEventAndUserHasSubs(userId, eventId);
+      }),
+      catchError(error => {
+        console.error('Error adding subscription:', error);
+        return of(void 0);
+      })
+    );
+  }
+  
+  toggleSubscriptionStatus(userId: string, eventId: string): Observable<void> {
+    const q = query(
+      this.subscriptionsCollection,
+      where('user_id', '==', userId),
+      where('event_id', '==', eventId)
+    );
+  
+    return from(getDocs(q)).pipe(
+      switchMap(snapshot => {
+        if (!snapshot.empty) {
+          const docId = snapshot.docs[0].id;
+          const currentStatus = snapshot.docs[0].data()["status"];
+          const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+  
+          return from(
+            updateDoc(doc(this.subscriptionsCollection, docId), { status: newStatus })
+          ).pipe(
+            tap(() => {
+              console.log(`Subscription status updated to ${newStatus}`);
+              this.getEventAndUserHasSubs(userId, eventId);
+            })
+          );
+        }
+        return of(void 0);
+      }),
+      catchError(error => {
+        console.error('Error toggling subscription status:', error);
+        return of(void 0);
+      })
+    );
   }
 
-  unsubscribeAction(userId: string | undefined, eventId: string | undefined): Observable<void> {
+  unsubscribeAction(userId: string, eventId: string): Observable<void> {
     if (!userId || !eventId) {
       console.error('User ID or Event ID is undefined');
       return of(void 0);
@@ -152,157 +201,257 @@ export class SubscriptionService {
       where('status', '==', 'active')
     );
   
-    return from(
-      getDocs(q).then(snapshot => {
+    return from(getDocs(q)).pipe(
+      switchMap(snapshot => {
         if (!snapshot.empty) {
           const docId = snapshot.docs[0].id;
+          const docRef = snapshot.docs[0].ref;
   
-          
-          return updateDoc(doc(this.subscriptionsCollection, docId), {
-            status: 'inactive'
-          }).then(() => {
-            console.log('Unsubscribed successfully');
-  
-            
-            this.getEventAndUserHasSubs(userId, eventId);
-  
-            
-            return this.updateAttendCount(eventId, -1).toPromise();
-          }).catch(error => {
-            console.error('Error updating subscription status:', error);
-            throw error; 
-          });
+          return from(
+            updateDoc(docRef, { status: 'inactive' })
+          ).pipe(
+            tap(() => {
+              console.log('Unsubscribed successfully');
+              this.getEventAndUserHasSubs(userId, eventId);
+            })
+          );
         } else {
-          console.warn('No active subscription found for the given user and event');
-          return Promise.resolve(); 
+          console.warn('No active subscription found');
+          this.CurrentSubSubject.next([]);
+          return of(void 0);
         }
-      }).catch(error => {
-        console.error('Error fetching subscription for unsubscribe action:', error);
-        throw error; 
+      }),
+      catchError(error => {
+        console.error('Error in unsubscribe action:', error);
+        return of(void 0);
       })
     );
   }
 
-  addFollowAction(userId: string | undefined, organizerId: string | undefined, eventId: string | undefined): Observable<void> {
+  addFollow(userId: string, organizerId: string, eventId?: string): Observable<void> {
     if (!userId || !organizerId) {
       console.error('User ID or Organizer ID is undefined');
-      return of(void 0); // Trả về Observable rỗng nếu tham số không hợp lệ
+      return of(void 0);
     }
   
-    const q = query(this.followCollection, where('user_id', '==', userId), where('organizer_id', '==', organizerId));
+    const q = query(
+      this.followCollection,
+      where('user_id', '==', userId),
+      where('organizer_id', '==', organizerId)
+    );
   
-    return from(
-      getDocs(q).then(snapshot => {
+    return from(getDocs(q)).pipe(
+      switchMap(snapshot => {
         if (snapshot.empty) {
-          
-          return addDoc(this.followCollection, {
-            user_id: userId,
-            organizer_id: organizerId,
-            status: 'active',
-            follow_date: new Date()
-          }).then(() => {
-            console.log('Followed organizer');
-            
-            this.getUserAndOrganizer(userId, organizerId);
-  
-            
-            if (eventId) {
-              return this.updateFollowCount(eventId, 1).toPromise();
-            }
-            return Promise.resolve(); 
-          }).catch(error => {
-            console.error('Follow failed', error);
-            throw error; 
-          });
+          // Nếu không có document, thêm mới
+          return from(
+            addDoc(this.followCollection, {
+              user_id: userId,
+              organizer_id: organizerId,
+              status: 'active',
+              follow_date: new Date()
+            })
+          ).pipe(
+            map(() => void 0), 
+            tap(() => console.log('Followed organizer successfully'))
+          );
         } else {
+          // Nếu đã tồn tại, cập nhật trạng thái
+          const docRef = snapshot.docs[0].ref;
+          return from(
+            updateDoc(docRef, { status: 'active' })
+          ).pipe(
+            tap(() => console.log('Updated follow status to active'))
+          );
+        }
+      }),
+      catchError(error => {
+        console.error('Error in addFollow:', error);
+        return of(void 0);
+      })
+    );
+  }
+
+  
+  checkFollowStatus(userId: string, organizerId: string): Observable<boolean> {
+    const q = query(
+      this.followCollection,
+      where('user_id', '==', userId),
+      where('organizer_id', '==', organizerId),
+      where('status', '==', 'active')
+    );
+  
+    return from(getDocs(q)).pipe(
+      map(snapshot => !snapshot.empty), // Trả về true nếu đã follow
+      catchError(error => {
+        console.error('Error checking follow status:', error);
+        return of(false); // Trả về false nếu có lỗi
+      })
+    );
+  }
+  
+  toggleFollowStatus(userId: string, organizerId: string, eventId?: string): Observable<void> {
+    if (!userId || !organizerId) {
+      console.error('User ID or Organizer ID is undefined');
+      return of(void 0);
+    }
+  
+    const q = query(
+      this.followCollection,
+      where('user_id', '==', userId),
+      where('organizer_id', '==', organizerId)
+    );
+  
+    return from(getDocs(q)).pipe(
+      switchMap(snapshot => {
+        if (!snapshot.empty) {
           const docRef = snapshot.docs[0].ref;
           const currentStatus = snapshot.docs[0].data()["status"];
-  
-          
           const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-          const change = newStatus === 'active' ? 1 : -1;
   
-          return updateDoc(docRef, {
-            status: newStatus
-          }).then(() => {
-            console.log(`Follow status updated to ${newStatus}`);
-            
-            this.getUserAndOrganizer(userId, organizerId);
-  
-            
-            if (eventId) {
-              return this.updateFollowCount(eventId, change).toPromise();
-            }
-            return Promise.resolve(); 
-          }).catch(error => {
-            console.error('Error updating follow status:', error);
-            throw error; 
-          });
-        }
-      }).catch(error => {
-        console.error('Error fetching follow data:', error);
-        throw error; 
-      })
-    );
-  }
-
-  updateAttendCount(eventId: string | undefined, change: number): Observable<void> {
-    if (!eventId) {
-      console.error('Event ID is undefined');
-      return of(void 0); 
-    }
-  
-    const docRef = doc(this.eventsCollection, eventId); 
-  
-    return from(
-      getDoc(docRef).then(snapshot => {
-        if (snapshot.exists()) {
-          return updateDoc(docRef, {
-            attendees_count: increment(change)
-          }).then(() => {
-            console.log('Attend count updated successfully');
-          }).catch(error => {
-            console.error('Error updating attend count:', error);
-            throw error;
-          });
+          return from(
+            updateDoc(docRef, { status: newStatus })
+          ).pipe(
+            tap(() => console.log(`Follow status updated to ${newStatus}`))
+          );
         } else {
-          console.error('Event not found for updating attend count');
-          return Promise.resolve();
+          console.warn('No follow relationship found');
+          return of(void 0);
         }
-      }).catch(error => {
-        console.error('Error fetching event for attend count update:', error);
-        throw error;
+      }),
+      catchError(error => {
+        console.error('Error toggling follow status:', error);
+        return of(void 0);
       })
     );
   }
-
   updateFollowCount(eventId: string | undefined, change: number): Observable<void> {
     if (!eventId) {
       console.error('Event ID is undefined');
-      return of(void 0); 
+      return of(void 0);
     }
   
-    const docRef = doc(this.eventsCollection, eventId); 
+    const docRef = doc(this.eventsCollection, eventId);
   
     return from(
       getDoc(docRef).then(snapshot => {
         if (snapshot.exists()) {
           return updateDoc(docRef, {
-            attendees_count: increment(change)
+            'organizer.followers': increment(change)
           }).then(() => {
-            console.log('Follow count updated successfully');
-          }).catch(error => {
-            console.error('Error updating follow count:', error);
-            throw error;
+            console.log('Organizer follower count updated successfully');
           });
         } else {
-          console.error('Event not found for updating follow count');
-          return Promise.resolve(); 
+          console.error('Event not found for updating follower count');
+          return Promise.resolve();
         }
-      }).catch(error => {
-        console.error('Error fetching event for follow count update:', error);
-        throw error;
+      })
+    ).pipe(
+      catchError(error => {
+        console.error('Error in updateFollowCount:', error);
+        return of(void 0);
       })
     );
   }
+
+  updateAttendeeCount(eventId: string, change: number): Observable<void> {
+    if (!eventId) {
+      console.error('Event ID is undefined');
+      return of(void 0);
+    }
+  
+    const docRef = doc(this.eventsCollection, eventId);
+  
+    return from(
+      updateDoc(docRef, {
+        attendees_count: increment(change)
+      })
+    ).pipe(
+      tap(() => console.log(`Attendees count updated by ${change}`)),
+      catchError(error => {
+        console.error('Error updating attendees count:', error);
+        return of(void 0);
+      })
+    );
+  }
+
+  getAllFollower(userId: string, organizerId: string): Observable<number> {
+    if (!userId || !organizerId) {
+      console.error('Invalid parameters: userId or organizerId is undefined');
+      return of(0); 
+    }
+  
+    const q = query(
+      this.followCollection,
+      where('organizer_id', '==', organizerId),
+      where('status', '==', 'active')
+    );
+  
+    return from(getDocs(q)).pipe(
+      map(snapshot => {
+        const followerCount = snapshot.size;
+        console.log(`Total followers for organizer ${organizerId}:`, followerCount);
+        return followerCount;
+      }),
+      catchError(error => {
+        console.error('Error fetching followers:', error);
+        return of(0);
+      })
+    );
+  }
+
+
+  getSubscriberCount(eventId: string): Observable<number> {
+    if (!eventId) {
+      console.error('Event ID is undefined');
+      return of(-1); // Trả về -1 nếu eventId không hợp lệ
+    }
+  
+    const q = query(
+      this.subscriptionsCollection,
+      where('event_id', '==', eventId),
+      where('status', '==', 'active') // Chỉ lấy những người đăng ký có trạng thái active
+    );
+  
+    return from(getDocs(q)).pipe(
+      map(snapshot => {
+        const subscriberCount = snapshot.size; // Lấy tổng số tài liệu
+        console.log(`Total subscribers for event ${eventId}:`, subscriberCount);
+        return subscriberCount;
+      }),
+      catchError(error => {
+        console.error('Error fetching subscriber count:', error);
+        return of(-1); // Trả về -1 nếu có lỗi
+      })
+    );
+  }
+  checkEventFull(eventId: string): Observable<boolean> {
+    if (!eventId) {
+      console.error('Event ID is undefined');
+      return of(false);
+    }
+  
+    const docRef = doc(this.eventsCollection, eventId);
+  
+    return from(getDoc(docRef)).pipe(
+      map(snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          const attendeesCount = data['attendees_count'] || 0;
+          const maxAttendees = data['max_attendees'] || 0;
+          return attendeesCount >= maxAttendees; // Trả về true nếu đã đủ người tham dự
+        } else {
+          console.error('Event not found');
+          return false;
+        }
+      }),
+      catchError(error => {
+        console.error('Error checking event full status:', error);
+        return of(false);
+      })
+    );
+  }
+  
+
+  
 }
