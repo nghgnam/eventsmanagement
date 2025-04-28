@@ -1,11 +1,11 @@
 import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import { BehaviorSubject, Observable, of , from} from "rxjs";
+import { BehaviorSubject, Observable, of , from, throwError} from "rxjs";
 import { EventList } from "../types/eventstype";
 import { auth, db } from "../config/firebase.config";
-import { collection, getDocs, onSnapshot, query, where, addDoc } from 'firebase/firestore';
+import { collection, getDocs, onSnapshot, query, where, addDoc, increment, updateDoc } from 'firebase/firestore';
 import { doc, getDoc } from "firebase/firestore";
-import { map } from "rxjs/operators";
+import { catchError, map, tap } from "rxjs/operators";
 
 @Injectable({
   providedIn: 'root'
@@ -117,5 +117,19 @@ export class EventsService {
         (event.location?.type === 'offline' && event.location?.address?.toLowerCase().includes(searchQuery))
       ))
     );
+  }
+
+  updateeventLikes(eventId: string, isLiked: boolean): Observable<void> {
+    const eventDocRef = doc(this.eventsConlection, eventId);
+    const change = isLiked ? 1 : -1;
+
+    return from(updateDoc(eventDocRef, {likes_count: increment(change) }))
+    .pipe(
+      tap(()=> console.log('Event likes updated successfully')),
+      catchError(error => {
+        console.error('Error updating event likes:', error);
+        return throwError(()=> error)
+      }
+    )    );
   }
 }

@@ -4,7 +4,7 @@
         <i class="fa-solid fa-map-marker-alt"></i>
         <span>Events in {{ location || 'All Locations' }}</span>
     </div>
-    
+
     <!-- Events Grid -->
     <div class="events-container" *ngIf="events$ | async as events">
         <!-- Loading State -->
@@ -12,18 +12,18 @@
             <div class="loading-spinner"></div>
             <p>Loading Events...</p>
         </div>
-        
+
         <!-- No Events Message -->
         <div class="no-events" *ngIf="!isLoading && displayedEvents.length === 0">
             <i class="fa-solid fa-calendar-xmark"></i>
             <h3>No events found</h3>
             <p>Try changing your filters or location to see more events</p>
         </div>
-        
+
         <!-- Events Grid -->
         <div class="events-grid" *ngIf="!isLoading && displayedEvents.length > 0">
-            <div class="event-card" *ngFor="let event of displayedEvents" (click)="goToDetail(event.id)">
-                <div class="event-image">
+            <div class="event-card" *ngFor="let event of displayedEvents" >
+                <div class="event-image" (click)="goToDetail(event.id)">
                     <img *ngIf="getSafeUrl(event.image_url) as SafeUrl" [src]="SafeUrl" [alt]="event.name">
                     <div class="event-date-badge">
                         <span class="day">{{ event.date_time_options[0].start_time | date: 'dd' }}</span>
@@ -40,16 +40,17 @@
                         <span>{{ event.event_type | titlecase }}</span>
                     </div>
                 </div>
-                <div class="event-content">
-                    <h3 class="event-title">{{ event.name }}</h3>
-                    <div class="event-details">
+                <div class="event-content" >
+                    <h3 class="event-title" (click)="goToDetail(event.id)">{{ event.name }}</h3>
+                    <div class="event-details" (click)="goToDetail(event.id)">
                         <div class="event-info">
                             <i class="fa-regular fa-clock"></i>
                             <span>{{ event.date_time_options[0].start_time | date: 'HH:mm' }}</span>
                         </div>
                         <div class="event-info">
                             <i class="fa-solid fa-location-dot"></i>
-                            <span>{{ event.location.type === 'online' ? 'Online Event' : event.location.address }}</span>
+                            <span>{{ event.location.type === 'online' ? 'Online Event' : event.location.address
+                                }}</span>
                         </div>
                     </div>
                     <div class="event-footer">
@@ -58,15 +59,25 @@
                             <span>{{ event.price ? (event.price + ' ' + (event.currency || 'USD')) : 'Free' }}</span>
                         </div>
                         <div class="event-organizer">
-                            <img *ngIf="getSafeUrl(event.organizer.profileImage) as SafeUrl" [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'" alt="Organizer avatar" class="organizer-avatar">
+                            <img *ngIf="getSafeUrl(event.organizer.profileImage) as SafeUrl"
+                                [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'"
+                                alt="Organizer avatar" class="organizer-avatar">
                             <span>{{ event.organizer.name }}</span>
+                        </div>
+                        <!-- Like Button -->
+                        <div class="event-like">
+                            <button (click)="toggleLike(event)" [class.liked]="event.isLiked">
+                                <i class="fa-solid"
+                                    [ngClass]="{'fa-heart': event.isLiked, 'fa-heart-circle-plus': !event.isLiked}"></i>
+                                <span>{{ event.likes_count }}</span>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-  
+
     <!-- See More Button -->
     <div class="see-more-container" *ngIf="showSeeMore | async">
         <button (click)="showMore()" class="see-more-btn">
@@ -75,4 +86,3 @@
         </button>
     </div>
 </div>
-      

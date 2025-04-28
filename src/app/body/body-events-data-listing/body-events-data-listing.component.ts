@@ -95,6 +95,16 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy , OnCha
     );
   }
 
+  toggleLike(event: any){
+    event.isLiked =! event.isLiked;
+    event.likeCount += event.isLiked ? 1 : -1;
+
+    this.eventsService.updateeventLikes(event.id, event.isLiked).subscribe({
+      next: () => console.log('Like status updated scuccessfully!'),
+      error: (error: any) => console.error('Error updating like status:', error)
+     })
+  }
+
 
   showMore() {
     this.showAll = true;

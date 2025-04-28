@@ -230,6 +230,9 @@
     margin-bottom: 0.5rem;
     font-weight: 600;
 }
+.section_title:hover{
+    cursor: pointer;
+}
 
 .section_subtitle {
     color: #6c757d;

@@ -1,5 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 export type EventList = {
+isLiked: any;
     id?: string;
     name: string;
     description: string;

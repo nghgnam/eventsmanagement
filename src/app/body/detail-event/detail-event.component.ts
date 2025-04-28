@@ -176,6 +176,10 @@ export class DetailEventComponent implements OnInit, OnDestroy {
   }
 
   deCreaseTicket() {
+    if(this.event?.price === 0 ){
+      this.showError('Sự kiện miễn phí chỉ cho phép đăng ký 1 vé!')
+      return ;
+    }
     if (this.totalTicket > 1) {
       this.totalTicket -= 1;
       this.totalPrice = (this.event?.price ?? 0) * this.totalTicket;
