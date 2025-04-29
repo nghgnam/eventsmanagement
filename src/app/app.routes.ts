@@ -7,8 +7,8 @@ import { DetailEventComponent } from './body/detail-event/detail-event.component
 import { LayoutRouterComponent } from './layout-router/layout-router.component';
 import { BodyPageComponent } from './body/body-page/body-page.component';
 import { UserInfomationComponent } from './user/user-infomation/user-infomation.component';
-import { ManageEventsComponent } from './manage-events/manage-events.component';
-
+import { ManageEventsComponent } from './manage-events/manage-events.component'
+import { TicketEventsManageComponent } from './ticket-events-manage/ticket-events-manage.component';
 export const routes: Routes = [
   {
     path: '',
@@ -22,6 +22,7 @@ export const routes: Routes = [
       { path: 'body', component: BodyPageComponent },
       { path: 'manage-events', component: ManageEventsComponent },
       { path: 'userprofile/:id', component: UserInfomationComponent },
+      { path: 'ticketsEvent', component: TicketEventsManageComponent},
       {
         path: 'search-results',
         loadComponent: () => import('./search-results/search-results.component').then(m => m.SearchResultsComponent)

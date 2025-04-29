@@ -10,7 +10,7 @@ import { SubscriptionService } from '../../service/subscription.service';
 import { getAuth } from 'firebase/auth';
 import { NotificationComponent } from '../../shared/components/notification/notification.component';
 import { finalize, takeUntil } from 'rxjs/operators';
-
+import { TicketService } from '../../service/ticket.service';
 @Component({
   selector: 'app-detail-event',
   standalone: true,
@@ -51,7 +51,8 @@ export class DetailEventComponent implements OnInit, OnDestroy {
     private eventsService: EventsService,
     private router: Router,
     private sanitizer: SafeUrlService,
-    private subscript: SubscriptionService
+    private subscript: SubscriptionService,
+    private ticketsService: TicketService
   ) {
     this.events$ = this.eventsService.events$;
   }
@@ -206,6 +207,8 @@ export class DetailEventComponent implements OnInit, OnDestroy {
       this.showError('Sự kiện đã đủ người tham dự!');
       return;
     }
+
+    
   
     this.subscript.addSubscription(
       userId,
@@ -222,6 +225,17 @@ export class DetailEventComponent implements OnInit, OnDestroy {
             this.isEventFull = isFull;
           });
         });
+        this.ticketsService.createTicket
+        (
+          userId, 
+          eventId, 
+          this.totalPrice ?? 0,
+          this.showEndTime ?? '' 
+        ).subscribe({
+          next: (ticket) =>{
+            console.log('Ticket created:', ticket);
+          }
+        })
         this.showNotification = true;
         this.notificationMessage = 'Đăng ký sự kiện thành công!';
         this.notificationType = 'success';

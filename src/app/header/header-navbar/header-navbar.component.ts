@@ -102,6 +102,16 @@ export class HeaderNavbarComponent implements OnInit {
     return this.sanitizer.bypassSecurityTrustUrl(url);
   }
 
+  goToTicketsManage(): void{
+    if(this.userCurrentId){
+      this.router.navigate(['/ticketsEvent']);
+      console.log('navigating to ticketsEvent');
+    }
+    else{
+      this.router.navigate(['/login']);
+      console.log('User not logged in, redirecting to login');
+    }
+  }
 
   
 }

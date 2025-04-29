@@ -1,1 +1,64 @@
-<p>ticket-events-manage works!</p>
+<div class="user_infomation_container" *ngIf="currentUser">
+    <div class="container">
+        <aside class="sidebar">
+            <h2 class="logo">nhnam</h2>
+            <div class="user-info">
+                <img *ngIf="getSafeUrl(user?.profileImage) as safeUrl" [src]="safeUrl" alt="User Avatar" class="avatar">
+                <div>
+                    <p class="username">{{user?.fullName}}</p>
+                    <p class="role">{{user?.type}}</p>
+                </div>
+            </div>
+            <nav class="menu">
+                <ul>
+                    <li [class.active]="changeTab === 'tab1'" (click)="changeTabSelected('tab1')">Unpaid Tickets</li>
+                    <li [class.active]="changeTab === 'tab2'" (click)="changeTabSelected('tab2')">Tickets for Upcoming Events</li>
+                    <li [class.active]="changeTab === 'tab3'" (click)="changeTabSelected('tab3')">Tickets for Past Events</li>
+                </ul>
+            </nav>
+            
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h2>Tickets</h2>
+            </header>
+
+            <form  class="card" *ngIf="changeTab === 'tab1'">
+                <!-- Alert Messages -->
+                <div class="alert alert-error" *ngIf="errorMessage">
+                    {{ errorMessage }}
+                </div>
+                <div class="alert alert-success" *ngIf="successMessage">
+                    {{ successMessage }}
+                </div>
+
+                <!-- Loading Spinner -->
+                <div class="loading-spinner" *ngIf="isLoading">
+                    <div class="spinner"></div>
+                </div>
+
+                <div class="section-header">
+                <h3>Unpaid Tickets</h3>
+                    <p class="section-description">Update your personal information and profile picture</p>
+                </div>
+
+                <div class="details_container">
+                    <div class="profile-section">
+                        
+                    </div>
+
+                    <div class="info_container">
+                        <div class="form-row">
+                        <div class="form-group"></div>
+                        </div>
+                    </div>
+                </div>        
+
+            </form>
+            
+            
+        </main>
+    </div>
+</div>
+<!-- <div class="layout"></div> -->
