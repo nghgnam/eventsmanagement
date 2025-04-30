@@ -10,6 +10,7 @@ import { TicketService } from '../service/ticket.service';
 import { SafeUrl } from '@angular/platform-browser';
 import { UsersService } from '../service/users.service';
 import { User } from '../types/userstype';
+import { catchError, switchMap, tap } from 'rxjs/operators';
 @Component({
   selector: 'app-ticket-events-manage',
   standalone: true,
@@ -23,8 +24,9 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy  {
   private events$: Observable<EventList[]> 
   private user$: Observable<User[]>
   user: User | undefined
-  event: EventList | undefined;
+  event: EventList[] = []
   ticket:TicketType[] =[]
+  listTicketsEventId: string[] = [];
 
   changeTab: string = 'tab1';
   errorMessage: string = '';
@@ -48,22 +50,35 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy  {
 
   ngOnInit(): void {
     if(auth.currentUser){
+
      this.usersService.getCurrentUserById(auth.currentUser.uid).subscribe({
       next: (userData)=> {
         this.user = userData;
       }
 
      })
-     this.ticketService.getAllTicketsByUserId(auth.currentUser.uid).subscribe(ticketData => {
-      if(ticketData.length > 0){
-        this.ticket = ticketData;
-        
-
+     this.ticketService.getAllTicketsByUserId(auth.currentUser.uid).pipe(
+      tap(ticketData => {
+        if (ticketData.length > 0) {
+          this.ticket = ticketData;
+          this.listTicketsEventId = this.ticket.map(ticket => ticket.event_id);
+          console.log('data ticket:', ticketData);
+          console.log('List ticket event id:', this.listTicketsEventId);
+        } else {
+          console.log('No ticket found for this user');
+        }
+      }),
+      switchMap(() => this.eventsService.getEventByListId(this.listTicketsEventId))
+    ).subscribe({
+      next: (eventData) => {
+        this.event = eventData;
+        console.log('Event data:', this.event);
+      },
+      error: (err) => {
+        console.error('Error fetching events:', err);
       }
-      else{
-        console.log('No ticket found for this user')
-      }
-     })
+    });
+     
     }
     
   }

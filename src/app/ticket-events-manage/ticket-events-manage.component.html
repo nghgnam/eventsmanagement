@@ -40,17 +40,26 @@
 
                 <div class="section-header">
                 <h3>Unpaid Tickets</h3>
-                    <p class="section-description">Update your personal information and profile picture</p>
-                </div>
+                    <p class="section-description">Your tickets does'nt paid</p>
+                </div>     
 
                 <div class="details_container">
-                    <div class="profile-section">
-                        
-                    </div>
-
                     <div class="info_container">
-                        <div class="form-row">
-                        <div class="form-group"></div>
+                        <div class="form-row" *ngFor="let e of event">
+                        <div class="form-group">
+                            <img *ngIf="getSafeUrl(e?.image_url) as safeUrl" [src]="safeUrl" alt="User Avatar" class="event-img">
+                            <div>
+                                <h3>{{e.name}}</h3>
+                            </div>
+                            <div>
+                                <p>{{e.date_time_options[0].start_time}}</p>
+                            </div>
+                            <div>
+                                <p>
+                                    {{e.organizer.name}}
+                                </p>
+                            </div>
+                        </div>
                         </div>
                     </div>
                 </div>        

@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import { BehaviorSubject, Observable, of , from, throwError} from "rxjs";
+import { BehaviorSubject, Observable, of , from, throwError, forkJoin} from "rxjs";
 import { EventList } from "../types/eventstype";
 import { auth, db } from "../config/firebase.config";
 import { collection, getDocs, onSnapshot, query, where, addDoc, increment, updateDoc } from 'firebase/firestore';
@@ -58,6 +58,22 @@ export class EventsService {
         }
       })
     );
+  }
+
+  getEventByListId(listEventId: string[]): Observable<EventList[]>{
+    if(listEventId.length === 0 || !listEventId){
+      console.log('No event IDs provided');
+      return of([]);
+    }
+
+    const eventQueries = listEventId.map(id => this.getEventById(id));
+    return forkJoin(eventQueries).pipe(
+      map(events => events.filter(event => event !== undefined) as EventList[]),
+      catchError(error => {
+        console.error('Error fetching events:', error);
+        return of([]);
+      })
+    )
   }
 
   getEventsByOrganizer(userId: string): Observable<EventList[]>{
