@@ -9,8 +9,7 @@ import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { User } from '../../types/userstype';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { SanitizerService } from '../../service/sanitizer.service';
-
+import { SafeUrlService } from '../../service/santizer.service';
 @Component({
   selector: 'app-header-navbar',
   standalone: true,
@@ -20,15 +19,16 @@ import { SanitizerService } from '../../service/sanitizer.service';
 })
 export class HeaderNavbarComponent implements OnInit {
   user: User | undefined;
-  user$ : Observable<User[]> | undefined
-  userCurrentId: string | undefined
-  userCurrentname : string | undefined
-  userCurrentImage : string | undefined
-  userCurrentEmail : string | undefined
-  isDropdownOpen : boolean = false;
+  user$: Observable<User[]> | undefined;
+  userCurrentId: string | undefined;
+  userCurrentname: string | undefined;
+  userCurrentImage: string | undefined;
+  userCurrentEmail: string | undefined;
+  isDropdownOpen: boolean = false;
   auth = getAuth();
+  currentUserType: string | undefined;
   
-  checkingForLogin: boolean = false
+  checkingForLogin: boolean = false;
   users: User[] = [];
 
   constructor(
@@ -51,6 +51,7 @@ export class HeaderNavbarComponent implements OnInit {
           this.userCurrentname = userData?.fullName ;
           this.userCurrentImage = userData?.profileImage || this.sanitizerService.getDefaultAvatarUrl()
           this.userCurrentEmail = userData?.email ;
+          this.currentUserType = userData?.type
         } )
       }
     })
@@ -76,8 +77,19 @@ export class HeaderNavbarComponent implements OnInit {
   goToManageEvent(): void{
     console.log('goToManageEvent clicked');
     if(this.userCurrentId){
-      this.router.navigate(['/manage-events']);
-      console.log('navigating to manage-events');
+
+
+      if(this.currentUserType === 'organizer'){
+        this.router.navigate(['/manage-events']);
+        console.log('navigating to manage-events');
+      }
+      else{
+        console.log(this.currentUserType)
+        this.router.navigate(['/userprofile', this.userCurrentId], {queryParams: {changeTab: 'tab3'}})
+        
+      }
+
+      
     } else {
       console.log('User not logged in, redirecting to login');
       this.router.navigate(['/login']);
@@ -95,4 +107,17 @@ export class HeaderNavbarComponent implements OnInit {
   sanitizeImageUrl(url: string | undefined): SafeUrl | undefined {
     return this.sanitizerService.sanitizeUrl(url) || undefined;
   }
+
+  goToTicketsManage(): void{
+    if(this.userCurrentId){
+      this.router.navigate(['/ticketsEvent']);
+      console.log('navigating to ticketsEvent');
+    }
+    else{
+      this.router.navigate(['/login']);
+      console.log('User not logged in, redirecting to login');
+    }
+  }
+
+  
 }

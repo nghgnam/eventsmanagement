@@ -5,7 +5,8 @@ import { EventList } from '../../types/eventstype';
 import { Observable, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
-
+import { SafeUrl } from '@angular/platform-browser';
+import { SafeUrlService } from '../../service/santizer.service';
 @Component({
   selector: 'app-all-events-listing',
   standalone: true,
@@ -19,7 +20,7 @@ export class AllEventsListingComponent implements OnInit, OnDestroy {
   isLoading = true;
   private subscription: Subscription = new Subscription();
 
-  constructor(private eventsService: EventsService, private router: Router) {
+  constructor(private eventsService: EventsService, private router: Router, private sanitizer: SafeUrlService) {
     this.events$ = this.eventsService.events$;
   }
 
@@ -31,6 +32,12 @@ export class AllEventsListingComponent implements OnInit, OnDestroy {
     });
     this.subscription.add(sub);
   }
+
+    getSafeUrl(url: string | undefined): SafeUrl| undefined{
+      
+      return this.sanitizer.sanitizeImageUrl(url);
+  
+    }
 
   goToDetail(eventId: string | undefined) {
     if (eventId) {

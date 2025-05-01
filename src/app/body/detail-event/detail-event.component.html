@@ -2,7 +2,8 @@
     <!-- Hero Section with Background Image -->
     <div class="events_background">
         <div class="events_background2" [ngStyle]="{'background-image': 'url(' + event.image_url + ')'}"></div>
-        <img [src]="getSafeUrl(event.image_url)" [alt]="event.name" class="background_details">
+        <img *ngIf="getSafeUrl(event.image_url) as SafeUrl" [src]="SafeUrl" [alt]="event.name"
+            class="background_details">
     </div>
 
     <!-- Main Content -->
@@ -16,8 +17,10 @@
                     <span>{{ showStartTime | date: 'EEEE, MMMM d' }}</span>
                 </div>
                 <h1 class="event_title">{{ event.name }}</h1>
-                <div class="event_type_badge" [ngClass]="{'online': event.event_type === 'online', 'offline': event.event_type === 'offline', 'hybrid': event.event_type === 'hybrid'}">
-                    <i class="fa-solid" [ngClass]="{'fa-video': event.event_type === 'online', 'fa-location-dot': event.event_type === 'offline', 'fa-desktop': event.event_type === 'hybrid'}"></i>
+                <div class="event_type_badge"
+                    [ngClass]="{'online': event.event_type === 'online', 'offline': event.event_type === 'offline', 'hybrid': event.event_type === 'hybrid'}">
+                    <i class="fa-solid"
+                        [ngClass]="{'fa-video': event.event_type === 'online', 'fa-location-dot': event.event_type === 'offline', 'fa-desktop': event.event_type === 'hybrid'}"></i>
                     {{ event.event_type }}
                 </div>
             </div>
@@ -25,16 +28,26 @@
             <!-- Organizer Info -->
             <div class="about_organizer">
                 <div class="organizer_avatar">
-                    <img [src]="getSafeUrl(event.organizer.profileImage) || sanitizerService.getDefaultAvatarUrl()" [alt]="event.organizer.name">
+                    <img *ngIf="getSafeUrl(event.organizer.profileImage) as SafeUrl"
+                        [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'"
+                        [alt]="event.organizer.name">
                 </div>
                 <div class="organizer_info">
-                    <span style="    font-weight: 600;">By</span>
+                    <span style="font-weight: 600;">By</span>
                     <p>{{ event.organizer.name }}</p>
                     <span>-</span>
                     <p>{{ event.organizer.followers }}</p>
-                    <span style="    font-weight: 600;">followers</span>
+                    <span style="font-weight: 600;">followers</span>
                 </div>
-                <button class="organizer_follow">Follow</button>
+                <button (click)="actionFollow()" [disabled]="isFollowLoading || isOrganizer" [class.active]="hasFollow"
+                    class="organizer_follow">
+                    <ng-container *ngIf="!isFollowLoading; else loadingTpl">
+                        {{ hasFollow ? 'Hủy theo dõi' : 'Theo dõi' }}
+                    </ng-container>
+                    <ng-template #loadingTpl>
+                        Đang xử lý...
+                    </ng-template>
+                </button>
             </div>
 
             <!-- Event Description -->
@@ -55,22 +68,24 @@
                     <div class="selected_date_text">
                         <h3>Selected Schedule</h3>
                         <p>{{ showStartTime | date : "EEEE, MMMM d, y" }}</p>
-                        <p class="time_range">{{ showStartTime | date : "h:mm a" }} - {{showEndTime | date : "h:mm a"}}</p>
+                        <p class="time_range">{{ showStartTime | date : "h:mm a" }} - {{showEndTime | date : "h:mm a"}}
+                        </p>
                     </div>
                 </div>
                 <div class="selected_date_and_time_container">
                     <h3 class="available_schedules">Available Schedules</h3>
                     <div class="date_time_options_grid">
-                        <div class="selected_options_date_and_time" *ngFor="let datetime of event.date_time_options; let i = index" 
-                             (click)="getDatetimeClick(i)" 
-                             [ngClass]="{'active': activeBorder === i}">
+                        <div class="selected_options_date_and_time"
+                            *ngFor="let datetime of event.date_time_options; let i = index"
+                            (click)="getDatetimeClick(i)" [ngClass]="{'active': activeBorder === i}">
                             <div class="date_time_card">
                                 <div class="date_time_header">
                                     <span class="date_day">{{ datetime.start_time | date : "EEEE"}}</span>
                                     <span class="date_month">{{ datetime.start_time | date : "MMMM"}}</span>
                                 </div>
                                 <div class="date_time_body">
-                                    <span class="date_number" [ngClass]="{'selected': isClickActive === i}">{{ datetime.start_time | date : "d"}}</span>
+                                    <span class="date_number" [ngClass]="{'selected': isClickActive === i}">{{
+                                        datetime.start_time | date : "d"}}</span>
                                     <span class="date_year">{{ datetime.start_time | date : "y"}}</span>
                                 </div>
                                 <div class="date_time_footer">
@@ -88,7 +103,8 @@
                 <h2>Location</h2>
             </div>
             <div class="event_location">
-                <i class="fa-solid" [ngClass]="{'fa-video': event.location.type === 'online', 'fa-location-dot': event.location.type === 'offline'}"></i>
+                <i class="fa-solid"
+                    [ngClass]="{'fa-video': event.location.type === 'online', 'fa-location-dot': event.location.type === 'offline'}"></i>
                 <span>{{ event.location.type === 'online' ? 'Online Event' : event.location.address }}</span>
             </div>
 
@@ -114,7 +130,9 @@
             </div>
             <div class="host_organized_about">
                 <div class="host_header">
-                    <img [src]="safeProfileImage || getSafeUrl(event.organizer.profileImage)" [alt]="event.organizer.name" class="host_avatar">
+                    <img *ngIf="getSafeUrl(event.organizer.profileImage) as SafeUrl"
+                        [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'"
+                        [alt]="event.organizer.name" class="host_avatar">
                     <div class="host_info">
                         <p class="host_name">{{event.organizer.name}}</p>
                         <p class="host_follower">{{event.organizer.followers}} followers</p>
@@ -128,10 +146,13 @@
                 <h2>More events from this organizer</h2>
             </div>
             <div class="events_other" *ngIf="events$ | async as events">
-                <div class="event_other" *ngFor="let e of events">
-                    <div class="event_other_block" *ngIf="event.organizer && e.organizer.name === event.organizer.name" (click)="goToDetail(e.id)">
+                <ng-container *ngFor="let e of events">
+                    <div class="event_other" *ngIf="event.organizer && e.organizer.name === event.organizer.name"
+                        (click)="goToDetail(e.id)">
+
+
                         <div class="event_other_image">
-                            <img [src]="getSafeUrl(e.image_url)" [alt]="e.name">
+                            <img *ngIf="getSafeUrl(e.image_url) as SafeUrl" [src]="SafeUrl" [alt]="e.name">
                             <div class="event_other_date">
                                 <span class="day">{{e.date_time_options[0].start_time | date : "d"}}</span>
                                 <span class="month">{{e.date_time_options[0].start_time | date : "MMM"}}</span>
@@ -139,38 +160,74 @@
                         </div>
                         <div class="event_other_info">
                             <p class="event_other_title">{{e.name}}</p>
-                            <p class="event_other_time">{{e.date_time_options[0].start_time | date : "EEEE MMMM d ha"}}</p>
+                            <p class="event_other_time">{{e.date_time_options[0].start_time | date : "EEEE MMMM d ha"}}
+                            </p>
                             <p class="event_other_price">{{e.price ? (e.price | currency) : 'Free'}}</p>
                             <p class="event_other_organizer">{{e.organizer.name}}</p>
+                        </div>
+                    </div>
+
+                </ng-container>
+            </div>
+        </div>
+
+        <!-- Ticket Purchase Section -->
+        <div class="event_ticket" *ngIf="!isOrganizer">
+            <div class="ticket_card">
+                <div class="ticket_header"  *ngIf="!isEventFull ">
+                    <div class="ticket_title">
+                        <i class="fa-solid fa-ticket"></i>
+                        <h3>Thông tin vé</h3>
+                    </div>
+                    <div class="ticket_price">
+                        <span class="price_value">{{ event.price ? (event.price | currency) : 'Miễn phí' }}</span>
+                        <span class="price_label">/ vé</span>
+                    </div>
+                </div>
+
+                <div class="ticket_separator"></div>
+
+                <div class="ticket_actions">
+                    <div class="ticket_quantity_section" *ngIf="!isEventFull || !hasSubscribes  ">
+                        <div class="quantity_label">Số lượng vé</div>
+                        <div class="ticket_quantity">
+                            <button class="quantity_btn" (click)="deCreaseTicket()">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
+                            <span class="quantity_value">{{ totalTicket }}</span>
+                            <button class="quantity_btn" (click)="inCreaseTicket()">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="total_price_section" *ngIf="!isEventFull  || !hasSubscribes " >
+                        <div class="total_price_label">Tổng tiền</div>
+                        <div class="total_price_value">{{ totalPrice | currency }}</div>
+                    </div>
+
+                    <button class="subscribe_btn" 
+                        [ngClass]="{'subscribed': hasSubscribes, 'full': isEventFull}"
+                        [disabled]="isEventFull || hasSubscribes"
+                        (click)="hasSubscribes ? openUnsubscribeDialog() : actionSubscribe()">
+                        <i class="fa-solid" [ngClass]="{'fa-check': hasSubscribes, 'fa-ticket': !hasSubscribes}"></i>
+                        <span *ngIf="isEventFull">Hết vé</span>
+                        <span *ngIf="!isEventFull">{{ hasSubscribes ? 'Đã đăng ký' : 'Đăng ký ngay' }}</span>
+                    </button>
+                    <div class="confirmation_dialog" *ngIf="showUnsubscribeDialog">
+                        <div class="dialog_content">
+                            <p>Bạn có chắc chắn muốn hủy đăng ký sự kiện này không?</p>
+                            <div class="dialog_actions">
+                                <button class="dialog_btn confirm" (click)="confirmUnsubscribe()">Hủy đăng ký</button>
+                                <button class="dialog_btn cancel" (click)="closeUnsubscribeDialog()">Đóng</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Ticket Purchase Section -->
-        <div class="get_ticket">
-            <div class="ticket_info">
-                <div class="ticket_quantity">
-                    <span>General Admission</span>
-                    <div class="quantity_controls">
-                        <button class="decrease" (click)="deCreaseTicket()">-</button>
-                        <p class="total_ticket">{{totalTicket}}</p>
-                        <button class="increase" (click)="inCreaseTicket()">+</button>
-                    </div>
-                </div>
-                <div class="ticket_price">
-                    <div class="price" *ngIf="totalPrice; else freeText">{{totalPrice | currency}}</div>
-                    <ng-template #freeText>Free</ng-template>
-                    <div class="ticket_status">
-                        <i class="fa-solid fa-circle-exclamation" (click)="isChecked()"></i>
-                        <p class="ticket_status_info" [ngClass]="{ 'hidden': isHidden, 'show': !isHidden }">
-                            Sale ends on {{showEndTime | date: "MMMM d yyyy"}}
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <button class="reserve_a_spot">Reserve a spot</button>
-        </div>
     </div>
 </div>
+
+<app-notification [message]="notificationMessage" [type]="notificationType"
+    [isVisible]="showNotification"></app-notification>
