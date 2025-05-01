@@ -8,7 +8,7 @@ import { LayoutRouterComponent } from './layout-router/layout-router.component';
 import { BodyPageComponent } from './body/body-page/body-page.component';
 import { UserInfomationComponent } from './user/user-infomation/user-infomation.component';
 import { ManageEventsComponent } from './manage-events/manage-events.component'
-import { TicketEventsManageComponent } from './ticket-events-manage/ticket-events-manage.component';
+import { TicketEventsManageComponent } from './tickets/ticket-events-manage/ticket-events-manage.component';
 export const routes: Routes = [
   {
     path: '',

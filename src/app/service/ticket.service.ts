@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { auth } from '../config/firebase.config';
-import { Observable, of, from, BehaviorSubject } from 'rxjs';
+import { Observable, of, from, BehaviorSubject, forkJoin } from 'rxjs';
 import { TicketType } from '../types/ticketstype';
 import { addDoc, collection, getDocs, onSnapshot, query, Timestamp, where } from 'firebase/firestore';
 import { doc, getDoc } from 'firebase/firestore';
@@ -47,20 +47,20 @@ export class TicketService {
     createTicket(userId: string, eventId: string, total_price: number, expire_at: string): Observable<TicketType>{
         return from(
             addDoc(this.ticketCollection, {
-            userId: userId,
+            user_id: userId,
             event_id: eventId,
             total_price: total_price,
-            createdAt: new Date(),
+            created_at: new Date(),
             used_at: null,
             status: 'active',
             paid: false,
-            expire_at: expire_at
+            expire_at: Timestamp.fromDate(new Date(expire_at)),
         })).pipe(
             map(docRef =>{
-                console.log('Ticket created with ID:', docRef.id);
+                
                 return { user_id: userId, event_id: eventId, total_price: total_price, status: 'unused', create_at: new Date() } as unknown as TicketType;
             }),catchError((error: any) =>{
-                console.error('Error creating ticket:', error);
+                
                 return [];
             })
         )
@@ -87,18 +87,71 @@ export class TicketService {
         const ticketRef = query(this.ticketCollection, where('user_id', '==', userId));
         return from(getDocs(ticketRef)).pipe(
             map(snapshot =>{
-                if(snapshot.empty){
-                    
+                if(snapshot.empty){    
                     return [];
                 }
                 else{
+                    
                     const tickets = snapshot.docs.map(doc =>{
                         
                         return {id: doc.id, ...doc.data()} as unknown as TicketType;
                     });
+                    
                     return tickets;
                 }
             })
         )
     }
+
+    changeStatusTicket(userId: string | undefined, eventIds: string[]): Observable<TicketType[]> {
+        const queries = eventIds.map(eventId => {
+          const ticketRef = query(
+            this.ticketCollection,
+            where('user_id', '==', userId),
+            where('event_id', '==', eventId),
+            where('status', 'in', ['active', 'unused', 'used'])
+          );
+      
+          return from(getDocs(ticketRef)).pipe(
+            map(snapshot => {
+              const now = new Date();
+              return snapshot.docs.map(doc => {
+                const ticketData = doc.data();
+                const expireAt = ticketData['expire_at'].toDate();
+                if (now > expireAt) {
+                  return { id: doc.id, ...ticketData, status: 'expired' } as unknown as TicketType;
+                }
+                return { id: doc.id, ...ticketData } as unknown as TicketType;
+              });
+            })
+          );
+        });
+      
+        
+        return forkJoin(queries).pipe(
+          map(results => results.flat()) 
+        );
+      }
+
+      getEventPart(userId: string | undefined, eventIds: string[]): Observable<TicketType[]> {
+        const queries = eventIds.map(eventId => {
+          const ticketRef = query(
+            this.ticketCollection,
+            where('user_id', '==', userId),
+            where('event_id', '==', eventId),
+            where('status', '==', 'expired')
+          );
+      
+          return from(getDocs(ticketRef)).pipe(
+            map(snapshot => {
+              return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as unknown as TicketType));
+            })
+          );
+        });
+      
+        // Hợp nhất kết quả từ tất cả các truy vấn
+        return forkJoin(queries).pipe(
+          map(results => results.flat()) 
+        );
+      }
 }

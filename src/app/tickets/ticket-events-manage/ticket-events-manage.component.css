@@ -1,0 +1,113 @@
+/* Reset CSS */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+/* Layout chính */
+
+.container {
+    display: flex;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+
+/* Sidebar */
+
+.sidebar {
+    width: 400px;
+    background-color: #fff;
+    padding: 20px;
+    border-right: 1px solid #e9ecef;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.username {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.role {
+    font-size: 14px;
+    color: #666;
+}
+
+.menu {
+    margin-top: 20px;
+}
+
+/* Sidebar menu */
+.menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.menu li {
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border-radius: 5px;
+}
+
+.menu li:hover {
+    background-color: #f0f0f0;
+}
+
+.menu li.active {
+    background-color: #f3f3f3;
+    color: #000000;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+    transform: scale(1.05);
+}
+
+/* Main content */
+.tab-content {
+    position: relative;
+    overflow: hidden;
+}
+.main-content{
+    width: 98%;
+    margin: 20px;
+}
+
+.card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: translateX(100%);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.card.ng-trigger {
+    opacity: 1;
+    transform: translateX(0);
+}
