@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { auth } from '../../config/firebase.config';
-import { Observable, Subscription } from 'rxjs';
+import { forkJoin, Observable, Subscription } from 'rxjs';
 import { TicketType } from '../../types/ticketstype';
 import { SafeUrlService } from '../../service/santizer.service';
 import { EventList } from '../../types/eventstype';
@@ -37,11 +37,16 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy  {
   private events$: Observable<EventList[]> 
   private user$: Observable<User[]>
   user: User | undefined
+  
   event: EventList[] = []
-  eventUnPai: EventList[] = []
+  eventUnPaid: EventList[] = []
   eventPart: EventList[] = []
   eventUpcoming: EventList[] = []
   ticket:TicketType[] =[]
+
+  listPartTickets: string[] = []
+  listUpcomingTickets: string[] = []
+  listUnPaidTickets: string[] = []
   listTicketsEventId: string[] = [];
 
   changeTab: string = 'tab1';
@@ -84,28 +89,63 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy  {
           console.log('No ticket found for this user');
         }
       }),
-      switchMap(() => this.eventsService.getEventByListId(this.listTicketsEventId))
+      switchMap(() => {
+        this.eventsService.getEventByListId(this.listTicketsEventId)
+        return forkJoin({
+          unpaidTickets: this.ticketService.getTicketsPaidStatus(this.currentUser?.uid, this.listTicketsEventId, false),
+          eventPart: this.ticketService.getEventPart(this.currentUser?.uid, this.listTicketsEventId),
+          upcomingTickets: this.ticketService.getUpcomingEvent(this.currentUser?.uid, this.listTicketsEventId)
+        });
+      })
     ).subscribe({
-      next: (eventData) => {
-        this.event = eventData;
+      next: ({ unpaidTickets, upcomingTickets, eventPart }) => {
+        this.listUnPaidTickets = unpaidTickets
+        .map(ticket => ticket.event_id)
+        .filter(eventId => typeof eventId === 'string')
+
+        this.eventsService.getEventByListId(this.listUnPaidTickets).subscribe({
+          next: (data) =>{
+            this.eventUnPaid = data
+          },
+          error: (error: any)=>{
+            console.error('Error get un paid event:', error)
+          }
+        })
+
+        this.listPartTickets = eventPart
+        .map(ticket => ticket.event_id)
+        .filter(eventId => typeof eventId === 'string')
+        this.eventsService.getEventByListId(this.listPartTickets).subscribe({
+          next: (data) =>{
+            this.eventPart = data
+          },
+          error: (error: any)=>{
+            console.error('Error get part event:', error)
+          }
+        })
+
+        this.listUpcomingTickets = upcomingTickets
+        .map(ticket => ticket.event_id)
+        .filter(eventId => typeof eventId === 'string')
+        this.eventsService.getEventByListId(this.listUpcomingTickets).subscribe({
+          next: (data) =>{
+            this.eventUpcoming = data
+          },
+          error: (error: any)=>{
+            console.error('Error get upcoming event:', error)
+          }
+        })
+
+
         this.ticketService.changeStatusTicket(this.currentUser?.uid, this.listTicketsEventId).subscribe({
-          next: (data) => {
-            console.log('Ticket status updated:', data);
+          next: (data) =>{
           },
-          error: (err) => {
-            console.error('Error updating ticket status:', err);
+          error: (error: any)=>{
+            console.error('Error updating status:', error)
           }
         })
-        this.ticketService.getEventPart(this.currentUser?.uid, this.listTicketsEventId).subscribe({
-          next: (eventPartData) => {
-            
-            console.log('Event part data:', eventPartData);
-          },
-          error: (err) => {
-            console.error('Error fetching event part data:', err);
-          }
-        })
-        console.log('Event data:', this.event);
+
+
       },
       error: (err) => {
         console.error('Error fetching events:', err);

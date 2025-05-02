@@ -17,8 +17,6 @@ export class UnpaidTicketsComponent implements OnInit, OnDestroy {
 
   constructor(private sanitizer: SafeUrlService) { }
   ngOnInit(): void {
-    // Initialize any necessary data or perform actions when the component is created
-    console.log(this.dataEvent);
   }
 
   getSafeUrl(url: string | undefined): SafeUrl| undefined{
@@ -27,6 +25,6 @@ export class UnpaidTicketsComponent implements OnInit, OnDestroy {
   
   }
   ngOnDestroy(): void {
-    // Clean up any subscriptions or resources when the component is destroyed
+    
   }
 }

@@ -26,13 +26,13 @@
 
             <div class="tab-content">
                 <form class="card" *ngIf="changeTab === 'tab1'" @tabAnimation>
-                    <app-unpaid-tickets [dataEvent]="event"></app-unpaid-tickets>
+                    <app-unpaid-tickets [dataEvent]="eventUnPaid"></app-unpaid-tickets>
                 </form>
                 <form class="card" *ngIf="changeTab === 'tab2'" @tabAnimation>
-                    <app-upcoming-tickets></app-upcoming-tickets>
+                    <app-upcoming-tickets [dataEvent]="eventUpcoming"></app-upcoming-tickets>
                 </form>
                 <form class="card" *ngIf="changeTab === 'tab3'" @tabAnimation>
-                    <app-past-tickets></app-past-tickets>
+                    <app-past-tickets [dataEvent]="eventPart"></app-past-tickets>
                 </form>
             </div>
             

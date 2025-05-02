@@ -55,7 +55,6 @@ export class DetailEventComponent implements OnInit, OnDestroy {
     private ticketsService: TicketService
   ) {
     this.events$ = this.eventsService.events$;
-    this.sanitizerService = sanitizerService;
   }
 
 

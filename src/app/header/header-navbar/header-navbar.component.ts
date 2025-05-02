@@ -31,13 +31,7 @@ export class HeaderNavbarComponent implements OnInit {
   checkingForLogin: boolean = false;
   users: User[] = [];
 
-  constructor(
-    private sharedService: SharedService, 
-    private authService : AuthService, 
-    private router: Router, 
-    private usersService: UsersService, 
-    private sanitizerService: SanitizerService
-  ) {
+  constructor(private sharedService: SharedService, private authService : AuthService, private router: Router, private usersService: UsersService, private sanitizer: DomSanitizer) {
     this.user$ = this.usersService.users$;
   }
 
@@ -49,7 +43,7 @@ export class HeaderNavbarComponent implements OnInit {
         this.userCurrentId = user.uid
         this.usersService.getCurrentUserById(currentUserId).subscribe(userData=>{
           this.userCurrentname = userData?.fullName ;
-          this.userCurrentImage = userData?.profileImage || this.sanitizerService.getDefaultAvatarUrl()
+          this.userCurrentImage = userData?.profileImage || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'
           this.userCurrentEmail = userData?.email ;
           this.currentUserType = userData?.type
         } )
@@ -73,7 +67,6 @@ export class HeaderNavbarComponent implements OnInit {
       this.router.navigate(['/userprofile', this.userCurrentId]);
     }
   }
-  
   goToManageEvent(): void{
     console.log('goToManageEvent clicked');
     if(this.userCurrentId){
@@ -105,7 +98,8 @@ export class HeaderNavbarComponent implements OnInit {
   }
 
   sanitizeImageUrl(url: string | undefined): SafeUrl | undefined {
-    return this.sanitizerService.sanitizeUrl(url) || undefined;
+    if (!url) return undefined;
+    return this.sanitizer.bypassSecurityTrustUrl(url);
   }
 
   goToTicketsManage(): void{
