@@ -1,0 +1,39 @@
+<div class="tab-content-container">
+    <h2 class="section-header">{{ sectionHeader }}</h2>
+    <p class="subsection-header">{{ subsectionHeader }}</p>
+  
+    <!-- Hiển thị trạng thái tải dữ liệu -->
+    <div *ngIf="isLoading" class="loading">
+      <p>Loading events...</p>
+    </div>
+  
+    <!-- Hiển thị danh sách sự kiện -->
+    <div *ngIf="!isLoading && (dataEvent?.length ?? 0) > 0; else noDataTemplate" class="event-list">
+      <div *ngFor="let event of dataEvent" class="event-card">
+        <div class="event-image">
+          <img [src]="getSafeUrl(event.image_url)" alt="{{ event.name }}" />
+        </div>
+        <div class="event-details">
+          <h3 class="event-title">{{ event.name }}</h3>
+          <p class="event-date">
+            <strong>Date:</strong> {{ event.date_time_options[0].start_time | date: 'medium' }}
+          </p>
+          <p class="event-location">
+            <strong>Location:</strong> {{ event.location.address }}
+          </p>
+          <p class="event-status" [ngClass]="ticketStatus[event.id ?? 'unknown']">
+            <strong>Status:</strong> {{ ticketStatus[event.id ?? 'unknown'] | titlecase }}
+          </p>
+        </div>
+        <div class="event-actions">
+          <button (click)="viewDetails(event.id)">View Details</button>
+          <!-- <button  (click)="payNow(event)">Pay Now</button> -->
+        </div>
+      </div>
+    </div>
+    <ng-template #noDataTemplate>
+      <div class="no-data">
+        <p>No events available for this category.</p>
+      </div>
+    </ng-template>
+  </div>

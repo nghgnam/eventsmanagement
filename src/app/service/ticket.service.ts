@@ -1,10 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Query } from '@angular/core';
 import { auth } from '../config/firebase.config';
 import { Observable, of, from, BehaviorSubject, forkJoin } from 'rxjs';
 import { TicketType } from '../types/ticketstype';
-import { addDoc, collection, getDocs, onSnapshot, query, Timestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, DocumentData, getDocs, onSnapshot, query, QuerySnapshot, Timestamp, updateDoc, where } from 'firebase/firestore';
 import { doc, getDoc } from 'firebase/firestore';
-import { catchError, debounceTime, map, mergeMap, switchMap, tap } from 'rxjs/operators';
+import { catchError, debounceTime, map, mergeMap, switchMap, tap, toArray } from 'rxjs/operators';
 import { db } from '../config/firebase.config';
 import { error } from 'console';
 
@@ -67,31 +67,72 @@ export class TicketService {
         )
     }
 
-    getTicketsPaidStatus(userId: string | undefined, eventId: string[], paidStatus: boolean): Observable<TicketType[]>{
-      const queries = eventId.map(eventId =>{
-        const ticketRef = query(this.ticketCollection, where('user_id', '==', userId), where('event_id', '==', eventId), where('paid', '==', paidStatus));
-        return from(getDocs(ticketRef)).pipe(
-            map(snapshot =>{
-                if(snapshot.empty){
-                    return [];
-                }
-                else{
-                    const tickets = snapshot.docs.map(doc =>{
-                        return {id: doc.id, ...doc.data()} as unknown as TicketType;
-                    });
-                    return tickets;
-                }
-            })
+    getTicketsUnPaidTicketsValid(userId: string | undefined, eventIds: string[]): Observable<TicketType[]>{
+      if(userId === undefined || eventIds.length === 0){
+        return of([]);
+      }
+      const now = Timestamp.now();
+
+      const queries = eventIds.map(eventId => {
+        const ticketRef = query(this.ticketCollection,
+          where('user_id', '==' , userId),
+          where('event_id' , '==' ,eventId),
+          where('status' , '==' , 'active'),
+          where('paid' , '==' , false),
+          where('expire_at', '>', now)
         )
-        
+
+        return from(getDocs(ticketRef)).pipe(
+          map(snapshot => {
+            if(snapshot.empty){
+              return []
+            }
+            else{
+              return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})) as unknown as TicketType[];
+            }
+          })
+        )
       })
 
       return forkJoin(queries).pipe(
-        map(results => results.flat())
-      );
+        map(results => results.flat()),
+      )
 
-
+      
     }
+
+    getTicketsUnPaidTicketsExpired(userId: string | undefined, eventIds: string[]): Observable<TicketType[]>{
+      if(userId === undefined || eventIds.length === 0){
+        return of([]);
+      }
+      const now = Timestamp.now();
+
+      const queries = eventIds.map(eventId => {
+        const ticketRef = query(this.ticketCollection,
+          where('user_id', '==' , userId),
+          where('event_id' , '==' ,eventId),
+          where('status' , '==' , 'expired'),
+          where('paid' , '==' , false),
+          where('expire_at', '<=', now)
+        )
+
+        return from(getDocs(ticketRef)).pipe(
+          map(snapshot => {
+            if(snapshot.empty){
+              return []
+            }
+            else{
+              return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()})) as unknown as TicketType[];
+            }
+          })
+        )
+      })
+
+      return forkJoin(queries).pipe(
+        map(results => results.flat()),
+      )      
+    }
+
 
     getAllTicketsByUserId(userId: string): Observable<TicketType[]>{
         const ticketRef = query(this.ticketCollection, where('user_id', '==', userId));
@@ -176,18 +217,41 @@ export class TicketService {
           );
         });
       
-        // Hợp nhất kết quả từ tất cả các truy vấn
+
+        return forkJoin(queries).pipe(
+          map(results => results.flat()) 
+        );
+      }
+      getCancalledTickets(userId: string | undefined, eventIds: string[]): Observable<TicketType[]> {
+        const queries = eventIds.map(eventId => {
+          const ticketRef = query(
+            this.ticketCollection,
+            where('user_id', '==', userId),
+            where('event_id', '==', eventId),
+            where('status', '==', 'canceled')
+          );
+      
+          return from(getDocs(ticketRef)).pipe(
+            map(snapshot => {
+              return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as unknown as TicketType));
+            })
+          );
+        });
+      
+
         return forkJoin(queries).pipe(
           map(results => results.flat()) 
         );
       }
       
       getUpcomingEvent(userId: string | undefined, eventIds: string[]): Observable<TicketType[]>{
+        const now = Timestamp.now();
         const queries = eventIds.map(eventId =>{
           const ticketRef = query(this.ticketCollection, 
             where('user_id', '==', userId), 
             where('event_id', '==' , eventId), 
-            where('status', 'in', ['active', 'unused']));
+            where('status', 'in', ['active', 'unused']),
+            where('expire_at', '>=', now));
 
           return from(getDocs(ticketRef)).pipe(
             map(snapshot =>{
@@ -200,4 +264,27 @@ export class TicketService {
 
         )
       }
+
+      getUseStatusTickets(userId: string | undefined, eventIds: string[], status: 'used' | 'unused'): Observable<TicketType[]> {
+        const queries = eventIds.map(eventId => {
+          const ticketRef = query(
+            this.ticketCollection,
+            where('user_id', '==', userId),
+            where('event_id', '==', eventId),
+            where('status', '==', 'unused'),
+            where('paid', '==', true)
+          );
+      
+          return from(getDocs(ticketRef)).pipe(
+            map(snapshot => {
+              return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as unknown as TicketType));
+            })
+          );
+        });
+
+        return forkJoin(queries).pipe(
+          map(results => results.flat()) 
+        );
+      }
+
 }

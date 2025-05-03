@@ -76,6 +76,7 @@
     cursor: pointer;
     transition: background-color 0.3s ease, color 0.3s ease;
     border-radius: 5px;
+    margin: 10px 0;
 }
 
 .menu li:hover {
@@ -89,6 +90,7 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
     transform: scale(1.05);
+    
 }
 
 /* Main content */

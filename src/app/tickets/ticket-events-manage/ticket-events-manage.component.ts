@@ -11,15 +11,13 @@ import { SafeUrl } from '@angular/platform-browser';
 import { UsersService } from '../../service/users.service';
 import { User } from '../../types/userstype';
 import { catchError, switchMap, tap } from 'rxjs/operators';
-import { UnpaidTicketsComponent } from "../unpaid-tickets/unpaid-tickets.component";
-import { UpcomingTicketsComponent } from '../upcoming-tickets/upcoming-tickets.component';
-import { PastTicketsComponent } from '../past-tickets/past-tickets.component';
+import { TabContentTicketsComponent } from '../tab-content-tickets/tab-content-tickets.component';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 
 @Component({
   selector: 'app-ticket-events-manage',
   standalone: true,
-  imports: [CommonModule, UnpaidTicketsComponent, UpcomingTicketsComponent, PastTicketsComponent],
+  imports: [CommonModule, TabContentTicketsComponent],
   templateUrl: './ticket-events-manage.component.html',
   styleUrls: ['./ticket-events-manage.component.css'],
   animations: [
@@ -43,6 +41,8 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy  {
   eventPart: EventList[] = []
   eventUpcoming: EventList[] = []
   ticket:TicketType[] =[]
+  eventUsed: EventList[] = []
+  eventCancel: EventList[] = []
 
   listPartTickets: string[] = []
   listUpcomingTickets: string[] = []
@@ -92,58 +92,63 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy  {
       switchMap(() => {
         this.eventsService.getEventByListId(this.listTicketsEventId)
         return forkJoin({
-          unpaidTickets: this.ticketService.getTicketsPaidStatus(this.currentUser?.uid, this.listTicketsEventId, false),
-          eventPart: this.ticketService.getEventPart(this.currentUser?.uid, this.listTicketsEventId),
-          upcomingTickets: this.ticketService.getUpcomingEvent(this.currentUser?.uid, this.listTicketsEventId)
+          activeTickets: this.ticketService.getUpcomingEvent(this.currentUser?.uid, this.listTicketsEventId),
+          unpaidTicketsValid: this.ticketService.getTicketsUnPaidTicketsValid(this.currentUser?.uid, this.listTicketsEventId),
+          unpaidTicketsExpired: this.ticketService.getTicketsUnPaidTicketsExpired(this.currentUser?.uid, this.listTicketsEventId),
+          usedTickets: this.ticketService.getUseStatusTickets(this.currentUser?.uid, this.listTicketsEventId, 'used'),
+          expiredTickets: this.ticketService.getEventPart(this.currentUser?.uid, this.listTicketsEventId),
+          canceledTickets: this.ticketService.getCancalledTickets(this.currentUser?.uid, this.listTicketsEventId),
         });
       })
     ).subscribe({
-      next: ({ unpaidTickets, upcomingTickets, eventPart }) => {
-        this.listUnPaidTickets = unpaidTickets
-        .map(ticket => ticket.event_id)
-        .filter(eventId => typeof eventId === 'string')
+      next: ({ activeTickets, unpaidTicketsValid, unpaidTicketsExpired,  usedTickets , expiredTickets , canceledTickets}) => {
+        console.log('Active Tickets:', activeTickets, 'Unpaid Tickets Valid:', unpaidTicketsValid, 'Unpaid Tickets Expired:', unpaidTicketsExpired, 'Used Tickets:', usedTickets, 'Expired Tickets:', expiredTickets, 'Canceled Tickets:', canceledTickets);
+        // this.listUnPaidTickets = unpaidTickets
+        // .map(ticket => ticket.event_id)
+        // .filter(eventId => typeof eventId === 'string')
 
-        this.eventsService.getEventByListId(this.listUnPaidTickets).subscribe({
-          next: (data) =>{
-            this.eventUnPaid = data
-          },
-          error: (error: any)=>{
-            console.error('Error get un paid event:', error)
-          }
-        })
+        // this.eventsService.getEventByListId(this.listUnPaidTickets).subscribe({
+        //   next: (data) =>{
+        //     this.eventUnPaid = data
+        //     console.log('Event Unpaid:', this.eventUnPaid)
+        //   },
+        //   error: (error: any)=>{
+        //     console.error('Error get un paid event:', error)
+        //   }
+        // })
 
-        this.listPartTickets = eventPart
-        .map(ticket => ticket.event_id)
-        .filter(eventId => typeof eventId === 'string')
-        this.eventsService.getEventByListId(this.listPartTickets).subscribe({
-          next: (data) =>{
-            this.eventPart = data
-          },
-          error: (error: any)=>{
-            console.error('Error get part event:', error)
-          }
-        })
+        // this.listPartTickets = eventPart
+        // .map(ticket => ticket.event_id)
+        // .filter(eventId => typeof eventId === 'string')
+        // this.eventsService.getEventByListId(this.listPartTickets).subscribe({
+        //   next: (data) =>{
+        //     this.eventPart = data
+        //   },
+        //   error: (error: any)=>{
+        //     console.error('Error get part event:', error)
+        //   }
+        // })
 
-        this.listUpcomingTickets = upcomingTickets
-        .map(ticket => ticket.event_id)
-        .filter(eventId => typeof eventId === 'string')
-        this.eventsService.getEventByListId(this.listUpcomingTickets).subscribe({
-          next: (data) =>{
-            this.eventUpcoming = data
-          },
-          error: (error: any)=>{
-            console.error('Error get upcoming event:', error)
-          }
-        })
+        // this.listUpcomingTickets = upcomingTickets
+        // .map(ticket => ticket.event_id)
+        // .filter(eventId => typeof eventId === 'string')
+        // this.eventsService.getEventByListId(this.listUpcomingTickets).subscribe({
+        //   next: (data) =>{
+        //     this.eventUpcoming = data
+        //   },
+        //   error: (error: any)=>{
+        //     console.error('Error get upcoming event:', error)
+        //   }
+        // })
 
 
-        this.ticketService.changeStatusTicket(this.currentUser?.uid, this.listTicketsEventId).subscribe({
-          next: (data) =>{
-          },
-          error: (error: any)=>{
-            console.error('Error updating status:', error)
-          }
-        })
+        // this.ticketService.changeStatusTicket(this.currentUser?.uid, this.listTicketsEventId).subscribe({
+        //   next: (data) =>{
+        //   },
+        //   error: (error: any)=>{
+        //     console.error('Error updating status:', error)
+        //   }
+        // })
 
 
       },
