@@ -28,46 +28,51 @@
             </header> -->
 
             <div class="tab-content">
-                <form class="card" *ngIf="changeTab === 'tab1'" @tabAnimation>
+                <div class="card" *ngIf="changeTab === 'tab1'" @tabAnimation>
                     <app-tab-content-tickets 
                     [dataEvent]="eventUpcoming"
+                    [mode]="'single'"
                     [dataTicket]="ticket"
                     sectionHeader="Active Tickets"
                     subsectionHeader="These are the tickets you have purchased and are currently active.">
                     </app-tab-content-tickets>
-                </form>
-                <form class="card" *ngIf="changeTab === 'tab2'" @tabAnimation>
+                </div>
+                <div class="card" *ngIf="changeTab === 'tab2'" @tabAnimation>
                     <app-tab-content-tickets 
-                    [dataEvent]="eventUnPaid"
+                    [dataEvent]="{valid: eventUnpaidValid, expired: eventUnpaidExpired}"
+                    [mode]="'multiple'"
                     [dataTicket]="ticket"
                     sectionHeader="Unpaid Tickets"
                     subsectionHeader="These are the tickets you have purchased but have not yet paid for.">
                     </app-tab-content-tickets>
-                </form>
-                <form class="card" *ngIf="changeTab === 'tab3'" @tabAnimation>
+                </div>
+                <div class="card" *ngIf="changeTab === 'tab3'" @tabAnimation>
                     <app-tab-content-tickets 
                     [dataEvent]="eventUsed"
+                    [mode]="'single'"
                     [dataTicket]="ticket"
                     sectionHeader="Used Tickets"
                     subsectionHeader="These are the tickets you have purchased and have already used.">
                     </app-tab-content-tickets>
-                </form>
-                <form class="card" *ngIf="changeTab === 'tab4'" @tabAnimation>
+                </div>
+                <div class="card" *ngIf="changeTab === 'tab4'" @tabAnimation>
                     <app-tab-content-tickets 
                     [dataEvent]="eventPart" 
+                    [mode]="'single'"
                     [dataTicket]="ticket"
                     sectionHeader="Expired Tickets"
                     subsectionHeader="These are the tickets you have purchased but are no longer valid.">
                     </app-tab-content-tickets>
-                </form>
-                <form class="card" *ngIf="changeTab === 'tab5'" @tabAnimation>
+                </div>
+                <div class="card" *ngIf="changeTab === 'tab5'" @tabAnimation>
                     <app-tab-content-tickets 
                     [dataEvent]="eventCancel" 
+                    [mode]="'single'"
                     [dataTicket]="ticket"
                     sectionHeader="Cancelled Tickets"
                     subsectionHeader="These are the tickets you have purchased but have been cancelled.">
                     </app-tab-content-tickets>
-                </form>
+                </div>
             </div>
             
             

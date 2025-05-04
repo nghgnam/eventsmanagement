@@ -30,6 +30,7 @@ import { trigger, state, style, transition, animate } from '@angular/animations'
   ]
 })
 export class TicketEventsManageComponent implements OnInit, OnDestroy  {
+
   //khai bao
   private subscriptions: Subscription[] = [];
   private events$: Observable<EventList[]> 
@@ -37,17 +38,21 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy  {
   user: User | undefined
   
   event: EventList[] = []
-  eventUnPaid: EventList[] = []
+  eventUnpaidValid: EventList[] = []
+  eventUnpaidExpired: EventList[] = []
   eventPart: EventList[] = []
   eventUpcoming: EventList[] = []
   ticket:TicketType[] =[]
   eventUsed: EventList[] = []
   eventCancel: EventList[] = []
-
-  listPartTickets: string[] = []
+ 
   listUpcomingTickets: string[] = []
-  listUnPaidTickets: string[] = []
+  listUnpaidTicketValid: string[] = []
+  listUnpaidTicketExpired: string[] = []
   listTicketsEventId: string[] = [];
+  listTicketsUsed: string[] = []
+  listTicketsCancel: string[] = []
+  listTicketExpired: string[] = []
 
   changeTab: string = 'tab1';
   
@@ -102,55 +107,53 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy  {
       })
     ).subscribe({
       next: ({ activeTickets, unpaidTicketsValid, unpaidTicketsExpired,  usedTickets , expiredTickets , canceledTickets}) => {
-        console.log('Active Tickets:', activeTickets, 'Unpaid Tickets Valid:', unpaidTicketsValid, 'Unpaid Tickets Expired:', unpaidTicketsExpired, 'Used Tickets:', usedTickets, 'Expired Tickets:', expiredTickets, 'Canceled Tickets:', canceledTickets);
-        // this.listUnPaidTickets = unpaidTickets
-        // .map(ticket => ticket.event_id)
-        // .filter(eventId => typeof eventId === 'string')
 
-        // this.eventsService.getEventByListId(this.listUnPaidTickets).subscribe({
-        //   next: (data) =>{
-        //     this.eventUnPaid = data
-        //     console.log('Event Unpaid:', this.eventUnPaid)
-        //   },
-        //   error: (error: any)=>{
-        //     console.error('Error get un paid event:', error)
-        //   }
-        // })
+        this.listUpcomingTickets = activeTickets.map(ticket => ticket.event_id).filter(eventId => typeof eventId === 'string');
+        this.eventsService.getEventByListId(this.listUpcomingTickets).subscribe({
+          next: (events) => {
+            this.eventUpcoming = events;
+            console.log('Upcoming Events:', this.eventUpcoming);
+          }
+        });
 
-        // this.listPartTickets = eventPart
-        // .map(ticket => ticket.event_id)
-        // .filter(eventId => typeof eventId === 'string')
-        // this.eventsService.getEventByListId(this.listPartTickets).subscribe({
-        //   next: (data) =>{
-        //     this.eventPart = data
-        //   },
-        //   error: (error: any)=>{
-        //     console.error('Error get part event:', error)
-        //   }
-        // })
+        this.listUnpaidTicketValid = unpaidTicketsValid.map(ticket => ticket.event_id).filter(eventId => typeof eventId === 'string');
+        this.eventsService.getEventByListId(this.listUnpaidTicketValid).subscribe({
+          next: (events) =>{
+            this.eventUnpaidValid = events;
+            console.log('Unpaid Valid Events:', this.eventUnpaidValid);
+          }
+        })
+        this.listUnpaidTicketExpired = unpaidTicketsExpired.map(ticket => ticket.event_id).filter(eventId => typeof eventId === 'string');
+        this.eventsService.getEventByListId(this.listUnpaidTicketExpired).subscribe({
+          next: (events) =>{
+            this.eventUnpaidExpired = events;
+            console.log('Unpaid Expired Events:', this.eventUnpaidExpired);
+          }
+        })
 
-        // this.listUpcomingTickets = upcomingTickets
-        // .map(ticket => ticket.event_id)
-        // .filter(eventId => typeof eventId === 'string')
-        // this.eventsService.getEventByListId(this.listUpcomingTickets).subscribe({
-        //   next: (data) =>{
-        //     this.eventUpcoming = data
-        //   },
-        //   error: (error: any)=>{
-        //     console.error('Error get upcoming event:', error)
-        //   }
-        // })
-
-
-        // this.ticketService.changeStatusTicket(this.currentUser?.uid, this.listTicketsEventId).subscribe({
-        //   next: (data) =>{
-        //   },
-        //   error: (error: any)=>{
-        //     console.error('Error updating status:', error)
-        //   }
-        // })
-
-
+        this.listTicketsUsed = usedTickets.map(ticket => ticket.event_id).filter(eventId => typeof eventId === 'string');
+        this.eventsService.getEventByListId(this.listTicketsUsed).subscribe({
+          next: (events) =>{
+            this.eventUsed = events;
+            console.log('Used Events:', this.eventUsed);
+          }
+        })
+        this.listTicketsCancel = canceledTickets.map(ticket => ticket.event_id).filter(eventId => typeof eventId === 'string');
+        this.eventsService.getEventByListId(this.listTicketsCancel).subscribe({
+          next: (events) =>{
+            this.eventCancel = events;
+            console.log('Canceled Events:', this.eventCancel);
+          }
+        })
+        this.listTicketExpired = expiredTickets.map(ticket => ticket.event_id).filter(eventId => typeof eventId === 'string');
+        this.eventsService.getEventByListId(this.listTicketExpired).subscribe({
+          next: (events) =>{
+            this.eventPart = events;
+            console.log('Part Events:', this.eventPart);
+          }
+        })
+        this.ticketService.changeStatusTicket(this.currentUser?.uid, this.listTicketsEventId)
+          
       },
       error: (err) => {
         console.error('Error fetching events:', err);

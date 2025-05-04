@@ -57,6 +57,9 @@
     font-weight: bold;
     margin: 0 0 10px;
     color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #e1e1e1;
   }
   
   .event-date,

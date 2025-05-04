@@ -101,6 +101,8 @@ export class TicketService {
       
     }
 
+
+
     getTicketsUnPaidTicketsExpired(userId: string | undefined, eventIds: string[]): Observable<TicketType[]>{
       if(userId === undefined || eventIds.length === 0){
         return of([]);
@@ -250,6 +252,7 @@ export class TicketService {
           const ticketRef = query(this.ticketCollection, 
             where('user_id', '==', userId), 
             where('event_id', '==' , eventId), 
+            where('paid', '==', true),
             where('status', 'in', ['active', 'unused']),
             where('expire_at', '>=', now));
 
@@ -271,7 +274,7 @@ export class TicketService {
             this.ticketCollection,
             where('user_id', '==', userId),
             where('event_id', '==', eventId),
-            where('status', '==', 'unused'),
+            where('status', '==', status),
             where('paid', '==', true)
           );
       
@@ -287,4 +290,5 @@ export class TicketService {
         );
       }
 
+      
 }
