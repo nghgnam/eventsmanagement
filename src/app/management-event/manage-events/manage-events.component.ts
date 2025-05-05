@@ -2,45 +2,53 @@ import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { UsersService } from '../service/users.service';
-import { User } from '../types/userstype';
+import { UsersService } from '../../service/users.service';
+import { User } from '../../types/userstype';
 import { getAuth } from 'firebase/auth';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { EventList } from '../types/eventstype';
-import { EventsService } from '../service/events.service';
-import { CloudinaryService } from '../service/cloudinary.service';
+import { EventList } from '../../types/eventstype';
+import { EventsService } from '../../service/events.service';
+import { CloudinaryService } from '../../service/cloudinary.service';
 import { Observable } from 'rxjs';
-import { AddressInformationService } from '../service/addressInformation.service';
+import { AddressInformationService } from '../../service/addressInformation.service';
 import { getCountries, getCountryCallingCode } from 'libphonenumber-js';
 import * as countries from 'i18n-iso-countries';
 import en from 'i18n-iso-countries/langs/en.json';
 import { skip, distinctUntilChanged, debounceTime } from 'rxjs/operators';
+import { EditEventComponent } from '../edit-event/edit-event.component';
+import { TrashEventsComponent } from '../trash-events/trash-events.component';
 
 @Component({
   selector: 'app-manage-events',
   standalone: true,
-  imports: [RouterModule, CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [RouterModule, CommonModule, FormsModule, ReactiveFormsModule, TrashEventsComponent ,EditEventComponent],
   templateUrl: './manage-events.component.html',
   styleUrls: ['./manage-events.component.css']
 })
 export class ManageEventsComponent implements OnInit {
+
+  editEventid: string | undefined
   currentUser: User | undefined;
   currentOrganizerEvent: EventList[] = [];
   errorMessage: string = '';
   successMessage: string = '';
   showCreateEventForm: boolean = false;
   eventForm: FormGroup;
-  activeTab: string = 'upcoming'; // 'upcoming' or 'past'
+  activeTab: 'upcoming' | 'past' | 'edit' | 'delete' | 'create' |undefined; // 'upcoming' or 'past'
   isLoading: boolean = false;
   selectedImage: File | null = null;
   imageError: string = '';
   imagePreviewUrl: string | null = null;
 
+  trashEvents: EventList[] = []; 
+  EditEvents: EventList[] = [];
+
   countries: { code: string, name: string }[] = [];
   citiesValue: any[] =[];
   districtsValue: any[] = [];
   wardsValue:any[]  = [];
+  
 
   districtsWithCities:any[] = [];
   wardsWithDistricts:any[] = [];
@@ -392,10 +400,12 @@ export class ManageEventsComponent implements OnInit {
     }
   }
 
-  setActiveTab(tab: string): void {
+  setActiveTab(tab: 'upcoming' | 'past' | 'edit' | 'delete' | 'create' | undefined): void {
     this.activeTab = tab;
-    // Reset form when switching tabs
+    console.log('Create event form is open. Closing it now.', this.activeTab);
+    console.log('show active tab ', this.showCreateEventForm)
     if (this.showCreateEventForm) {
+
       this.toggleCreateEventForm();
     }
   }
@@ -520,5 +530,9 @@ export class ManageEventsComponent implements OnInit {
       console.error("Geocoding error:", error);
       return null;
     }
+  }
+
+  getEventIdEdit(eventId: string | undefined){
+    return this.editEventid = eventId
   }
 }

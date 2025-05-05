@@ -20,35 +20,39 @@
                     <li [class.active]="activeTab === 'past'" (click)="setActiveTab('past')">
                         <span>Past Events</span>
                     </li>
-                    <!-- <li (click)="toggleCreateEventForm()">
-                        <span>Create New Event</span>
-                    </li> -->
+
+                    <li [class.active]="activeTab === 'delete'" (click)="setActiveTab('delete')" >
+                        <span>Cancelled Events</span>
+                    </li>
                 </ul>
             </div>
         </div>
 
         <!-- Main Content -->
         <div class="main-content">
+
+            
+
             <!-- Header -->
             <div class="header">
                 <h2>
                     {{activeTab === 'upcoming' ? 'Upcoming Events' : 'Past Events'}}
                 </h2>
-                <button class="create-event-btn" (click)="toggleCreateEventForm()">
+                <button class="create-event-btn" (click)="toggleCreateEventForm()" >
                     Create New Event
                 </button>
-                </div>
-    
+            </div>
+
             <!-- Alert Messages -->
-                <div class="alert alert-error" *ngIf="errorMessage">
-                    {{errorMessage}}
-                </div>
-                <div class="alert alert-success" *ngIf="successMessage">
-                    {{successMessage}}
-                </div>
+            <div class="alert alert-error" *ngIf="errorMessage">
+                {{errorMessage}}
+            </div>
+            <div class="alert alert-success" *ngIf="successMessage">
+                {{successMessage}}
+            </div>
 
             <!-- Create Event Form -->
-            <div class="card create-event-form" *ngIf="showCreateEventForm">
+            <div class="card create-event-form" *ngIf="showCreateEventForm ">
                 <h3>Create New Event</h3>
                 <form [formGroup]="eventForm" (ngSubmit)="onSubmit()">
                     <div class="form-row">
@@ -57,10 +61,12 @@
                             <div class="input-with-icon">
                                 <input type="text" id="name" formControlName="name" placeholder="Enter event name">
                             </div>
-                            <div class="error-message" *ngIf="eventForm.get('name')?.touched && eventForm.get('name')?.errors?.['required']">
+                            <div class="error-message"
+                                *ngIf="eventForm.get('name')?.touched && eventForm.get('name')?.errors?.['required']">
                                 Event name is required
                             </div>
-                            <div class="error-message" *ngIf="eventForm.get('name')?.touched && eventForm.get('name')?.errors?.['minlength']">
+                            <div class="error-message"
+                                *ngIf="eventForm.get('name')?.touched && eventForm.get('name')?.errors?.['minlength']">
                                 Event name must be at least 3 characters
                             </div>
                         </div>
@@ -70,12 +76,15 @@
                         <div class="form-group">
                             <label for="description">Description *</label>
                             <div class="input-with-icon">
-                                <textarea id="description" formControlName="description" placeholder="Enter event description"></textarea>
+                                <textarea id="description" formControlName="description"
+                                    placeholder="Enter event description"></textarea>
                             </div>
-                            <div class="error-message" *ngIf="eventForm.get('description')?.touched && eventForm.get('description')?.errors?.['required']">
+                            <div class="error-message"
+                                *ngIf="eventForm.get('description')?.touched && eventForm.get('description')?.errors?.['required']">
                                 Description is required
                             </div>
-                            <div class="error-message" *ngIf="eventForm.get('description')?.touched && eventForm.get('description')?.errors?.['minlength']">
+                            <div class="error-message"
+                                *ngIf="eventForm.get('description')?.touched && eventForm.get('description')?.errors?.['minlength']">
                                 Description must be at least 10 characters
                             </div>
                         </div>
@@ -87,24 +96,26 @@
                             <div class="input-with-icon">
                                 <input type="datetime-local" id="startDate" formControlName="startDate">
                             </div>
-                            <div class="error-message" *ngIf="eventForm.get('startDate')?.touched && eventForm.get('startDate')?.errors?.['required']">
+                            <div class="error-message"
+                                *ngIf="eventForm.get('startDate')?.touched && eventForm.get('startDate')?.errors?.['required']">
                                 Start date is required
                             </div>
-                            </div>
-                            <div class="form-group">
+                        </div>
+                        <div class="form-group">
                             <label for="endDate">End Date *</label>
                             <div class="input-with-icon">
                                 <input type="datetime-local" id="endDate" formControlName="endDate">
                             </div>
-                            <div class="error-message" *ngIf="eventForm.get('endDate')?.touched && eventForm.get('endDate')?.errors?.['required']">
+                            <div class="error-message"
+                                *ngIf="eventForm.get('endDate')?.touched && eventForm.get('endDate')?.errors?.['required']">
                                 End date is required
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="form-row">
-                        
-                            <div class="form-group">
+
+                        <div class="form-group">
                             <label for="eventType">Event Type *</label>
                             <div class="input-with-icon">
                                 <select id="eventType" formControlName="eventType">
@@ -113,7 +124,8 @@
                                     <option value="hybrid">Hybrid</option>
                                 </select>
                             </div>
-                            <div class="error-message" *ngIf="eventForm.get('eventType')?.touched && eventForm.get('eventType')?.errors?.['required']">
+                            <div class="error-message"
+                                *ngIf="eventForm.get('eventType')?.touched && eventForm.get('eventType')?.errors?.['required']">
                                 Event type is required
                             </div>
                         </div>
@@ -131,42 +143,43 @@
                         </div>
                     </div>
                     <div class="form-row" *ngIf="isOffline || isHybird">
-                            <div class="form-group">
-                                <label for="districts">Districts</label>
-                                <div class="input-with-icon">
-                                    <i class="fa-solid fa-city input-icon"></i>
-                                    <select id="districts" formControlName="districts"
-                                        [class.is-invalid]="districts?.invalid && districts?.touched">
-                                        <option [ngValue]="null">Select a district</option>
-                                        <option *ngFor="let districtOption of districtsWithCities" [ngValue]="districtOption">
-                                            {{ districtOption.name }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="error-message" *ngIf="districts?.invalid && districts?.touched">
-                                    <span *ngIf="districts?.errors?.['required']">District is required</span>
-                                </div>
+                        <div class="form-group">
+                            <label for="districts">Districts</label>
+                            <div class="input-with-icon">
+                                <i class="fa-solid fa-city input-icon"></i>
+                                <select id="districts" formControlName="districts"
+                                    [class.is-invalid]="districts?.invalid && districts?.touched">
+                                    <option [ngValue]="null">Select a district</option>
+                                    <option *ngFor="let districtOption of districtsWithCities"
+                                        [ngValue]="districtOption">
+                                        {{ districtOption.name }}
+                                    </option>
+                                </select>
                             </div>
-
-                            <div class="form-group">
-                                <label for="wards">Wards</label>
-                                <div class="input-with-icon">
-                                    <i class="fa-solid fa-earth-asia input-icon"></i>
-                                    <select id="wards" formControlName="wards"
-                                        [class.is-invalid]="wards?.invalid && wards?.touched">
-                                        <option [ngValue]="null">Select a ward</option>
-                                        <option *ngFor="let wardOption of wardsWithDistricts" [ngValue]="wardOption">
-                                            {{ wardOption.name }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="error-message" *ngIf="wards?.invalid && wards?.touched">
-                                    <span *ngIf="wards?.errors?.['required']">Ward is required</span>
-                                </div>
+                            <div class="error-message" *ngIf="districts?.invalid && districts?.touched">
+                                <span *ngIf="districts?.errors?.['required']">District is required</span>
                             </div>
                         </div>
+
+                        <div class="form-group">
+                            <label for="wards">Wards</label>
+                            <div class="input-with-icon">
+                                <i class="fa-solid fa-earth-asia input-icon"></i>
+                                <select id="wards" formControlName="wards"
+                                    [class.is-invalid]="wards?.invalid && wards?.touched">
+                                    <option [ngValue]="null">Select a ward</option>
+                                    <option *ngFor="let wardOption of wardsWithDistricts" [ngValue]="wardOption">
+                                        {{ wardOption.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="error-message" *ngIf="wards?.invalid && wards?.touched">
+                                <span *ngIf="wards?.errors?.['required']">Ward is required</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="form-row" *ngIf="isOffline || isHybird">
-                            <div class="form-group">
+                        <div class="form-group">
                             <label for="country">Country</label>
                             <div class="input-with-icon">
                                 <i class="fa-solid fa-earth-asia input-icon"></i>
@@ -175,15 +188,15 @@
                                     <option value="">Select a country</option>
                                     <option *ngFor="let countryOption of countries" [value]="countryOption.name">
                                         {{ countryOption.name }}
-                              </option>
-                            </select>
+                                    </option>
+                                </select>
                             </div>
                             <div class="error-message" *ngIf="country?.invalid && country?.touched">
                                 <span *ngIf="country?.errors?.['required']">Country is required</span>
                             </div>
                         </div>
 
-                            <div class="form-group">
+                        <div class="form-group">
                             <label for="city">City</label>
                             <div class="input-with-icon">
                                 <i class="fa-solid fa-city input-icon"></i>
@@ -201,13 +214,13 @@
                         </div>
                     </div>
                     <div class="form-row">
-                            <div class="form-group">
+                        <div class="form-group">
                             <label for="price">Price</label>
                             <div class="input-with-icon">
                                 <input type="number" id="price" formControlName="price" min="0" step="0.01">
                             </div>
-                            </div>
-                            <div class="form-group">
+                        </div>
+                        <div class="form-group">
                             <label for="maxAttendees">Max Attendees</label>
                             <div class="input-with-icon">
                                 <input type="number" id="maxAttendees" formControlName="maxAttendees" min="1">
@@ -216,13 +229,14 @@
                     </div>
 
                     <div class="form-row">
-                            <div class="form-group">
+                        <div class="form-group">
                             <label for="tags">Tags (comma separated)</label>
                             <div class="input-with-icon">
-                                <input type="text" id="tags" formControlName="tags" placeholder="e.g., Business, Technology">
+                                <input type="text" id="tags" formControlName="tags"
+                                    placeholder="e.g., Business, Technology">
                             </div>
-                            </div>
-                            <div class="form-group">
+                        </div>
+                        <div class="form-group">
                             <label for="image">Event Image</label>
                             <div class="image-upload-container">
                                 <div class="image-preview" *ngIf="imagePreviewUrl">
@@ -235,7 +249,8 @@
                                     <p>Click to upload image</p>
                                     <p class="image-hint">Recommended: 1200x630px, max 5MB</p>
                                 </div>
-                                <input type="file" id="image" (change)="onImageSelected($event)" accept="image/*" class="hidden-input">
+                                <input type="file" id="image" (change)="onImageSelected($event)" accept="image/*"
+                                    class="hidden-input">
                             </div>
                             <div class="error-message" *ngIf="imageError">
                                 {{imageError}}
@@ -244,7 +259,7 @@
                     </div>
 
                     <div class="form-row">
-                        
+
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn-secondary" (click)="toggleCreateEventForm()">
@@ -258,11 +273,11 @@
             </div>
 
             <!-- Events List -->
-            <div class="card events-list" *ngIf="!showCreateEventForm">
+            <div class="card events-list" *ngIf="!showCreateEventForm && (activeTab === 'past' || activeTab === 'upcoming')">
                 <div class="loading-spinner" *ngIf="isLoading">
                     Loading events...
                 </div>
-                
+
                 <div class="events-grid" *ngIf="!isLoading">
                     <div class="event-card" *ngFor="let event of getFilteredEvents()">
                         <div class="event-image" *ngIf="event.image_url">
@@ -281,17 +296,19 @@
                                     <span>Start: {{formatDate(event.date_time_options[0].start_time)}}</span>
                                 </div>
                                 <div class="info-item">
-                                    <span>{{event.location.type === 'online' ? 'Online Event' : event.location.address}}</span>
+                                    <span>{{event.location.type === 'online' ? 'Online Event' :
+                                        event.location.address}}</span>
                                 </div>
                                 <div class="info-item">
-                                    <span>{{event.attendees_count || 0}} / {{event.max_attendees || 'Unlimited'}} attendees</span>
+                                    <span>{{event.attendees_count || 0}} / {{event.max_attendees || 'Unlimited'}}
+                                        attendees</span>
                                 </div>
                                 <div class="info-item" *ngIf="event.price">
                                     <span>Price: ${{event.price}}</span>
                                 </div>
                             </div>
                             <div class="event-actions">
-                                <button class="btn-edit" (click)="editEvent(event)">
+                                <button class="btn-edit" (click)="editEvent(event)"  (click)="setActiveTab('edit')">
                                     Edit
                                 </button>
                                 <button class="btn-delete" (click)="deleteEvent(event)">
@@ -309,6 +326,18 @@
                     </button>
                 </div>
             </div>
+
+            <div class="card" *ngIf="!showCreateEventForm && activeTab === 'edit'">
+                <app-edit-event 
+                [eventId]="editEventid"
+                [eventForm]="eventForm"
+                ></app-edit-event>
+                
+            </div>
+            <div class="card" *ngIf="!showCreateEventForm && activeTab === 'delete'">
+                <app-trash-events >    </app-trash-events>
+            </div>
+
         </div>
     </div>
 </div>

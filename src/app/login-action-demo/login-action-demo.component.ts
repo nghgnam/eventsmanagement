@@ -8,14 +8,13 @@ import { User } from '../types/userstype';
 import { EventsService } from '../service/events.service';
 import { AuthService } from '../service/auth.service';
 import { getAuth } from 'firebase/auth';
-
+import { ChangeDetectorRef } from '@angular/core';
 @Component({
   selector: 'app-login-action-demo',
   standalone: true,
   imports: [FormsModule , CommonModule,RouterModule, ReactiveFormsModule],
   templateUrl: './login-action-demo.component.html',
-  styleUrls: ['./login-action-demo.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./login-action-demo.component.css']
 })
 export class LoginActionDemoComponent implements OnInit{
   email: any;
@@ -29,11 +28,13 @@ export class LoginActionDemoComponent implements OnInit{
   private unsubscribeFn: any;
 
 
+
   constructor(
     private eventsService : EventsService, 
     private authService: AuthService, 
     private router: Router,
-    private fb : FormBuilder
+    private fb : FormBuilder,
+    private cdr: ChangeDetectorRef
   ){
     this.userForm = this.fb.group({
       email: ['' , [Validators.required , Validators.email]],
@@ -76,6 +77,7 @@ export class LoginActionDemoComponent implements OnInit{
         switch (error.code) {
           case 'auth/invalid-credential':
             this.errorMessage = 'Invalid email or password. Please try again.';
+            
             break;
           case 'auth/user-not-found':
             this.errorMessage = 'No account found with this email.';
@@ -93,7 +95,9 @@ export class LoginActionDemoComponent implements OnInit{
             this.errorMessage = 'An error occurred during login. Please try again.';
         }
       }
-    });    
+    });  
+    
+    this.cdr.markForCheck();
   }
 get emailCtrl() { return this.userForm.get('email')!; }
 get passwordCtrl() { return this.userForm.get('password')!; }

@@ -173,6 +173,16 @@ input:not(:placeholder-shown) ~ .from_login_label_name {
     font-family: 'Roboto', Arial, sans-serif;
 }
 
+.error-message2 {
+    color: #FF4136; /* Màu đỏ tươi cho lỗi */
+    font-size: 12px;
+    position: relative;
+    right: 0px;
+    bottom: -16px;
+    font-family: 'Roboto', Arial, sans-serif;
+    text-align: center;
+}
+
 .invalid {
     border-color: #FF4136; /* Viền đỏ khi lỗi */
 }

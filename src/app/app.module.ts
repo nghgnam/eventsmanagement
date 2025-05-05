@@ -11,7 +11,7 @@ import { DetailEventComponent } from './body/detail-event/detail-event.component
 import { LayoutComponent } from './layout/layout.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HeaderSearchComponent } from './header/header-search/header-search.component';
-import { ManageEventsComponent } from './manage-events/manage-events.component';
+import { ManageEventsComponent } from './management-event/manage-events/manage-events.component';
 
 @NgModule({
   declarations: [

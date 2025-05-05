@@ -6,7 +6,7 @@ import { RegisterActionDemoComponent } from './register-action-demo/register-act
 import { UserInfomationComponent } from './user/user-infomation/user-infomation.component';
 import { DetailEventComponent } from './body/detail-event/detail-event.component';
 import { LayoutComponent } from './layout/layout.component';
-import { ManageEventsComponent } from './manage-events/manage-events.component';
+import { ManageEventsComponent } from './management-event/manage-events/manage-events.component';
 
 const routes: Routes = [
   {

@@ -89,7 +89,7 @@ export class AuthService {
         return throwError(() => ({ code: error.code, message: errorMessage }));
       })
     );
-  }
+  } 
 
   login(email: string, password: string): Observable<String> {
     return from(signInWithEmailAndPassword(this.auth, email, password)).pipe(
