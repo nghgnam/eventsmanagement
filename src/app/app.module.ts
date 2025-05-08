@@ -15,7 +15,6 @@ import { ManageEventsComponent } from './management-event/manage-events/manage-e
 
 @NgModule({
   declarations: [
-    // AppComponent removed from here
   ],
   imports: [
     BrowserModule,

@@ -55,7 +55,6 @@
                             <label for="fileInput" class="upload-box">
                                 <div class="upload-content">
                                     <img id="previewImage" *ngIf="sanitizeImageUrl(imageUrl) as safeUrl" [src]="safeUrl || ' https://res.cloudinary.com/dpiqldk0y/image/upload/v1743798202/users_upload/1900x1900-000000-80-0-0_cwqap8.jpg'" alt="Preview">
-                                    <img id="previewImage" *ngIf="sanitizeImageUrl(imageUrl) as safeUrl" [src]="safeUrl || ' https://res.cloudinary.com/dpiqldk0y/image/upload/v1743798202/users_upload/1900x1900-000000-80-0-0_cwqap8.jpg'" alt="Preview">
                                     <div class="upload-placeholder" *ngIf="!imageUrl">
                                         <i class="upload-icon">📷</i>
                                         <p>Choose Image</p>

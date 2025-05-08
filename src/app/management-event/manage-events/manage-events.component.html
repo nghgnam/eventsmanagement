@@ -133,7 +133,7 @@
                     <div class="form-group" *ngIf="isOffline || isHybird">
                         <label for="details_address">Address</label>
                         <div class="input-with-icon">
-                            <i class="fa-solid fa-house input-icon"></i>
+                            <span class="material-icons input-icon">home</span>
                             <input type="text" id="details_address" formControlName="details_address"
                                 [class.is-invalid]="details_address?.invalid && details_address?.touched"
                                 placeholder="Enter your details_address address">
@@ -146,7 +146,7 @@
                         <div class="form-group">
                             <label for="districts">Districts</label>
                             <div class="input-with-icon">
-                                <i class="fa-solid fa-city input-icon"></i>
+                                <span class="material-icons input-icon">location_city</span>
                                 <select id="districts" formControlName="districts"
                                     [class.is-invalid]="districts?.invalid && districts?.touched">
                                     <option [ngValue]="null">Select a district</option>
@@ -164,7 +164,7 @@
                         <div class="form-group">
                             <label for="wards">Wards</label>
                             <div class="input-with-icon">
-                                <i class="fa-solid fa-earth-asia input-icon"></i>
+                                <span class="material-icons input-icon">public</span>
                                 <select id="wards" formControlName="wards"
                                     [class.is-invalid]="wards?.invalid && wards?.touched">
                                     <option [ngValue]="null">Select a ward</option>
@@ -182,7 +182,7 @@
                         <div class="form-group">
                             <label for="country">Country</label>
                             <div class="input-with-icon">
-                                <i class="fa-solid fa-earth-asia input-icon"></i>
+                                <span class="material-icons input-icon">public</span>
                                 <select id="country" formControlName="country"
                                     [class.is-invalid]="country?.invalid && country?.touched">
                                     <option value="">Select a country</option>
@@ -199,7 +199,7 @@
                         <div class="form-group">
                             <label for="city">City</label>
                             <div class="input-with-icon">
-                                <i class="fa-solid fa-city input-icon"></i>
+                                <span class="material-icons input-icon">location_city</span>
                                 <select id="city" formControlName="city"
                                     [class.is-invalid]="city?.invalid && city?.touched">
                                     <option [ngValue]="null">Select a city</option>
@@ -293,26 +293,37 @@
                             <p class="event-description">{{event.description}}</p>
                             <div class="event-info">
                                 <div class="info-item">
+                                    <span class="material-icons">schedule</span>
                                     <span>Start: {{formatDate(event.date_time_options[0].start_time)}}</span>
                                 </div>
                                 <div class="info-item">
-                                    <span>{{event.location.type === 'online' ? 'Online Event' :
-                                        event.location.address}}</span>
+                                    <span class="material-icons">location_on</span>
+                                    <span>{{event.location.type === 'online' ? 'Online Event' : event.location.address}}</span>
                                 </div>
                                 <div class="info-item">
-                                    <span>{{event.attendees_count || 0}} / {{event.max_attendees || 'Unlimited'}}
-                                        attendees</span>
+                                    <span class="material-icons">groups</span>
+                                    <span>{{event.attendees_count || 0}} / {{event.max_attendees || 'Unlimited'}} attendees</span>
                                 </div>
                                 <div class="info-item" *ngIf="event.price">
+                                    <span class="material-icons">sell</span>
                                     <span>Price: ${{event.price}}</span>
                                 </div>
                             </div>
                             <div class="event-actions">
-                                <button class="btn-edit" (click)="editEvent(event)"  (click)="setActiveTab('edit')">
-                                    Edit
+                                <button class="btn-edit"
+                                        *ngIf="getEventStatus(event) !== 'Past'"
+                                        (click)="editEvent(event)">
+                                    <span class="material-icons">edit</span> Edit
                                 </button>
-                                <button class="btn-delete" (click)="deleteEvent(event)">
-                                    Delete
+                                <button class="btn-delete"
+                                        *ngIf="getEventStatus(event) !== 'Cancelled'"
+                                        (click)="confirmDelete(event)">
+                                    <span class="material-icons">delete</span> Delete
+                                </button>
+                                <button class="btn-restore"
+                                        *ngIf="getEventStatus(event) === 'Cancelled'"
+                                        (click)="restoreEvent(event)">
+                                    <span class="material-icons">restore</span> Restore
                                 </button>
                             </div>
                         </div>
@@ -329,13 +340,26 @@
 
             <div class="card" *ngIf="!showCreateEventForm && activeTab === 'edit'">
                 <app-edit-event 
-                [eventId]="editEventid"
-                [eventForm]="eventForm"
+                    [eventId]="editEventid"
+                    [countries]="countries"
+                    [citiesValue]="citiesValue"
+                    [districtsValue]="districtsValue"
+                    [wardsValue]="wardsValue"
                 ></app-edit-event>
-                
             </div>
             <div class="card" *ngIf="!showCreateEventForm && activeTab === 'delete'">
-                <app-trash-events >    </app-trash-events>
+                <app-trash-events (restored)="loadOrganizerEvents()"></app-trash-events>
+            </div>
+
+            <div class="delete-dialog" *ngIf="showDeleteDialog">
+                <div class="delete-dialog-content">
+                    <h3 class="delete-dialog-title">Cancel Event</h3>
+                    <p class="delete-dialog-message">Are you sure you want to cancel this event? This action can be undone later.</p>
+                    <div class="delete-dialog-actions">
+                        <button class="delete-dialog-btn cancel" (click)="cancelDelete()">Cancel</button>
+                        <button class="delete-dialog-btn confirm" (click)="deleteEvent(eventToDelete!)">Confirm</button>
+                    </div>
+                </div>
             </div>
 
         </div>

@@ -13,6 +13,10 @@ export type EventList = {
     location: {
         type: 'online' | 'offline';
         address?: string;
+        districts?: any;
+        wards?: any;
+        country?: string;
+        city?: any;
         coordinates?: {
             latitude: number;
             longitude: number;

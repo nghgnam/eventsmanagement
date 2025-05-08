@@ -1,6 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 
-export interface TicketType {
+export type TicketType = {
     user_id: string;
     event_id: string;
     status: ('active' | 'unused' | 'used' | 'canceled' | 'expired');
