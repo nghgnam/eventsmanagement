@@ -171,4 +171,12 @@ export class AuthService {
       })
     );
   }
+
+  getCurrentUser(): User | null {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      return JSON.parse(userStr);
+    }
+    return null;
+  }
 }

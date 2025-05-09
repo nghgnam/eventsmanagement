@@ -27,14 +27,6 @@
                 <i class="fa-solid fa-globe"></i>
                 <span>All Events</span>
             </button>
-            <button class="filter-select-btn" [class.active]="selectedFilter === 'free'" (click)="selectFilter('free')">
-                <i class="fa-solid fa-ticket"></i>
-                <span>Free Events</span>
-            </button>
-            <button class="filter-select-btn" [class.active]="selectedFilter === 'online'" (click)="selectFilter('online')">
-                <i class="fa-solid fa-video"></i>
-                <span>Online Events</span>
-            </button>
             <button class="filter-select-btn" [class.active]="selectedFilter === 'today'" (click)="selectFilter('today')">
                 <i class="fa-solid fa-calendar-day"></i>
                 <span>Today</span>
@@ -42,6 +34,14 @@
             <button class="filter-select-btn" [class.active]="selectedFilter === 'weekend'" (click)="selectFilter('weekend')">
                 <i class="fa-solid fa-calendar-week"></i>
                 <span>This Weekend</span>
+            </button>
+            <button class="filter-select-btn" [class.active]="selectedFilter === 'free'" (click)="selectFilter('free')">
+                <i class="fa-solid fa-ticket"></i>
+                <span>Free Events</span>
+            </button>
+            <button class="filter-select-btn" [class.active]="selectedFilter === 'online'" (click)="selectFilter('online')">
+                <i class="fa-solid fa-video"></i>
+                <span>Online Events</span>
             </button>
             <button class="filter-select-btn" [class.active]="selectedFilter === 'music'" (click)="selectFilter('music')">
                 <i class="fa-solid fa-music"></i>

@@ -29,6 +29,10 @@ export const routes: Routes = [
       {
         path: 'search-results',
         loadComponent: () => import('./search-results/search-results.component').then(m => m.SearchResultsComponent)
+      },
+      {
+        path: 'following',
+        loadComponent: () => import('./body/following-organizers/following-organizers.component').then(m => m.FollowingOrganizersComponent)
       }
     ]
   },

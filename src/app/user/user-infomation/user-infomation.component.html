@@ -11,16 +11,34 @@
             </div>
             <nav class="menu" *ngIf="currentRole === 'member'">
                 <ul>
-                    <li [class.active]="changeTab === 'tab1'" (click)="changeTabSelected('tab1')">Contact Details</li>
-                    <li [class.active]="changeTab === 'tab2'" (click)="changeTabSelected('tab2')">Password and Security</li>
-                    <li [class.active]="changeTab === 'tab3'" (click)="changeTabSelected('tab3')">Organizer</li>
+                    <li [class.active]="changeTab === 'tab1'" (click)="changeTabSelected('tab1')">
+                        <i class="fa-solid fa-user"></i>
+                        <span>Contact Details</span>
+                    </li>
+                    <li [class.active]="changeTab === 'tab2'" (click)="changeTabSelected('tab2')">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Password and Security</span>
+                    </li>
+                    <li [class.active]="changeTab === 'tab3'" (click)="changeTabSelected('tab3')">
+                        <i class="fa-solid fa-building"></i>
+                        <span>Organizer</span>
+                    </li>
                 </ul>
             </nav>
             <nav class="menu" *ngIf="currentRole === 'organizer'">
                 <ul>
-                    <li [class.active]="changeTab === 'tab1'" (click)="changeTabSelected('tab1')">Contact Details</li>
-                    <li [class.active]="changeTab === 'tab2'" (click)="changeTabSelected('tab2')">Password and Security</li>         
-                    <li [class.active]="changeTab === 'tab3'" (click)="changeTabSelected('tab3')">Organizer</li> 
+                    <li [class.active]="changeTab === 'tab1'" (click)="changeTabSelected('tab1')">
+                        <i class="fa-solid fa-user"></i>
+                        <span>Contact Details</span>
+                    </li>
+                    <li [class.active]="changeTab === 'tab2'" (click)="changeTabSelected('tab2')">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Password and Security</span>
+                    </li>         
+                    <li [class.active]="changeTab === 'tab3'" (click)="changeTabSelected('tab3')">
+                        <i class="fa-solid fa-building"></i>
+                        <span>Organizer</span>
+                    </li> 
                 </ul>
             </nav>
         </aside>
@@ -45,7 +63,7 @@
                 </div>
 
                 <div class="section-header">
-                <h3>Contact Details</h3>
+                    <h3>Contact Details</h3>
                     <p class="section-description">Update your personal information and profile picture</p>
                 </div>
 
@@ -54,7 +72,7 @@
                         <div class="upload-container">
                             <label for="fileInput" class="upload-box">
                                 <div class="upload-content">
-                                    <img id="previewImage" *ngIf="sanitizeImageUrl(imageUrl) as safeUrl" [src]="safeUrl || ' https://res.cloudinary.com/dpiqldk0y/image/upload/v1743798202/users_upload/1900x1900-000000-80-0-0_cwqap8.jpg'" alt="Preview">
+                                    <img id="previewImage" *ngIf="sanitizeImageUrl(imageUrl) as safeUrl" [src]="safeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743798202/users_upload/1900x1900-000000-80-0-0_cwqap8.jpg'" alt="Preview">
                                     <div class="upload-placeholder" *ngIf="!imageUrl">
                                         <i class="upload-icon">📷</i>
                                         <p>Choose Image</p>
@@ -68,7 +86,7 @@
 
                     <div class="info_container">
                         <div class="form-row">
-                        <div class="form-group">
+                            <div class="form-group">
                                 <label for="firstName">First Name</label>
                                 <div class="input-wrapper">
                                     <i class="fa-solid fa-user input-icon"></i>
@@ -80,9 +98,9 @@
                                     <span *ngIf="firstName?.errors?.['required']">First name is required</span>
                                     <span *ngIf="firstName?.errors?.['minlength']">First name must be at least 2 characters</span>
                                 </div>
-                        </div>
+                            </div>
 
-                        <div class="form-group">
+                            <div class="form-group">
                                 <label for="lastName">Last Name</label>
                                 <div class="input-wrapper">
                                     <i class="fa-solid fa-user input-icon"></i>
@@ -107,7 +125,7 @@
                                         <option *ngFor="let calling of getCountryCallingCodes" [value]="calling.code">
                                             {{calling.code}} - {{calling.dialCode}}
                                         </option>
-                                </select>
+                                    </select>
                                 </div>
                                 <div class="input-wrapper">
                                     <i class="fa-solid fa-phone input-icon"></i>
@@ -121,6 +139,7 @@
                                 <span *ngIf="phoneNumber?.errors?.['pattern']">Please enter a valid phone number</span>
                             </div>
                         </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="dateOfBirth">Birth</label>
@@ -132,8 +151,8 @@
                                 </div>
                                 <div class="error-message" *ngIf="dateOfBirth?.invalid && dateOfBirth?.touched">
                                     <span *ngIf="dateOfBirth?.errors?.['required']">Birth day is required</span>
+                                </div>
                             </div>
-                        </div>
 
                             <div class="form-group">
                                 <label for="email">Mail</label>
@@ -143,9 +162,9 @@
                                         [class.is-invalid]="email?.invalid && email?.touched"
                                         placeholder="Enter your mail">
                                 </div>
-                                <div class="error-message" *ngIf="lastName?.invalid && lastName?.touched">
+                                <div class="error-message" *ngIf="email?.invalid && email?.touched">
                                     <span *ngIf="email?.errors?.['required']">Email is required</span>
-                                    <span *ngIf="email?.errors?.['email']">Email incorecly </span>
+                                    <span *ngIf="email?.errors?.['email']">Email incorrectly</span>
                                 </div>
                             </div>
                         </div>
@@ -153,107 +172,64 @@
                 </div>
 
                 <div class="section-header">
-                <h3>Home Address</h3>
+                    <h3>Home Address</h3>
                     <p class="section-description">Update your current address information</p>
                 </div>
 
                 <div class="info_container">
                     <div class="form-group">
                         <label for="details_address">Address</label>
-                        <label for="details_address">Address</label>
-                        <label for="details_address">Address</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-house input-icon"></i>
                             <input type="text" id="details_address" formControlName="details_address"
                                 [class.is-invalid]="details_address?.invalid && details_address?.touched"
-                                placeholder="Enter your details address">
                                 placeholder="Enter your details address">
                         </div>
                         <div class="error-message" *ngIf="details_address?.invalid && details_address?.touched">
                             <span *ngIf="details_address?.errors?.['required']">Street address is required</span>
                         </div>
                     </div>
+
                     <div class="form-row">
-                        
-
-                        
-
                         <div class="form-group">
-                            <label for="wards">wards</label>
+                            <label for="wards">Wards</label>
                             <div class="input-wrapper">
-                                
-                                <i class="fa-solid fa-map-location input-icon"></i>
-                                < id="wards" formControlName="wards"
-                                    [class.is-invalid]="wards?.invalid && wards?.touched">
-                                    <option [ngValue]="null">Select a wards</option>
-                                    <option *ngFor="let wardsOption of wardsWithDistricts" [ngValue]="wardsOption">
-                                        {{ wardsOption.name }}
-                                    </option>
-                            <label for="wards">wards</label>
-                            <div class="input-wrapper">
-                                
                                 <i class="fa-solid fa-map-location input-icon"></i>
                                 <select id="wards" formControlName="wards"
                                     [class.is-invalid]="wards?.invalid && wards?.touched">
-                                    <option [ngValue]="null">Select a wards</option>
+                                    <option [ngValue]="null">Select a ward</option>
                                     <option *ngFor="let wardsOption of wardsWithDistricts" [ngValue]="wardsOption">
                                         {{ wardsOption.name }}
                                     </option>
                                 </select>
                             </div>
                             <div class="error-message" *ngIf="wards?.invalid && wards?.touched">
-                                <span *ngIf="wards?.errors?.['required']">wards is required</span>
+                                <span *ngIf="wards?.errors?.['required']">Ward is required</span>
                             </div>
-                            
                         </div>
+
                         <div class="form-group">
-                            <label for="districts">districts</label>
+                            <label for="districts">Districts</label>
                             <div class="input-wrapper">
                                 <i class="fa-solid fa-city input-icon"></i>
                                 <select id="districts" formControlName="districts"
                                     [class.is-invalid]="districts?.invalid && districts?.touched">
-                                    <option [ngValue]="null">Select a districts</option>
-                                    <option *ngFor="let districtsOption of districtsWithCities" [ngValue]="districtsOption">
-                                        {{ districtsOption.name }}
-                                    </option>
-                                    </select>
-                            </div>
-                            <div class="error-message" *ngIf="wards?.invalid && wards?.touched">
-                                <span *ngIf="wards?.errors?.['required']">wards is required</span>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="districts">districts</label>
-                            <div class="input-wrapper">
-                                <i class="fa-solid fa-city input-icon"></i>
-                                <select id="districts" formControlName="districts"
-                                    [class.is-invalid]="districts?.invalid && districts?.touched">
-                                    <option [ngValue]="null">Select a districts</option>
+                                    <option [ngValue]="null">Select a district</option>
                                     <option *ngFor="let districtsOption of districtsWithCities" [ngValue]="districtsOption">
                                         {{ districtsOption.name }}
                                     </option>
                                 </select>
                             </div>
                             <div class="error-message" *ngIf="districts?.invalid && districts?.touched">
-                                <span *ngIf="districts?.errors?.['required']">districts is required</span>
-                            </div>
-                        </div>
-                    </div>
-
-                            
-                            <div class="error-message" *ngIf="districts?.invalid && districts?.touched">
-                                <span *ngIf="districts?.errors?.['required']">districts is required</span>
+                                <span *ngIf="districts?.errors?.['required']">District is required</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="form-row">
-                        
-
                         <div class="form-group">
                             <label for="city">City</label>
                             <div class="input-wrapper">
-                                
                                 <i class="fa-solid fa-city input-icon"></i>
                                 <select id="city" formControlName="city"
                                     [class.is-invalid]="city?.invalid && city?.touched">
@@ -267,6 +243,7 @@
                                 <span *ngIf="city?.errors?.['required']">City is required</span>
                             </div>
                         </div>
+
                         <div class="form-group">
                             <label for="country">Country</label>
                             <div class="input-wrapper">
@@ -276,15 +253,15 @@
                                     <option value="">Select a country</option>
                                     <option *ngFor="let countryOption of countries" [value]="countryOption.name">
                                         {{ countryOption.name }}
-                              </option>
-                            </select>
+                                    </option>
+                                </select>
                             </div>
                             <div class="error-message" *ngIf="country?.invalid && country?.touched">
                                 <span *ngIf="country?.errors?.['required']">Country is required</span>
                             </div>
                         </div>
                     </div>
-                
+                </div>
 
                 <div class="form-actions">
                     <button type="submit" class="btn-primary" [disabled]="userForm.invalid || isSaving">
@@ -295,8 +272,8 @@
                     </button>
                 </div>
             </form>
-            
-            <form [formGroup]="changePasswordForm" class="card" *ngIf="changeTab=== 'tab2'">
+
+            <form [formGroup]="changePasswordForm" class="card" *ngIf="changeTab === 'tab2'">
                 <div class="alert alert-error" *ngIf="errorMessage">
                     {{ errorMessage }}
                 </div>
@@ -318,34 +295,32 @@
                         <div class="form-group">
                             <label for="changePassword">Current Password</label>
                             <div class="input-wrapper">
-                                    
-                                <i class="fa-solid fa-lock input-icon " ></i>
+                                <i class="fa-solid fa-lock input-icon"></i>
                                 <input type="password" id="changePassword" formControlName="password"
                                     [class.is-invalid]="password?.invalid && password?.touched"
                                     placeholder="Enter your current password">
                             </div>
                             <div class="error-message" *ngIf="password?.invalid && password?.touched">
-                                <span *ngIf="password?.errors?.['required']">password is required</span>
+                                <span *ngIf="password?.errors?.['required']">Password is required</span>
                             </div>
                         </div>
-                    <div class="form-group">
+
+                        <div class="form-group">
                             <label for="NewPassword">New Password</label>
                             <div class="input-wrapper">
-                                    
-                                <i class="fa-solid fa-lock input-icon " ></i>
+                                <i class="fa-solid fa-lock input-icon"></i>
                                 <input type="password" id="NewPassword" formControlName="NewPassword"
                                     [class.is-invalid]="NewPassword?.invalid && NewPassword?.touched"
                                     placeholder="Enter your new password">
                             </div>
                             <div class="error-message" *ngIf="NewPassword?.invalid && NewPassword?.touched">
                                 <span *ngIf="NewPassword?.errors?.['required']">New password is required</span>
-                                <span *ngIf="changePasswordForm.get('password')?.value === changePasswordForm.get('NewPassword')?.value ">New password does not match</span>
-                                
+                                <span *ngIf="changePasswordForm.get('password')?.value === changePasswordForm.get('NewPassword')?.value">New password must be different from current password</span>
                             </div>
                         </div>
+
                         <div class="form-actions">
                             <button type="submit" class="btn-primary" [disabled]="changePasswordForm.invalid || isSaving" (click)="updatePasswordHandler()">
-                            
                                 <span class="button-content">
                                     <i class="button-icon">{{ isSaving ? '⏳' : '💾' }}</i>
                                     {{ isSaving ? 'Saving...' : 'Change password' }}
@@ -356,88 +331,70 @@
                     <div class="security-container" style="flex: 1"></div>
                 </div>
             </form>
-            
 
-            <form [formGroup]="OrganizerForm" class="card" *ngIf="changeTab=== 'tab3'">
-                <div class="alert alert-error" *ngIf="errorMessage">
-                    {{ errorMessage }}
-                </div>
-                <div class="alert alert-success" *ngIf="successMessage">
-                    {{ successMessage }}
-                </div>
-
-                <div class="loading-spinner" *ngIf="isLoading">
-                    <div class="spinner"></div>
-                </div>
+            <form [formGroup]="OrganizerForm" class="card" *ngIf="changeTab === 'tab3'">
+                <div class="alert alert-error" *ngIf="errorMessage">{{errorMessage}}</div>
+                <div class="alert alert-success" *ngIf="successMessage">{{successMessage}}</div>
+                <div class="loading-spinner" *ngIf="isLoading"><div class="spinner"></div></div>
 
                 <div class="section-header">
                     <h3>Organizer</h3>
                     <p class="section-description">Become Organizer</p>
                 </div>
-                <div class="form-actions" style="    flex-direction: column; align-items: flex-start;">
-                    <button type="active" class="btn-primary"  (click)="onChangeType()">Become a Organizer</button>
+
+                <div class="form-actions" style="flex-direction: column; align-items: flex-start;">
+                    <button type="button" class="btn-primary" (click)="onChangeType()" *ngIf="currentUser?.type === 'member'">Become a Organizer</button>
+                    
                     <div class="active-organizer-form" *ngIf="activeOF">
                         <div class="form-group organizer-form-group">
                             <label for="companyName">Company Name</label>
                             <div class="input-wrapper">
-                                    
                                 <i class="fa-solid fa-building input-icon"></i>
-                                <input type="text" id="companyName" formControlName="companyName"
-                                    [class.is-invalid]="companyName?.invalid && companyName?.touched"
-                                    placeholder="Enter your company">
+                                <input type="text" id="companyName" formControlName="companyName" [class.is-invalid]="companyName?.invalid && companyName?.touched" placeholder="Enter your company">
                             </div>
                             <div class="error-message" *ngIf="companyName?.invalid && companyName?.touched">
-                                <span *ngIf="companyName?.errors?.['required']">company is required</span>
+                                <span *ngIf="companyName?.errors?.['required']">Company name is required</span>
                             </div>
                         </div>
+
                         <div class="form-group organizer-form-group">
                             <label for="identifier">Identifier Code</label>
                             <div class="input-wrapper">
-                                    
                                 <i class="fa-solid fa-address-card input-icon"></i>
-                                <input type="text" id="identifier" formControlName="identifier"
-                                    [class.is-invalid]="identifier?.invalid && identifier?.touched"
-                                    placeholder="Enter your Identifier code">
+                                <input type="text" id="identifier" formControlName="identifier" [class.is-invalid]="identifier?.invalid && identifier?.touched" placeholder="Enter your Identifier code">
                             </div>
                             <div class="error-message" *ngIf="identifier?.invalid && identifier?.touched">
                                 <span *ngIf="identifier?.errors?.['required']">Identifier Code is required</span>
                                 <span *ngIf="identifier?.errors?.['pattern']">Please enter a valid identifier code</span>
-
                             </div>
                         </div>
+
                         <div class="form-group organizer-form-group">
                             <label for="jobTitle">Job Title</label>
                             <div class="input-wrapper">
-                                    
                                 <i class="fa-solid fa-user-tie input-icon"></i>
-                                <input type="text" id="jobTitle" formControlName="jobTitle"
-                                    [class.is-invalid]="jobTitle?.invalid && jobTitle?.touched"
-                                    placeholder="Enter your Job title">
+                                <input type="text" id="jobTitle" formControlName="jobTitle" [class.is-invalid]="jobTitle?.invalid && jobTitle?.touched" placeholder="Enter your Job title">
                             </div>
                             <div class="error-message" *ngIf="jobTitle?.invalid && jobTitle?.touched">
                                 <span *ngIf="jobTitle?.errors?.['required']">Job title is required</span>
                             </div>
                         </div>
+
                         <div class="form-group organizer-form-group">
                             <label for="postalCode">Postal Code</label>
                             <div class="input-wrapper">
-                                    
                                 <i class="fa-brands fa-usps input-icon"></i>
-                                <input type="text" id="postalCode" formControlName="postalCode"
-                                    [class.is-invalid]="postalCode?.invalid && postalCode?.touched"
-                                    placeholder="Enter your Postal code">
+                                <input type="text" id="postalCode" formControlName="postalCode" [class.is-invalid]="postalCode?.invalid && postalCode?.touched" placeholder="Enter your Postal code">
                             </div>
                             <div class="error-message" *ngIf="postalCode?.invalid && postalCode?.touched">
-                                <span *ngIf="postalCode?.errors?.['required']">Postal is required</span>
+                                <span *ngIf="postalCode?.errors?.['required']">Postal code is required</span>
                             </div>
                         </div>
                     </div>
+
                     <div class="form-actions" *ngIf="activeOF">
-                        
-                        <button type="submit" class="btn-primary"  (click)="activeOrganizer()" [disabled]="OrganizerForm.invalid || isSaving">
-                            <span class="button-content">
-                                Active organizer
-                            </span>
+                        <button type="submit" class="btn-primary" (click)="activeOrganizer()" [disabled]="OrganizerForm.invalid || isSaving">
+                            <span class="button-content">Active organizer</span>
                         </button>
                     </div>
                 </div>

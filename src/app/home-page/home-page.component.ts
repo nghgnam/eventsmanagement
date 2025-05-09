@@ -1,6 +1,5 @@
 // home-page.component.ts
 import { Component, OnInit } from '@angular/core';
-import { HeaderPageComponent } from '../header/header-page/header-page.component';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { BodyPageComponent } from '../body/body-page/body-page.component';
 import { SharedService } from '../service/shared.service';
@@ -10,7 +9,7 @@ import { FooterPageComponent } from '../footer-page/footer-page.component';
 @Component({
   selector: 'app-home-page',
   standalone: true,
-  imports: [HeaderPageComponent, RouterModule, BodyPageComponent, CommonModule, FooterPageComponent],
+  imports: [RouterModule, BodyPageComponent, CommonModule, FooterPageComponent],
   templateUrl: './home-page.component.html',
   styleUrls: ['./home-page.component.css']
 })

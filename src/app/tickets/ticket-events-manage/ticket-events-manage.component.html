@@ -2,11 +2,11 @@
     <div class="container">
         <aside class="sidebar">
             <h2 class="logo">nhnam</h2>
-            <div class="user-info">
-                <img *ngIf="getSafeUrl(user?.profileImage) as safeUrl" [src]="safeUrl" alt="User Avatar" class="avatar">
+            <div class="user-info" *ngIf="user">
+                <img *ngIf="getSafeUrl(user.profileImage) as safeUrl" [src]="safeUrl" alt="User Avatar" class="avatar">
                 <div>
-                    <p class="username">{{user?.fullName}}</p>
-                    <p class="role">{{user?.type}}</p>
+                    <p class="username">{{user.fullName}}</p>
+                    <p class="role">{{user.type}}</p>
                 </div>
             </div>
             <nav class="menu">
@@ -16,66 +16,66 @@
                     <li [class.active]="changeTab === 'tab3'" (click)="changeTabSelected('tab3')">Used Tickets</li>
                     <li [class.active]="changeTab === 'tab4'" (click)="changeTabSelected('tab4')">Expired Tickets</li>
                     <li [class.active]="changeTab === 'tab5'" (click)="changeTabSelected('tab5')">Cancelled Tickets</li>
-
                 </ul>
             </nav>
-            
         </aside>
 
         <main class="main-content">
-            <!-- <header class="header">
-                <h2>Tickets</h2>
-            </header> -->
+            <div *ngIf="isLoading" class="loading">
+                <p>Loading your tickets...</p>
+            </div>
 
-            <div class="tab-content">
+            <div *ngIf="error" class="error">
+                <p>{{error}}</p>
+            </div>
+
+            <div class="tab-content" *ngIf="!isLoading && !error">
                 <div class="card" *ngIf="changeTab === 'tab1'" @tabAnimation>
                     <app-tab-content-tickets 
-                    [dataEvent]="eventUpcoming"
-                    [mode]="'single'"
-                    [dataTicket]="ticket"
-                    sectionHeader="Active Tickets"
-                    subsectionHeader="These are the tickets you have purchased and are currently active.">
+                        [dataEvent]="eventUpcoming"
+                        [mode]="'single'"
+                        [dataTicket]="ticket"
+                        sectionHeader="Active Tickets"
+                        subsectionHeader="These are the tickets you have purchased and are currently active.">
                     </app-tab-content-tickets>
                 </div>
                 <div class="card" *ngIf="changeTab === 'tab2'" @tabAnimation>
                     <app-tab-content-tickets 
-                    [dataEvent]="{valid: eventUnpaidValid, expired: eventUnpaidExpired}"
-                    [mode]="'multiple'"
-                    [dataTicket]="ticket"
-                    sectionHeader="Unpaid Tickets"
-                    subsectionHeader="These are the tickets you have purchased but have not yet paid for.">
+                        [dataEvent]="{valid: eventUnpaidValid, expired: eventUnpaidExpired}"
+                        [mode]="'multiple'"
+                        [dataTicket]="ticket"
+                        sectionHeader="Unpaid Tickets"
+                        subsectionHeader="These are the tickets you have purchased but have not yet paid for.">
                     </app-tab-content-tickets>
                 </div>
                 <div class="card" *ngIf="changeTab === 'tab3'" @tabAnimation>
                     <app-tab-content-tickets 
-                    [dataEvent]="eventUsed"
-                    [mode]="'single'"
-                    [dataTicket]="ticket"
-                    sectionHeader="Used Tickets"
-                    subsectionHeader="These are the tickets you have purchased and have already used.">
+                        [dataEvent]="eventUsed"
+                        [mode]="'single'"
+                        [dataTicket]="ticket"
+                        sectionHeader="Used Tickets"
+                        subsectionHeader="These are the tickets you have purchased and have already used.">
                     </app-tab-content-tickets>
                 </div>
                 <div class="card" *ngIf="changeTab === 'tab4'" @tabAnimation>
                     <app-tab-content-tickets 
-                    [dataEvent]="eventPart" 
-                    [mode]="'single'"
-                    [dataTicket]="ticket"
-                    sectionHeader="Expired Tickets"
-                    subsectionHeader="These are the tickets you have purchased but are no longer valid.">
+                        [dataEvent]="eventPart" 
+                        [mode]="'single'"
+                        [dataTicket]="ticket"
+                        sectionHeader="Expired Tickets"
+                        subsectionHeader="These are the tickets you have purchased but are no longer valid.">
                     </app-tab-content-tickets>
                 </div>
                 <div class="card" *ngIf="changeTab === 'tab5'" @tabAnimation>
                     <app-tab-content-tickets 
-                    [dataEvent]="eventCancel" 
-                    [mode]="'single'"
-                    [dataTicket]="ticket"
-                    sectionHeader="Cancelled Tickets"
-                    subsectionHeader="These are the tickets you have purchased but have been cancelled.">
+                        [dataEvent]="eventCancel" 
+                        [mode]="'single'"
+                        [dataTicket]="ticket"
+                        sectionHeader="Cancelled Tickets"
+                        subsectionHeader="These are the tickets you have purchased but have been cancelled.">
                     </app-tab-content-tickets>
                 </div>
             </div>
-            
-            
         </main>
     </div>
 </div>
