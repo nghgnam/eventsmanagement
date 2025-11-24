@@ -94,7 +94,6 @@ export class AuthService {
   login(email: string, password: string): Observable<String> {
     return from(signInWithEmailAndPassword(this.auth, email, password)).pipe(
       switchMap((userCredential: UserCredential) => {
-        console.log(userCredential.user);
         return from(userCredential.user.getIdToken());
       }),
       catchError(error => {

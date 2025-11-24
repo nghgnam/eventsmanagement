@@ -37,8 +37,8 @@
                 <button class="create-event-btn" (click)="toggleCreateEventForm()">
                     Create New Event
                 </button>
-            </div>
-
+                </div>
+    
             <!-- Alert Messages -->
             @if (errorMessage) {
               <div class="alert alert-error">
@@ -118,7 +118,7 @@
                             }
                         </div>
                     </div>
-
+                    
                     <div class="form-row">
                         <div class="form-group">
                             <label for="location">Location *</label>
@@ -147,15 +147,96 @@
                             }
                         </div>
                     </div>
+                    <div class="form-group" *ngIf="isOffline || isHybird">
+                        <label for="details_address">Address</label>
+                        <div class="input-with-icon">
+                            <i class="fa-solid fa-house input-icon"></i>
+                            <input type="text" id="details_address" formControlName="details_address"
+                                [class.is-invalid]="details_address?.invalid && details_address?.touched"
+                                placeholder="Enter your details_address address">
+                        </div>
+                        <div class="error-message" *ngIf="details_address?.invalid && details_address?.touched">
+                            <span *ngIf="details_address?.errors?.['required']">Street address is required</span>
+                        </div>
+                    </div>
+                    <div class="form-row" *ngIf="isOffline || isHybird">
+                            <div class="form-group">
+                                <label for="districts">Districts</label>
+                                <div class="input-with-icon">
+                                    <i class="fa-solid fa-city input-icon"></i>
+                                    <select id="districts" formControlName="districts"
+                                        [class.is-invalid]="districts?.invalid && districts?.touched">
+                                        <option [ngValue]="null">Select a district</option>
+                                        <option *ngFor="let districtOption of districtsWithCities" [ngValue]="districtOption">
+                                            {{ districtOption.name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="error-message" *ngIf="districts?.invalid && districts?.touched">
+                                    <span *ngIf="districts?.errors?.['required']">District is required</span>
+                                </div>
+                            </div>
 
+                            <div class="form-group">
+                                <label for="wards">Wards</label>
+                                <div class="input-with-icon">
+                                    <i class="fa-solid fa-earth-asia input-icon"></i>
+                                    <select id="wards" formControlName="wards"
+                                        [class.is-invalid]="wards?.invalid && wards?.touched">
+                                        <option [ngValue]="null">Select a ward</option>
+                                        <option *ngFor="let wardOption of wardsWithDistricts" [ngValue]="wardOption">
+                                            {{ wardOption.name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="error-message" *ngIf="wards?.invalid && wards?.touched">
+                                    <span *ngIf="wards?.errors?.['required']">Ward is required</span>
+                                </div>
+                            </div>
+                        </div>
+                    <div class="form-row" *ngIf="isOffline || isHybird">
+                            <div class="form-group">
+                            <label for="country">Country</label>
+                            <div class="input-with-icon">
+                                <i class="fa-solid fa-earth-asia input-icon"></i>
+                                <select id="country" formControlName="country"
+                                    [class.is-invalid]="country?.invalid && country?.touched">
+                                    <option value="">Select a country</option>
+                                    <option *ngFor="let countryOption of countries" [value]="countryOption.name">
+                                        {{ countryOption.name }}
+                              </option>
+                            </select>
+                            </div>
+                            <div class="error-message" *ngIf="country?.invalid && country?.touched">
+                                <span *ngIf="country?.errors?.['required']">Country is required</span>
+                            </div>
+                        </div>
+
+                            <div class="form-group">
+                            <label for="city">City</label>
+                            <div class="input-with-icon">
+                                <i class="fa-solid fa-city input-icon"></i>
+                                <select id="city" formControlName="city"
+                                    [class.is-invalid]="city?.invalid && city?.touched">
+                                    <option [ngValue]="null">Select a city</option>
+                                    <option *ngFor="let cityOption of citiesValue" [ngValue]="cityOption">
+                                        {{ cityOption.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="error-message" *ngIf="city?.invalid && city?.touched">
+                                <span *ngIf="city?.errors?.['required']">City is required</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="form-row">
-                        <div class="form-group">
+                            <div class="form-group">
                             <label for="price">Price</label>
                             <div class="input-with-icon">
                                 <input type="number" id="price" formControlName="price" min="0" step="0.01">
                             </div>
-                        </div>
-                        <div class="form-group">
+                            </div>
+                            <div class="form-group">
                             <label for="maxAttendees">Max Attendees</label>
                             <div class="input-with-icon">
                                 <input type="number" id="maxAttendees" formControlName="maxAttendees" min="1">
@@ -164,13 +245,13 @@
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group">
+                            <div class="form-group">
                             <label for="tags">Tags (comma separated)</label>
                             <div class="input-with-icon">
                                 <input type="text" id="tags" formControlName="tags" placeholder="e.g., Business, Technology">
                             </div>
-                        </div>
-                        <div class="form-group">
+                            </div>
+                            <div class="form-group">
                             <label for="image">Event Image</label>
                             <div class="image-upload-container">
                                 @if (imagePreviewUrl) {

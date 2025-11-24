@@ -3,16 +3,16 @@
 
         <div class="header_navbar_login_user " >
             <div class="header_navbar_login_user_icon">
-                <img *ngIf="sanitizeImageUrl(userCurrentImage) as safeUrl" [src]="safeUrl" [src]="safeUrl || 'assets/images/Sample_User_Icon.png'" alt="" style="    height: 36px; width: 36px;     border-radius: 50%;">
+                <img *ngIf="sanitizeImageUrl(userCurrentImage) as safeUrl" [src]="safeUrl" [src]="safeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'" alt="" style="    height: 36px; width: 36px;     border-radius: 50%;">
             </div>
-            <p class="header_navbar_login_user_name">{{userCurrentname || 'Guest'}}</p>
+            <p class="header_navbar_login_user_name">{{userCurrentname || userCurrentEmail}}</p>
         </div>
         <div class="user_dropdown_menu"  [ngClass]="{'show_dropdown_menu' : isDropdownOpen , 'hidden' : !isDropdownOpen}" (mouseleave)="showDropdown($event)">
             <div class="options_menu border_line" (click)="goToManageEvent()">Manage Events</div>
-            <div class="options_menu">Tickets</div>
+            <div class="options_menu" (click)="goToTicketsManage()">Tickets</div>
             <div class="options_menu">Following</div>
             <div class="options_menu border_line" (click)="goToAccountSetting()">Account settings</div>
-            <a class="header_navbar_logout" (click)="onSignOut()">
+            <a class="header_navbar_logout" (click)="onSignOut()"> 
                 LOGOUT
                 <i class="fa-solid fa-right-from-bracket header_navbar_logout_icon"></i>
             </a>

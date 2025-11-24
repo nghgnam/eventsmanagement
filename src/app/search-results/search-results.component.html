@@ -1,10 +1,9 @@
 <div class="page-container">
-    <!-- Breadcrumb -->
-    <div class="breadcrumb">
-      <a routerLink="/home">Home</a>
-      <span class="separator">/</span>
-      <span class="current">Search Results</span>
-    </div>
+  <div class="breadcrumb">
+    <a routerLink="/home">Home</a>
+    <span class="separator">/</span>
+    <span class="current">Search Results</span>
+  </div>
 
     <!-- Page header with modern design -->
     <div class="page-header">
@@ -28,7 +27,7 @@
           </button>
           @if (activeFilters > 0) {
             <button class="action-button" (click)="resetFilters()">
-            <i class="material-icons">clear_all</i>
+              <i class="material-icons">clear_all</i>
               Clear All
             </button>
           }
@@ -210,15 +209,20 @@
         }
       </div>
 
-      <!-- Right Sidebar - Map Preview -->
+      <!-- Right Sidebar - Map -->
       <div class="map-sidebar">
         <div class="map-container">
           <div class="map-header">
-            <h3>Event Locations</h3>
-            <button class="view-map-btn" (click)="openFullMap()">
-              <span class="material-icons">fullscreen</span>
-              View Full Map
-            </button>
+            <div class="map-actions">
+              <button class="location-btn" (click)="getUserLocation()" [disabled]="isLocating">
+                <span class="material-icons">{{ isLocating ? 'hourglass_empty' : 'my_location' }}</span>
+                {{ isLocating ? 'Locating...' : 'My Location' }}
+              </button>
+              <button class="view-map-btn" (click)="openFullMap()">
+                <span class="material-icons">fullscreen</span>
+                View Full Map
+              </button>
+            </div>
           </div>
           <div class="map-content">
             <div id="mapContainer" #mapContainer></div>
@@ -264,11 +268,10 @@
     </div>
   }
 
-  <!-- Info Window Template -->
-  <ng-template #infoWindowTemplate>
-    <div class="info-window">
-      <h4>{{selectedEvent?.name}}</h4>
-      <p>{{selectedEvent?.location?.address}}</p>
-      <button (click)="viewEventDetails(selectedEvent?.id)">View Details</button>
-    </div>
-  </ng-template>
+<ng-template #infoWindowTemplate>
+  <div class="info-window">
+    <h4>{{selectedEvent?.name}}</h4>
+    <p>{{selectedEvent?.location?.address}}</p>
+    <button (click)="viewEventDetails(selectedEvent?.id)">View Details</button>
+  </div>
+</ng-template>

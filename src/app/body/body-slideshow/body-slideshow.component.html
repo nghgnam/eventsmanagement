@@ -1,18 +1,40 @@
-<div class="slideShowContainer">
-  <div class="slideshow-header">
-    <h2>Featured Events</h2>
-    <p>Discover the most exciting blood donation events happening near you</p>
+<div class="slideshow-section">
+  <div class="slideshow-container">
+    <div class="slideshow-header">
+      <h2>Featured Events</h2>
+      <p>Discover exciting blood donation events happening near you</p>
+    </div>
+    
+    <div class="slideshow-wrapper">
+      <div class="custom-slider" (mouseenter)="onMouseEnter()" (mouseleave)="onMouseLeave()">
+        <!-- Main slide -->
+        <div class="slide-container" #slideContainer>
+          <div class="slide" [style.background-image]="'url(' + slides[currentSlideIndex].image + ')'">
+            <div class="slide-content">
+              <h3>{{ slides[currentSlideIndex].title }}</h3>
+              <p>{{ slides[currentSlideIndex].description }}</p>
+            </div>
+          </div>
+          
+          <!-- Navigation arrows -->
+          <button class="slider-nav prev" (click)="prevSlide(); onSlideInteraction()">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <button class="slider-nav next" (click)="nextSlide(); onSlideInteraction()">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          
+          <!-- Slide indicators -->
+          <div class="slide-indicators">
+            <span 
+              *ngFor="let slide of slides; let i = index" 
+              class="indicator" 
+              [class.active]="i === currentSlideIndex"
+              (click)="goToSlide(i); onSlideInteraction()">
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  
-  <ng-image-slider #nav
-    [images]="imageObject"
-    [imageSize]="{ width: '1270px', height: '508px' }"
-    [infinite]="true"
-    [autoSlide]="5"
-    [showArrow]="true"
-    [slideImage]="1"
-    [imagePopup]="true"
-    [animationSpeed]="1"
-  > 
-  </ng-image-slider>
 </div>

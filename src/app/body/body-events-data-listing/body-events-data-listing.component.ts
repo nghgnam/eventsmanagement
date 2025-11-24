@@ -5,7 +5,8 @@ import { EventList } from '../../types/eventstype';
 import { map, Observable, Subscription } from 'rxjs';
 import { Router } from '@angular/router'; 
 import { RouterModule } from '@angular/router';
-
+import { SafeUrlService } from '../../service/santizer.service';
+import { SafeUrl } from '@angular/platform-browser';
 @Component({
   selector: 'app-body-events-data-listing',
   standalone: true,
@@ -24,7 +25,7 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy , OnCha
   isLoading = true;
   private subscription: Subscription = new Subscription();
 
-  constructor(private eventsService: EventsService, private router: Router) {
+  constructor(private eventsService: EventsService, private router: Router, private sanitizer: SafeUrlService) {
     this.events$ = this.eventsService.events$;
   }
   ngOnChanges(changes: SimpleChanges): void {
@@ -46,6 +47,12 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy , OnCha
       this.displayedEvents = this.showAll ? this.filteredEvents : this.filteredEvents.slice(0, 8)
     })
     this.subscription.add(sub)
+  }
+
+  getSafeUrl(url: string | undefined): SafeUrl| undefined{
+    
+    return this.sanitizer.sanitizeImageUrl(url);
+
   }
 
 
@@ -86,6 +93,16 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy , OnCha
     return this.events$.pipe(
       map(events => this.getFilteredEvents(events).length > 8 && !this.showAll)
     );
+  }
+
+  toggleLike(event: any){
+    event.isLiked =! event.isLiked;
+    event.likeCount += event.isLiked ? 1 : -1;
+
+    this.eventsService.updateeventLikes(event.id, event.isLiked).subscribe({
+      next: () => console.log('Like status updated scuccessfully!'),
+      error: (error: any) => console.error('Error updating like status:', error)
+     })
   }
 
 

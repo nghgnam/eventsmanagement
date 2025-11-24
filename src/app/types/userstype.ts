@@ -12,7 +12,9 @@ export interface BaseUser {
   age: number;
   dateOfBirth: Timestamp;
   address: {
-    street: string;
+    details_address: string;
+    wards: string;
+    districts: string;
     city: string;
     country: string;
   };

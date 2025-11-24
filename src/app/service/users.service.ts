@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { Firestore, collection, doc, getDoc, getDocs, onSnapshot, updateDoc } from "@angular/fire/firestore";
+import { Firestore, collection, doc, getDoc, getDocs, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "@angular/fire/firestore";
 import { BehaviorSubject, Observable, from, map } from "rxjs";
 import { User } from "../types/userstype";
 
@@ -61,4 +61,6 @@ export class UsersService{
             updatedAt: new Date()
         }));
     }
+
+
 }

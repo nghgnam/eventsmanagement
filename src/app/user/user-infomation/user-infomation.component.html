@@ -207,24 +207,46 @@
 
                 <div class="info_container">
                     <div class="form-group">
-                        <label for="street">Address</label>
+                        <label for="details_address">Address</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-house input-icon"></i>
-                            <input type="text" id="street" formControlName="street"
-                                [class.is-invalid]="street?.invalid && street?.touched"
-                                placeholder="Enter your street address">
+                            <input type="text" id="details_address" formControlName="details_address"
+                                [class.is-invalid]="details_address?.invalid && details_address?.touched"
+                                placeholder="Enter your details address">
                         </div>
-                        @if (street?.invalid && street?.touched) {
+                        @if (details_address?.invalid && details_address?.touched) {
                           <div class="error-message">
-                            @if (street?.errors?.['required']) {
-                              <span>Street address is required</span>
+                            @if (details_address?.errors?.['required']) {
+                              <span>Address is required</span>
                             }
                           </div>
                         }
                     </div>
 
                     <div class="form-row">
-                    <div class="form-group">
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-city input-icon"></i>
+                                <select id="city" formControlName="city"
+                                    [class.is-invalid]="city?.invalid && city?.touched">
+                                    <option value="">Select a city</option>
+                                    @for (cityOption of citiesValue; track cityOption.code) {
+                                      <option [ngValue]="cityOption">
+                                        {{ cityOption.name }}
+                                      </option>
+                                    }
+                                </select>
+                            </div>
+                            @if (city?.invalid && city?.touched) {
+                              <div class="error-message">
+                                @if (city?.errors?.['required']) {
+                                  <span>City is required</span>
+                                }
+                              </div>
+                            }
+                        </div>
+                        <div class="form-group">
                             <label for="country">Country</label>
                             <div class="input-wrapper">
                                 <i class="fa-solid fa-earth-asia input-icon"></i>
@@ -236,30 +258,12 @@
                                         {{ countryOption.name }}
                                       </option>
                                     }
-                            </select>
+                                </select>
                             </div>
                             @if (country?.invalid && country?.touched) {
                               <div class="error-message">
                                 @if (country?.errors?.['required']) {
                                   <span>Country is required</span>
-                                }
-                              </div>
-                            }
-                        </div>
-
-                        <div class="form-group">
-                            <label for="city">City</label>
-                            <div class="input-wrapper">
-                                
-                                <i class="fa-solid fa-city input-icon"></i>
-                                <input type="text" id="city" formControlName="city"
-                                    [class.is-invalid]="city?.invalid && city?.touched"
-                                    placeholder="Enter your city">
-                            </div>
-                            @if (city?.invalid && city?.touched) {
-                              <div class="error-message">
-                                @if (city?.errors?.['required']) {
-                                  <span>City is required</span>
                                 }
                               </div>
                             }
@@ -278,7 +282,7 @@
               </form>
             }
             @if (changeTab === 'tab2') {
-              <form [formGroup]="userForm" class="card">
+              <form [formGroup]="changePasswordForm" class="card">
                 @if (errorMessage) {
                   <div class="alert alert-error">
                     {{ errorMessage }}
@@ -300,14 +304,12 @@
                     <h3>Password and Security</h3>
                     <p class="section-description">Update your Security</p>
                 </div>
-
                 <div class="password-security-setting">
                     <div style="flex: 1; margin-right: 200px">
                         <div class="form-group">
                             <label for="changePassword">Current Password</label>
                             <div class="input-wrapper">
-                                    
-                                <i class="fa-solid fa-lock input-icon " ></i>
+                                <i class="fa-solid fa-lock input-icon"></i>
                                 <input type="password" id="changePassword" formControlName="password"
                                     [class.is-invalid]="password?.invalid && password?.touched"
                                     placeholder="Enter your current password">
@@ -315,16 +317,15 @@
                             @if (password?.invalid && password?.touched) {
                               <div class="error-message">
                                 @if (password?.errors?.['required']) {
-                                  <span>password is required</span>
+                                  <span>Password is required</span>
                                 }
                               </div>
                             }
                         </div>
-                    <div class="form-group">
+                        <div class="form-group">
                             <label for="NewPassword">New Password</label>
                             <div class="input-wrapper">
-                                    
-                                <i class="fa-solid fa-lock input-icon " ></i>
+                                <i class="fa-solid fa-lock input-icon"></i>
                                 <input type="password" id="NewPassword" formControlName="NewPassword"
                                     [class.is-invalid]="NewPassword?.invalid && NewPassword?.touched"
                                     placeholder="Enter your new password">
@@ -334,14 +335,14 @@
                                 @if (NewPassword?.errors?.['required']) {
                                   <span>New password is required</span>
                                 }
-                                @if (userForm.get('password')?.value === userForm.get('NewPassword')?.value) {
-                                  <span>New password does not match</span>
+                                @if (NewPassword?.errors?.['minlength']) {
+                                  <span>New password must be at least 6 characters</span>
                                 }
                               </div>
                             }
                         </div>
                         <div class="form-actions">
-                            <button type="submit" class="btn-primary" [disabled]="userForm.invalid || isSaving" (click)="updatePasswordHandler()">
+                            <button type="submit" class="btn-primary" [disabled]="changePasswordForm.invalid || isSaving" (click)="updatePasswordHandler()">
                                 <span class="button-content">
                                     <i class="button-icon">{{ isSaving ? '⏳' : '💾' }}</i>
                                     {{ isSaving ? 'Saving...' : 'Change password' }}
@@ -349,13 +350,13 @@
                             </button>
                         </div>
                     </div>
-                    <div class="security-container" style="flex: 1">                    </div>
+                    <div class="security-container" style="flex: 1"></div>
                 </div>
               </form>
             }
             
             @if (changeTab === 'tab3') {
-              <form [formGroup]="userForm" class="card">
+              <form [formGroup]="OrganizerForm" class="card">
                 @if (errorMessage) {
                   <div class="alert alert-error">
                     {{ errorMessage }}
@@ -377,14 +378,13 @@
                     <h3>Organizer</h3>
                     <p class="section-description">Become Organizer</p>
                 </div>
-                <div class="form-actions" style="    flex-direction: column; align-items: flex-start;">
-                    <button type="active" class="btn-primary"  (click)="onChangeType()">Become a Organizer</button>
+                <div class="form-actions" style="flex-direction: column; align-items: flex-start;">
+                    <button type="button" class="btn-primary" (click)="onChangeType()">Become a Organizer</button>
                     @if (activeOF) {
                       <div class="active-organizer-form">
                         <div class="form-group organizer-form-group">
                             <label for="companyName">Company Name</label>
                             <div class="input-wrapper">
-                                    
                                 <i class="fa-solid fa-building input-icon"></i>
                                 <input type="text" id="companyName" formControlName="companyName"
                                     [class.is-invalid]="companyName?.invalid && companyName?.touched"
@@ -393,7 +393,7 @@
                             @if (companyName?.invalid && companyName?.touched) {
                               <div class="error-message">
                                 @if (companyName?.errors?.['required']) {
-                                  <span>company is required</span>
+                                  <span>Company name is required</span>
                                 }
                               </div>
                             }
@@ -401,7 +401,6 @@
                         <div class="form-group organizer-form-group">
                             <label for="identifier">Identifier Code</label>
                             <div class="input-wrapper">
-                                    
                                 <i class="fa-solid fa-address-card input-icon"></i>
                                 <input type="text" id="identifier" formControlName="identifier"
                                     [class.is-invalid]="identifier?.invalid && identifier?.touched"
@@ -413,7 +412,7 @@
                                   <span>Identifier Code is required</span>
                                 }
                                 @if (identifier?.errors?.['pattern']) {
-                                  <span>Please enter a valid identifier code</span>
+                                  <span>Please enter a valid identifier code (12 digits)</span>
                                 }
                               </div>
                             }
@@ -421,7 +420,6 @@
                         <div class="form-group organizer-form-group">
                             <label for="jobTitle">Job Title</label>
                             <div class="input-wrapper">
-                                    
                                 <i class="fa-solid fa-user-tie input-icon"></i>
                                 <input type="text" id="jobTitle" formControlName="jobTitle"
                                     [class.is-invalid]="jobTitle?.invalid && jobTitle?.touched"
@@ -438,7 +436,6 @@
                         <div class="form-group organizer-form-group">
                             <label for="postalCode">Postal Code</label>
                             <div class="input-wrapper">
-                                    
                                 <i class="fa-brands fa-usps input-icon"></i>
                                 <input type="text" id="postalCode" formControlName="postalCode"
                                     [class.is-invalid]="postalCode?.invalid && postalCode?.touched"
@@ -447,16 +444,14 @@
                             @if (postalCode?.invalid && postalCode?.touched) {
                               <div class="error-message">
                                 @if (postalCode?.errors?.['required']) {
-                                  <span>Postal is required</span>
+                                  <span>Postal code is required</span>
                                 }
                               </div>
                             }
                         </div>
                       </div>
-                    }
-                    @if (activeOF) {
                       <div class="form-actions">
-                        <button type="submit" class="btn-primary"  (click)="activeOrganizer()">
+                        <button type="submit" class="btn-primary" (click)="activeOrganizer()" [disabled]="OrganizerForm.invalid || isSaving">
                             <span class="button-content">
                                 Active organizer
                             </span>
