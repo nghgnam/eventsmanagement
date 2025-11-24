@@ -20,25 +20,29 @@
                     <li [class.active]="activeTab === 'past'" (click)="setActiveTab('past')">
                         <span>Past Events</span>
                     </li>
-                    <!-- <li (click)="toggleCreateEventForm()">
-                        <span>Create New Event</span>
-                    </li> -->
+
+                    <li [class.active]="activeTab === 'delete'" (click)="setActiveTab('delete')" >
+                        <span>Cancelled Events</span>
+                    </li>
                 </ul>
             </div>
         </div>
 
         <!-- Main Content -->
         <div class="main-content">
+
+            
+
             <!-- Header -->
             <div class="header">
                 <h2>
                     {{activeTab === 'upcoming' ? 'Upcoming Events' : 'Past Events'}}
                 </h2>
-                <button class="create-event-btn" (click)="toggleCreateEventForm()">
+                <button class="create-event-btn" (click)="toggleCreateEventForm()" >
                     Create New Event
                 </button>
-                </div>
-    
+            </div>
+
             <!-- Alert Messages -->
             @if (errorMessage) {
               <div class="alert alert-error">
@@ -79,7 +83,8 @@
                         <div class="form-group">
                             <label for="description">Description *</label>
                             <div class="input-with-icon">
-                                <textarea id="description" formControlName="description" placeholder="Enter event description"></textarea>
+                                <textarea id="description" formControlName="description"
+                                    placeholder="Enter event description"></textarea>
                             </div>
                             @if (eventForm.get('description')?.touched && eventForm.get('description')?.errors?.['required']) {
                               <div class="error-message">
@@ -118,7 +123,7 @@
                             }
                         </div>
                     </div>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="location">Location *</label>
@@ -147,96 +152,126 @@
                             }
                         </div>
                     </div>
-                    <div class="form-group" *ngIf="isOffline || isHybird">
+                    @if (isOffline || isHybird) {
+                      <div class="form-group">
                         <label for="details_address">Address</label>
                         <div class="input-with-icon">
-                            <i class="fa-solid fa-house input-icon"></i>
-                            <input type="text" id="details_address" formControlName="details_address"
-                                [class.is-invalid]="details_address?.invalid && details_address?.touched"
-                                placeholder="Enter your details_address address">
+                          <span class="material-icons input-icon">home</span>
+                          <input type="text" id="details_address" formControlName="details_address"
+                              [class.is-invalid]="details_address?.invalid && details_address?.touched"
+                              placeholder="Enter your details_address address">
                         </div>
-                        <div class="error-message" *ngIf="details_address?.invalid && details_address?.touched">
-                            <span *ngIf="details_address?.errors?.['required']">Street address is required</span>
-                        </div>
-                    </div>
-                    <div class="form-row" *ngIf="isOffline || isHybird">
-                            <div class="form-group">
-                                <label for="districts">Districts</label>
-                                <div class="input-with-icon">
-                                    <i class="fa-solid fa-city input-icon"></i>
-                                    <select id="districts" formControlName="districts"
-                                        [class.is-invalid]="districts?.invalid && districts?.touched">
-                                        <option [ngValue]="null">Select a district</option>
-                                        <option *ngFor="let districtOption of districtsWithCities" [ngValue]="districtOption">
-                                            {{ districtOption.name }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="error-message" *ngIf="districts?.invalid && districts?.touched">
-                                    <span *ngIf="districts?.errors?.['required']">District is required</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="wards">Wards</label>
-                                <div class="input-with-icon">
-                                    <i class="fa-solid fa-earth-asia input-icon"></i>
-                                    <select id="wards" formControlName="wards"
-                                        [class.is-invalid]="wards?.invalid && wards?.touched">
-                                        <option [ngValue]="null">Select a ward</option>
-                                        <option *ngFor="let wardOption of wardsWithDistricts" [ngValue]="wardOption">
-                                            {{ wardOption.name }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="error-message" *ngIf="wards?.invalid && wards?.touched">
-                                    <span *ngIf="wards?.errors?.['required']">Ward is required</span>
-                                </div>
-                            </div>
-                        </div>
-                    <div class="form-row" *ngIf="isOffline || isHybird">
-                            <div class="form-group">
-                            <label for="country">Country</label>
-                            <div class="input-with-icon">
-                                <i class="fa-solid fa-earth-asia input-icon"></i>
-                                <select id="country" formControlName="country"
-                                    [class.is-invalid]="country?.invalid && country?.touched">
-                                    <option value="">Select a country</option>
-                                    <option *ngFor="let countryOption of countries" [value]="countryOption.name">
-                                        {{ countryOption.name }}
-                              </option>
+                        @if (details_address?.invalid && details_address?.touched) {
+                          <div class="error-message">
+                            @if (details_address?.errors?.['required']) {
+                              <span>Street address is required</span>
+                            }
+                          </div>
+                        }
+                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label for="districts">Districts</label>
+                          <div class="input-with-icon">
+                            <span class="material-icons input-icon">location_city</span>
+                            <select id="districts" formControlName="districts"
+                                [class.is-invalid]="districts?.invalid && districts?.touched">
+                              <option [ngValue]="null">Select a district</option>
+                              @for (districtOption of districtsWithCities; track districtOption.code) {
+                                <option [ngValue]="districtOption">
+                                  {{ districtOption.name }}
+                                </option>
+                              }
                             </select>
+                          </div>
+                          @if (districts?.invalid && districts?.touched) {
+                            <div class="error-message">
+                              @if (districts?.errors?.['required']) {
+                                <span>District is required</span>
+                              }
                             </div>
-                            <div class="error-message" *ngIf="country?.invalid && country?.touched">
-                                <span *ngIf="country?.errors?.['required']">Country is required</span>
-                            </div>
+                          }
                         </div>
 
-                            <div class="form-group">
-                            <label for="city">City</label>
-                            <div class="input-with-icon">
-                                <i class="fa-solid fa-city input-icon"></i>
-                                <select id="city" formControlName="city"
-                                    [class.is-invalid]="city?.invalid && city?.touched">
-                                    <option [ngValue]="null">Select a city</option>
-                                    <option *ngFor="let cityOption of citiesValue" [ngValue]="cityOption">
-                                        {{ cityOption.name }}
-                                    </option>
-                                </select>
+                        <div class="form-group">
+                          <label for="wards">Wards</label>
+                          <div class="input-with-icon">
+                            <span class="material-icons input-icon">public</span>
+                            <select id="wards" formControlName="wards"
+                                [class.is-invalid]="wards?.invalid && wards?.touched">
+                              <option [ngValue]="null">Select a ward</option>
+                              @for (wardOption of wardsWithDistricts; track wardOption.code) {
+                                <option [ngValue]="wardOption">
+                                  {{ wardOption.name }}
+                                </option>
+                              }
+                            </select>
+                          </div>
+                          @if (wards?.invalid && wards?.touched) {
+                            <div class="error-message">
+                              @if (wards?.errors?.['required']) {
+                                <span>Ward is required</span>
+                              }
                             </div>
-                            <div class="error-message" *ngIf="city?.invalid && city?.touched">
-                                <span *ngIf="city?.errors?.['required']">City is required</span>
-                            </div>
+                          }
                         </div>
-                    </div>
+                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label for="country">Country</label>
+                          <div class="input-with-icon">
+                            <span class="material-icons input-icon">public</span>
+                            <select id="country" formControlName="country"
+                                [class.is-invalid]="country?.invalid && country?.touched">
+                              <option value="">Select a country</option>
+                              @for (countryOption of countries; track countryOption.name) {
+                                <option [value]="countryOption.name">
+                                  {{ countryOption.name }}
+                                </option>
+                              }
+                            </select>
+                          </div>
+                          @if (country?.invalid && country?.touched) {
+                            <div class="error-message">
+                              @if (country?.errors?.['required']) {
+                                <span>Country is required</span>
+                              }
+                            </div>
+                          }
+                        </div>
+
+                        <div class="form-group">
+                          <label for="city">City</label>
+                          <div class="input-with-icon">
+                            <span class="material-icons input-icon">location_city</span>
+                            <select id="city" formControlName="city"
+                                [class.is-invalid]="city?.invalid && city?.touched">
+                              <option [ngValue]="null">Select a city</option>
+                              @for (cityOption of citiesValue; track cityOption.code) {
+                                <option [ngValue]="cityOption">
+                                  {{ cityOption.name }}
+                                </option>
+                              }
+                            </select>
+                          </div>
+                          @if (city?.invalid && city?.touched) {
+                            <div class="error-message">
+                              @if (city?.errors?.['required']) {
+                                <span>City is required</span>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
                     <div class="form-row">
-                            <div class="form-group">
+                        <div class="form-group">
                             <label for="price">Price</label>
                             <div class="input-with-icon">
                                 <input type="number" id="price" formControlName="price" min="0" step="0.01">
                             </div>
-                            </div>
-                            <div class="form-group">
+                        </div>
+                        <div class="form-group">
                             <label for="maxAttendees">Max Attendees</label>
                             <div class="input-with-icon">
                                 <input type="number" id="maxAttendees" formControlName="maxAttendees" min="1">
@@ -245,13 +280,14 @@
                     </div>
 
                     <div class="form-row">
-                            <div class="form-group">
+                        <div class="form-group">
                             <label for="tags">Tags (comma separated)</label>
                             <div class="input-with-icon">
-                                <input type="text" id="tags" formControlName="tags" placeholder="e.g., Business, Technology">
+                                <input type="text" id="tags" formControlName="tags"
+                                    placeholder="e.g., Business, Technology">
                             </div>
-                            </div>
-                            <div class="form-group">
+                        </div>
+                        <div class="form-group">
                             <label for="image">Event Image</label>
                             <div class="image-upload-container">
                                 @if (imagePreviewUrl) {
@@ -278,6 +314,9 @@
                         </div>
                     </div>
 
+                    <div class="form-row">
+
+                    </div>
                     <div class="form-actions">
                         <button type="button" class="btn-secondary" (click)="toggleCreateEventForm()">
                             Cancel
@@ -318,12 +357,15 @@
                             <p class="event-description">{{event.description}}</p>
                             <div class="event-info">
                                 <div class="info-item">
+                                    <span class="material-icons">schedule</span>
                                     <span>Start: {{formatDate(event.date_time_options[0].start_time)}}</span>
                                 </div>
                                 <div class="info-item">
+                                    <span class="material-icons">location_on</span>
                                     <span>{{event.location.type === 'online' ? 'Online Event' : event.location.address}}</span>
                                 </div>
                                 <div class="info-item">
+                                    <span class="material-icons">groups</span>
                                     <span>{{event.attendees_count || 0}} / {{event.max_attendees || 'Unlimited'}} attendees</span>
                                 </div>
                                 @if (event.price) {
@@ -333,12 +375,21 @@
                                 }
                             </div>
                             <div class="event-actions">
+                              @if (getEventStatus(event) !== 'Past') {
                                 <button class="btn-edit" (click)="editEvent(event)">
-                                    Edit
+                                  <span class="material-icons">edit</span> Edit
                                 </button>
-                                <button class="btn-delete" (click)="deleteEvent(event)">
-                                    Delete
+                              }
+                              @if (getEventStatus(event) !== 'Cancelled') {
+                                <button class="btn-delete" (click)="confirmDelete(event)">
+                                  <span class="material-icons">delete</span> Delete
                                 </button>
+                              }
+                              @if (getEventStatus(event) === 'Cancelled') {
+                                <button class="btn-restore" (click)="restoreEvent(event)">
+                                  <span class="material-icons">restore</span> Restore
+                                </button>
+                              }
                             </div>
                         </div>
                       </div>

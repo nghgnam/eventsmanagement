@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { SafeUrlService } from '../../service/santizer.service';
 import { SafeUrl } from '@angular/platform-browser';
+
 @Component({
   selector: 'app-body-events-data-listing',
   standalone: true,
@@ -14,7 +15,7 @@ import { SafeUrl } from '@angular/platform-browser';
   templateUrl: './body-events-data-listing.component.html',
   styleUrls: ['./body-events-data-listing.component.css']
 })
-export class BodyEventsDataListingComponent implements OnInit, OnDestroy , OnChanges{ 
+export class BodyEventsDataListingComponent implements OnInit, OnDestroy, OnChanges { 
   @Input() selectedFilter: string = '';
   @Input() location: string = '';
   
@@ -28,7 +29,18 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy , OnCha
   constructor(private eventsService: EventsService, private router: Router, private sanitizer: SafeUrlService) {
     this.events$ = this.eventsService.events$;
   }
-  ngOnChanges(changes: SimpleChanges): void {
+
+  ngOnInit() {
+    this.eventsService.fetchEvents(); 
+    const sub = this.events$.subscribe(events => {
+      this.isLoading = false;
+      this.filteredEvents = this.getFilteredEvents(events);
+      this.displayedEvents = this.showAll ? this.filteredEvents : this.filteredEvents.slice(0, 8);
+    });
+    this.subscription.add(sub);
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
     if (changes['selectedFilter'] || changes['location']) {
       this.events$.subscribe(events => {
         this.filteredEvents = this.getFilteredEvents(events);
@@ -36,57 +48,88 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy , OnCha
       });
     }
   }
-  
-  
 
-  ngOnInit() {
-    this.eventsService.fetchEvents(); 
-    const sub = this.events$.subscribe(events=> {
-      this.isLoading = false
-      this.filteredEvents = this.getFilteredEvents(events);
-      this.displayedEvents = this.showAll ? this.filteredEvents : this.filteredEvents.slice(0, 8)
-    })
-    this.subscription.add(sub)
+  private isEventExpired(event: EventList): boolean {
+    const now = new Date();
+    const endDate = new Date(event.date_time_options[0].end_time);
+    return endDate < now;
   }
 
-  getSafeUrl(url: string | undefined): SafeUrl| undefined{
-    
+  private getFilteredEvents(events: EventList[]): EventList[] {
+    let filtered = events.filter(event => !this.isEventExpired(event));
+
+    if (this.selectedFilter) {
+      switch (this.selectedFilter) {
+        case 'today':
+          const today = new Date();
+          filtered = filtered.filter(event => {
+            const eventDate = new Date(event.date_time_options[0].start_time);
+            return eventDate.toDateString() === today.toDateString();
+          });
+          break;
+        case 'weekend':
+          const now = new Date();
+          const weekendStart = new Date(now);
+          weekendStart.setDate(now.getDate() + (6 - now.getDay()));
+          weekendStart.setHours(0, 0, 0, 0);
+          const weekendEnd = new Date(weekendStart);
+          weekendEnd.setDate(weekendStart.getDate() + 2);
+          weekendEnd.setHours(23, 59, 59, 999);
+          
+          filtered = filtered.filter(event => {
+            const eventDate = new Date(event.date_time_options[0].start_time);
+            return eventDate >= weekendStart && eventDate <= weekendEnd;
+          });
+          break;
+        case 'free':
+          filtered = filtered.filter(event => !event.price || event.price === 0);
+          break;
+        case 'online':
+          filtered = filtered.filter(event => event.event_type === 'online');
+          break;
+      }
+    }
+
+    if (this.location) {
+      filtered = filtered.filter(event => 
+        event.location.address?.toLowerCase().includes(this.location.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }
+
+  getSafeUrl(url: string | undefined): SafeUrl | undefined {
     return this.sanitizer.sanitizeImageUrl(url);
-
   }
 
-
-  getFilteredEvents(events: EventList[]): EventList[] {
-    this.filteredEvents =  events.filter(event => {
-      const matchLocation = !this.location || event.location.address?.toLowerCase().includes(this.location.toLowerCase());
-      const filter = this.selectedFilter.toLowerCase();
-      const matchFilter = this.matchFilter(event , filter);
-      
-      
-      return matchLocation && matchFilter;    
-    });
-    return this.filteredEvents
-  }
-
-  private matchFilter(event: EventList, filter: string): boolean {
-    switch (filter.toLowerCase()) {
-      case 'all':
-        return true;
-      case 'draft':
-        return event.status === 'draft';
-      case 'published':
-        return event.status === 'published';
-      case 'completed':
-        return event.status === 'completed';
-      case 'cancelled':
-        return event.status === 'cancelled';
-      default:
-        return (event.event_type ).toLowerCase() === filter.toLowerCase();
+  goToDetail(eventId: string | undefined) {
+    if (eventId) {
+      this.router.navigate(['/detail', eventId]);
     }
   }
 
-  getLimitedEvents(): EventList[] {
-    return this.displayedEvents
+  showMore() {
+    this.showAll = true;
+    this.events$.subscribe(events => {
+      this.filteredEvents = this.getFilteredEvents(events);
+      this.displayedEvents = this.filteredEvents;
+    });
+  }
+
+  toggleLike(event: EventList) {
+    if (!event.id) {
+      console.error('Event ID is undefined');
+      return;
+    }
+
+    event.isLiked = !event.isLiked;
+    event.likes_count = (event.likes_count || 0) + (event.isLiked ? 1 : -1);
+
+    this.eventsService.updateeventLikes(event.id, event.isLiked).subscribe({
+      next: () => console.log('Like status updated successfully!'),
+      error: (error: any) => console.error('Error updating like status:', error)
+    });
   }
 
   get showSeeMore(): Observable<boolean> {
@@ -95,30 +138,7 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy , OnCha
     );
   }
 
-  toggleLike(event: any){
-    event.isLiked =! event.isLiked;
-    event.likeCount += event.isLiked ? 1 : -1;
-
-    this.eventsService.updateeventLikes(event.id, event.isLiked).subscribe({
-      next: () => console.log('Like status updated scuccessfully!'),
-      error: (error: any) => console.error('Error updating like status:', error)
-     })
-  }
-
-
-  showMore() {
-    this.showAll = true;
-  }
-
-  goToDetail(eventId: string | undefined) {
-    if (eventId) {
-      this.router.navigate(['/detail', eventId]);
-      console.log('Navigating to event detail:', eventId); 
-    } else {
-      console.error("Event ID is undefined!");
-    }
-  }
-  ngOnDestroy(): void {
-    this.subscription.unsubscribe()
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 }

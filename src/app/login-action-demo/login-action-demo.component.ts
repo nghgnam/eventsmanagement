@@ -12,7 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-
+import { ChangeDetectorRef } from '@angular/core';
 @Component({
   selector: 'app-login-action-demo',
   standalone: true,
@@ -28,8 +28,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatCheckboxModule
   ],
   templateUrl: './login-action-demo.component.html',
-  styleUrls: ['./login-action-demo.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./login-action-demo.component.css']
 })
 export class LoginActionDemoComponent implements OnInit{
   email: any;
@@ -43,11 +42,13 @@ export class LoginActionDemoComponent implements OnInit{
   private unsubscribeFn: any;
 
 
+
   constructor(
     private eventsService : EventsService, 
     private authService: AuthService, 
     private router: Router,
-    private fb : FormBuilder
+    private fb : FormBuilder,
+    private cdr: ChangeDetectorRef
   ){
     this.userForm = this.fb.group({
       email: ['' , [Validators.required , Validators.email]],
@@ -90,6 +91,7 @@ export class LoginActionDemoComponent implements OnInit{
         switch (error.code) {
           case 'auth/invalid-credential':
             this.errorMessage = 'Invalid email or password. Please try again.';
+            
             break;
           case 'auth/user-not-found':
             this.errorMessage = 'No account found with this email.';
@@ -107,7 +109,9 @@ export class LoginActionDemoComponent implements OnInit{
             this.errorMessage = 'An error occurred during login. Please try again.';
         }
       }
-    });    
+    });  
+    
+    this.cdr.markForCheck();
   }
 get emailCtrl() { return this.userForm.get('email')!; }
 get passwordCtrl() { return this.userForm.get('password')!; }

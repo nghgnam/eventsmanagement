@@ -67,16 +67,19 @@
                             <span>{{ event.price ? (event.price + ' ' + (event.currency || 'USD')) : 'Free' }}</span>
                         </div>
                         <div class="event-organizer">
-                            <img *ngIf="getSafeUrl(event.organizer.profileImage) as SafeUrl"
-                                [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'"
-                                alt="Organizer avatar" class="organizer-avatar">
+                            @if (getSafeUrl(event.organizer.profileImage); as SafeUrl) {
+                              <img
+                                  [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'"
+                                  alt="Organizer avatar" class="organizer-avatar">
+                            }
                             <span>{{ event.organizer.name }}</span>
                         </div>
                         <!-- Like Button -->
                         <div class="event-like">
                             <button (click)="toggleLike(event)" [class.liked]="event.isLiked">
                                 <i class="fa-solid"
-                                    [ngClass]="{'fa-heart': event.isLiked, 'fa-heart-circle-plus': !event.isLiked}"></i>
+                                    [class.fa-heart]="event.isLiked"
+                                    [class.fa-heart-circle-plus]="!event.isLiked"></i>
                                 <span>{{ event.likes_count }}</span>
                             </button>
                         </div>

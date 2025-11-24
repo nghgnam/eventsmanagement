@@ -2,45 +2,58 @@ import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { UsersService } from '../service/users.service';
-import { User } from '../types/userstype';
+import { UsersService } from '../../service/users.service';
+import { User } from '../../types/userstype';
 import { getAuth } from 'firebase/auth';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { EventList } from '../types/eventstype';
-import { EventsService } from '../service/events.service';
-import { CloudinaryService } from '../service/cloudinary.service';
-import { Observable } from 'rxjs';
-import { AddressInformationService } from '../service/addressInformation.service';
+import { EventList } from '../../types/eventstype';
+import { EventsService } from '../../service/events.service';
+import { CloudinaryService } from '../../service/cloudinary.service';
+import { Observable, from } from 'rxjs';
+import { AddressInformationService } from '../../service/addressInformation.service';
 import { getCountries, getCountryCallingCode } from 'libphonenumber-js';
 import * as countries from 'i18n-iso-countries';
 import en from 'i18n-iso-countries/langs/en.json';
-import { skip, distinctUntilChanged, debounceTime } from 'rxjs/operators';
+import { skip, distinctUntilChanged, debounceTime, switchMap } from 'rxjs/operators';
+import { EditEventComponent } from '../edit-event/edit-event.component';
+import { TrashEventsComponent } from '../trash-events/trash-events.component';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../config/firebase.config';
+import { Timestamp } from 'firebase/firestore';
+import { AuthService } from '../../service/auth.service';
+import { CreateEventComponent } from '../create-event/create-event.component';
 
 @Component({
   selector: 'app-manage-events',
   standalone: true,
-  imports: [RouterModule, CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [RouterModule, CommonModule, FormsModule, ReactiveFormsModule, TrashEventsComponent, EditEventComponent, CreateEventComponent],
   templateUrl: './manage-events.component.html',
   styleUrls: ['./manage-events.component.css']
 })
 export class ManageEventsComponent implements OnInit {
+
+  editEventid: string | undefined
   currentUser: User | undefined;
   currentOrganizerEvent: EventList[] = [];
   errorMessage: string = '';
   successMessage: string = '';
   showCreateEventForm: boolean = false;
   eventForm: FormGroup;
-  activeTab: string = 'upcoming'; // 'upcoming' or 'past'
+  activeTab: 'upcoming' | 'past' | 'edit' | 'delete' | 'create' |undefined = 'upcoming'; 
   isLoading: boolean = false;
   selectedImage: File | null = null;
   imageError: string = '';
   imagePreviewUrl: string | null = null;
 
+  trashEvents: EventList[] = []; 
+  EditEvents: EventList[] = [];
+
   countries: { code: string, name: string }[] = [];
   citiesValue: any[] =[];
   districtsValue: any[] = [];
   wardsValue:any[]  = [];
+  
 
   districtsWithCities:any[] = [];
   wardsWithDistricts:any[] = [];
@@ -53,6 +66,9 @@ export class ManageEventsComponent implements OnInit {
   private lastGeocodingRequest: number = 0;
   private readonly GEOCODING_DELAY = 1000; // 1 second delay between requests
 
+  showDeleteDialog: boolean = false;
+  eventToDelete: EventList | null = null;
+
   constructor(
     private usersService: UsersService,
     private router: Router,
@@ -60,7 +76,8 @@ export class ManageEventsComponent implements OnInit {
     private eventService: EventsService,
     private cloudinaryService: CloudinaryService,
     private fb: FormBuilder,
-    private location: AddressInformationService
+    private location: AddressInformationService,
+    private authService: AuthService
   ) {
     this.eventForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
@@ -108,13 +125,10 @@ export class ManageEventsComponent implements OnInit {
       distinctUntilChanged()
     )
     .subscribe(selectedCity =>{
-      console.log('Selected City:', selectedCity); // Debug log
       if(selectedCity && selectedCity.code){
-        console.log('Filtering districts for city code:', selectedCity.code); // Debug log
         this.districtsWithCities = this.districtsValue.filter(
           district => district.parent_code === selectedCity.code
         );
-        console.log('Filtered districts:', this.districtsWithCities); // Debug log
         
         this.eventForm.get('districts')?.reset();
         this.eventForm.get('wards')?.reset();
@@ -134,13 +148,10 @@ export class ManageEventsComponent implements OnInit {
       distinctUntilChanged()
     )
     .subscribe(selectedDistrict =>{
-      console.log('Selected District:', selectedDistrict); // Debug log
       if(selectedDistrict && selectedDistrict.code){
-        console.log('Filtering wards for district code:', selectedDistrict.code); // Debug log
         this.wardsWithDistricts = this.wardsValue.filter(
           ward => ward.parent_code === selectedDistrict.code
         );
-        console.log('Filtered wards:', this.wardsWithDistricts); // Debug log
         
         this.eventForm.get('wards')?.reset();
         this.errorMessage = 'Please select a ward';
@@ -191,17 +202,18 @@ export class ManageEventsComponent implements OnInit {
   loadOrganizerEvents(): void {
     if (this.currentUser?.id) {
       this.isLoading = true;
-      this.eventService.getEventsByOrganizer(String(this.currentUser.id)).subscribe({
-        next: (eventData) => {
-          this.currentOrganizerEvent = eventData || [];
-          this.isLoading = false;
-        },
-        error: (error) => {
-          console.error('Error loading events:', error);
-          this.errorMessage = 'Failed to load events';
-          this.isLoading = false;
-        }
-      });
+      from(this.eventService.getEventsByOrganizer(String(this.currentUser.id)))
+        .subscribe({
+          next: (events) => {
+            this.currentOrganizerEvent = events;
+            this.isLoading = false;
+          },
+          error: (error) => {
+            console.error('Error loading events:', error);
+            this.errorMessage = 'Failed to load events';
+            this.isLoading = false;
+          }
+        });
     }
   }
 
@@ -392,9 +404,8 @@ export class ManageEventsComponent implements OnInit {
     }
   }
 
-  setActiveTab(tab: string): void {
+  setActiveTab(tab: 'upcoming' | 'past' | 'edit' | 'delete' | 'create' | undefined): void {
     this.activeTab = tab;
-    // Reset form when switching tabs
     if (this.showCreateEventForm) {
       this.toggleCreateEventForm();
     }
@@ -434,6 +445,9 @@ export class ManageEventsComponent implements OnInit {
   }
 
   getEventStatus(event: EventList): string {
+    if (event.status === 'cancelled') {
+      return 'Cancelled';
+    }
     const today = new Date();
     const startDate = new Date(event.date_time_options[0].start_time);
     const endDate = new Date(event.date_time_options[0].end_time);
@@ -448,15 +462,46 @@ export class ManageEventsComponent implements OnInit {
   }
 
   editEvent(event: EventList): void {
-    // Implement edit functionality
-    console.log('Edit event:', event);
-    // TODO: Implement edit event functionality
+    this.editEventid = event.id;
+    this.activeTab = 'edit';
   }
 
-  deleteEvent(event: EventList): void {
-    // Implement delete functionality
-    console.log('Delete event:', event);
-    // TODO: Implement delete event functionality
+  confirmDelete(event: EventList): void {
+    this.eventToDelete = event;
+    this.showDeleteDialog = true;
+  }
+
+  cancelDelete(): void {
+    this.showDeleteDialog = false;
+    this.eventToDelete = null;
+  }
+
+  async deleteEvent(event: EventList): Promise<void> {
+    if (!event.id) return;
+
+    try {
+      await this.eventService.cancelEvent(event.id).toPromise();
+      this.successMessage = 'Event cancelled successfully';
+      this.showDeleteDialog = false;
+      this.eventToDelete = null;
+      this.loadOrganizerEvents();
+    } catch (error) {
+      console.error('Error cancelling event:', error);
+      this.errorMessage = 'Failed to cancel event';
+    }
+  }
+
+  async restoreEvent(event: EventList): Promise<void> {
+    if (!event.id) return;
+
+    try {
+      await this.eventService.restoreEvent(event.id).toPromise();
+      this.successMessage = 'Event restored successfully';
+      this.loadOrganizerEvents();
+    } catch (error) {
+      console.error('Error restoring event:', error);
+      this.errorMessage = 'Failed to restore event';
+    }
   }
 
   // Filter events based on active tab
@@ -464,18 +509,19 @@ export class ManageEventsComponent implements OnInit {
     if (!this.currentOrganizerEvent.length) return [];
 
     const today = new Date();
-    return this.currentOrganizerEvent.filter(event => {
-      const startDate = new Date(event.date_time_options[0].start_time);
-      const endDate = new Date(event.date_time_options[0].end_time);
-
-      if (this.activeTab === 'upcoming') {
-        return startDate > today;
-      } else if (this.activeTab === 'past') {
-        return endDate < today;
-      } else {
-        return true; // Show all events if tab is not specified
-      }
-    });
+    if (this.activeTab === 'upcoming') {
+      return this.currentOrganizerEvent.filter(event => {
+        const startDate = new Date(event.date_time_options[0].start_time);
+        return startDate > today && event.status !== 'cancelled';
+      });
+    } else if (this.activeTab === 'past') {
+      return this.currentOrganizerEvent.filter(event => {
+        const endDate = new Date(event.date_time_options[0].end_time);
+        return endDate < today && event.status !== 'cancelled';
+      });
+    } else {
+      return this.currentOrganizerEvent.filter(event => event.status !== 'cancelled');
+    }
   }
 
   getTrimmedString(value: any): string {
@@ -520,5 +566,13 @@ export class ManageEventsComponent implements OnInit {
       console.error("Geocoding error:", error);
       return null;
     }
+  }
+
+  getEventIdEdit(eventId: string | undefined){
+    return this.editEventid = eventId
+  }
+  onEventRestored() {
+    this.setActiveTab('past'); // Chuyển về tab Past Events
+    this.loadOrganizerEvents(); // Cập nhật lại danh sách
   }
 }

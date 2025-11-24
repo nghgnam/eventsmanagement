@@ -8,11 +8,10 @@ import { UserInfomationComponent } from './user/user-infomation/user-infomation.
 import { DetailEventComponent } from './body/detail-event/detail-event.component';
 import { LayoutComponent } from './layout/layout.component';
 import { HeaderSearchComponent } from './header/header-search/header-search.component';
-import { ManageEventsComponent } from './manage-events/manage-events.component';
+import { ManageEventsComponent } from './management-event/manage-events/manage-events.component';
 
 @NgModule({
   declarations: [
-    // AppComponent removed from here
   ],
   imports: [
     HttpClientModule,

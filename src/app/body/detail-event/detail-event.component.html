@@ -32,9 +32,11 @@
             <!-- Organizer Info -->
             <div class="about_organizer">
                 <div class="organizer_avatar">
-                    <img *ngIf="getSafeUrl(event.organizer.profileImage) as SafeUrl"
-                        [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'"
-                        [alt]="event.organizer.name">
+                    @if (getSafeUrl(event.organizer.profileImage); as SafeUrl) {
+                      <img
+                          [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'"
+                          [alt]="event.organizer.name">
+                    }
                 </div>
                 <div class="organizer_info">
                     <span style="font-weight: 600;">By</span>
@@ -45,12 +47,11 @@
                 </div>
                 <button (click)="actionFollow()" [disabled]="isFollowLoading || isOrganizer" [class.active]="hasFollow"
                     class="organizer_follow">
-                    <ng-container *ngIf="!isFollowLoading; else loadingTpl">
-                        {{ hasFollow ? 'Hủy theo dõi' : 'Theo dõi' }}
-                    </ng-container>
-                    <ng-template #loadingTpl>
-                        Đang xử lý...
-                    </ng-template>
+                    @if (!isFollowLoading) {
+                      {{ hasFollow ? 'Hủy theo dõi' : 'Theo dõi' }}
+                    } @else {
+                      Đang xử lý...
+                    }
                 </button>
             </div>
 
@@ -138,9 +139,11 @@
             </div>
             <div class="host_organized_about">
                 <div class="host_header">
-                    <img *ngIf="getSafeUrl(event.organizer.profileImage) as SafeUrl"
-                        [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'"
-                        [alt]="event.organizer.name" class="host_avatar">
+                    @if (getSafeUrl(event.organizer.profileImage); as SafeUrl) {
+                      <img
+                          [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'"
+                          [alt]="event.organizer.name" class="host_avatar">
+                    }
                     <div class="host_info">
                         <p class="host_name">{{event.organizer.name}}</p>
                         <p class="host_follower">{{event.organizer.followers}} followers</p>
@@ -160,7 +163,9 @@
                     @if (event.organizer && e.organizer.name === event.organizer.name) {
                       <div class="event_other_block" (click)="goToDetail(e.id)">
                         <div class="event_other_image">
-                            <img *ngIf="getSafeUrl(e.image_url) as SafeUrl" [src]="SafeUrl" [alt]="e.name">
+                            @if (getSafeUrl(e.image_url); as SafeUrl) {
+                              <img [src]="SafeUrl" [alt]="e.name">
+                            }
                             <div class="event_other_date">
                                 <span class="day">{{e.date_time_options[0].start_time | date : "d"}}</span>
                                 <span class="month">{{e.date_time_options[0].start_time | date : "MMM"}}</span>

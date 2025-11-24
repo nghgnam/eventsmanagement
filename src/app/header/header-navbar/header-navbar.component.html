@@ -1,31 +1,50 @@
-<div class="header_navbar">
-    <div class="header_navbar_state" [ngClass]="{'hidden': !checkingForLogin , 'show': checkingForLogin}" (mouseenter)="showDropdown($event) " >
+<nav class="header_navbar">
+  <div class="header_navbar_left">
+    <div class="header_navbar_menu" [class.mobile-open]="mobileMenuOpen" [class.mobile-hide]="!mobileMenuOpen && isMobile">
+      <a routerLink="/contact-sales" class="header_navbar_link">Contact Sales</a>
+      <a routerLink="/create-event" class="header_navbar_link">Create Events</a>
+      <a routerLink="/find-tickets" class="header_navbar_link">Find my tickets</a>
+      <a routerLink="/help" class="header_navbar_link">Help</a>
+    </div>
+    <button class="header_navbar_hamburger" (click)="toggleMobileMenu()" aria-label="Toggle menu">
+      <span class="hamburger-icon">&#9776;</span>
+    </button>
+  </div>
 
-        <div class="header_navbar_login_user " >
-            <div class="header_navbar_login_user_icon">
-                <img *ngIf="sanitizeImageUrl(userCurrentImage) as safeUrl" [src]="safeUrl" [src]="safeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'" alt="" style="    height: 36px; width: 36px;     border-radius: 50%;">
-            </div>
-            <p class="header_navbar_login_user_name">{{userCurrentname || userCurrentEmail}}</p>
-        </div>
-        <div class="user_dropdown_menu"  [ngClass]="{'show_dropdown_menu' : isDropdownOpen , 'hidden' : !isDropdownOpen}" (mouseleave)="showDropdown($event)">
-            <div class="options_menu border_line" (click)="goToManageEvent()">Manage Events</div>
+  <div class="header_navbar_center">
+    <app-header-search></app-header-search>
+  </div>
+
+  <div class="header_navbar_right">
+    @if (checkingForLogin) {
+      <div class="header_navbar_user_group" (mouseenter)="showDropdown(true)" (mouseleave)="showDropdown(false)">
+        @if (sanitizeImageUrl(userCurrentImage); as safeUrl) {
+          <img [src]="safeUrl" class="header_navbar_avatar" alt="Avatar" />
+        }
+        <span class="header_navbar_username">{{ userCurrentname || userCurrentEmail }}</span>
+        <div class="header_navbar_state">
+          <div class="user_dropdown_menu" [class.show_dropdown_menu]="isDropdownOpen">
+            <div class="options_menu" (click)="goToManageEvent()">Manage Events</div>
             <div class="options_menu" (click)="goToTicketsManage()">Tickets</div>
-            <div class="options_menu">Following</div>
+            <div class="options_menu" (click)="goToFollowing()">Following</div>
             <div class="options_menu border_line" (click)="goToAccountSetting()">Account settings</div>
             <a class="header_navbar_logout" (click)="onSignOut()"> 
-                LOGOUT
-                <i class="fa-solid fa-right-from-bracket header_navbar_logout_icon"></i>
+              LOGOUT
+              <i class="fa-solid fa-right-from-bracket header_navbar_logout_icon"></i>
             </a>
+          </div>
         </div>
-    </div>
+      </div>
+    }
     
-    
-
-    <a class="header_navbar_sign_up" [routerLink]="['/register']" (click)="onNavigate()" [ngClass]="{'hidden': checkingForLogin , 'show': !checkingForLogin}">
-        SIGN UP
-    </a>
-    <a class="header_navbar_login" [routerLink]="['/login']" (click)="onNavigate()" [ngClass]="{'hidden': checkingForLogin , 'show': !checkingForLogin}">
-        LOGIN
-        <i class="fa-solid fa-right-to-bracket header_navbar_login_icon"></i>
-    </a>
-</div>
+    @if (!checkingForLogin) {
+      <a class="header_navbar_sign_up" [routerLink]="['/register']" (click)="onNavigate()">
+          SIGN UP
+      </a>
+      <a class="header_navbar_login" [routerLink]="['/login']" (click)="onNavigate()">
+          LOGIN
+          <i class="fa-solid fa-right-to-bracket header_navbar_login_icon"></i>
+      </a>
+    }
+  </div>
+</nav>

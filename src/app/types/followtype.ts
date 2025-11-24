@@ -1,6 +1,15 @@
 export type Follows = {
-    user_id: string | undefined;
-    id: string | undefined;
-    organizer_id : string | undefined;
-    status: ('active' | 'inactive');
+    id?: string;
+    user_id: string;
+    organizer_id: string;
+    status: 'active' | 'inactive';
+    follow_date?: Date;
+    organizer?: {
+        id: string;
+        fullName: string;
+        profileImage?: string;
+        organization?: {
+            companyName: string;
+        };
+    };
 }

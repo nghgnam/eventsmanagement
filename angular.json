@@ -43,7 +43,10 @@
                 "node_modules"
               ]
             },
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "i18n-iso-countries"
+            ]
           },
           "configurations": {
             "production": {

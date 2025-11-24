@@ -11,24 +11,38 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { getCountries, getCountryCallingCode } from 'libphonenumber-js';
 import * as countries from 'i18n-iso-countries';
 import en from 'i18n-iso-countries/langs/en.json';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 import { Timestamp } from 'firebase/firestore';
 import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { skip } from 'rxjs/operators';
 import { AddressInformationService } from '../../service/addressInformation.service';
+import { AuthService } from '../../service/auth.service';
+import { Follows } from '../../types/followtype';
 
 
 interface CloudinaryResponse {
   secure_url: string;
 }
 
+interface FollowWithOrganizer extends Follows {
+    organizer?: {
+        id: string;
+        fullName: string;
+        profileImage?: string;
+        organization?: {
+            companyName: string;
+        };
+    };
+}
+
 @Component({
   selector: 'app-user-infomation',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './user-infomation.component.html',
-  styleUrls: ['./user-infomation.component.css']
+  styleUrls: ['./user-infomation.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserInfomationComponent implements OnInit, OnDestroy {
   user$: Observable<User[]>;
@@ -56,6 +70,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   wardsWithDistricts:any[] = [];
   currentCity: string ="";
 
+  followedOrganizers: FollowWithOrganizer[] = [];
 
   constructor(
     private userService: UsersService, 
@@ -65,7 +80,8 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     private sanitizer: DomSanitizer,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private location: AddressInformationService
+    private location: AddressInformationService,
+    private authService: AuthService
   ) {
     this.user$ = this.userService.users$;
     this.userForm = this.fb.group({
@@ -121,7 +137,6 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     this.location.getWards().subscribe(dataWards =>{
       this.wardsValue = dataWards;
     })
-
     this.userForm.get('city')?.valueChanges
     .pipe(skip(1))
     .subscribe(selectedCity =>{
@@ -212,6 +227,8 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     });
 
     this.subscriptions.push(new Subscription(() => unsubscribe()));
+
+    this.loadFollowedOrganizers();
   }
 
   private updateFormWithUserData(user: User): void {   
@@ -616,4 +633,56 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   get identifier() {return this.OrganizerForm.get('identifier');}
   get jobTitle() {return this.OrganizerForm.get('jobTitle');}
   get postalCode() {return this.OrganizerForm.get('postalCode')}
+
+  private loadFollowedOrganizers() {
+    if (this.currentUser?.type === 'member') {
+      const sub = this.userService.getFollowedOrganizers(this.currentUser.id).subscribe({
+        next: async (follows: Follows[]) => {
+          // Load organizer information for each follow
+          const followsWithOrganizers = await Promise.all(
+            follows.map(async (follow) => {
+              if (!follow.organizer_id) return follow;
+              const organizer = await this.userService.getCurrentUserById(follow.organizer_id).toPromise();
+              return {
+                ...follow,
+                organizer
+              } as FollowWithOrganizer;
+            })
+          );
+          this.followedOrganizers = followsWithOrganizers;
+          this.cdr.detectChanges();
+        },
+        error: (error: Error) => {
+          console.error('Error loading followed organizers:', error);
+          this.errorMessage = 'Failed to load followed organizers';
+          this.cdr.detectChanges();
+        }
+      });
+      this.subscriptions.push(sub);
+    }
+  }
+
+  unfollowOrganizer(followId: string | undefined) {
+    if (!followId) return;
+
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const sub = this.userService.unfollowOrganizer(followId).subscribe({
+      next: () => {
+        this.followedOrganizers = this.followedOrganizers.filter(f => f.id !== followId);
+        this.successMessage = 'Successfully unfollowed organizer';
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (error: Error) => {
+        console.error('Error unfollowing organizer:', error);
+        this.errorMessage = 'Failed to unfollow organizer';
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+    this.subscriptions.push(sub);
+  }
 }  

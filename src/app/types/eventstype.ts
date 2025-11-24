@@ -1,6 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 export type EventList = {
-isLiked: any;
+    isLiked: any;
     id?: string;
     name: string;
     description: string;
@@ -13,6 +13,10 @@ isLiked: any;
     location: {
         type: 'online' | 'offline';
         address?: string;
+        districts?: any;
+        wards?: any;
+        country?: string;
+        city?: any;
         coordinates?: {
             latitude: number;
             longitude: number;

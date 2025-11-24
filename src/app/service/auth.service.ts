@@ -89,7 +89,7 @@ export class AuthService {
         return throwError(() => ({ code: error.code, message: errorMessage }));
       })
     );
-  }
+  } 
 
   login(email: string, password: string): Observable<String> {
     return from(signInWithEmailAndPassword(this.auth, email, password)).pipe(
@@ -170,5 +170,13 @@ export class AuthService {
         return throwError(() => ({ code: error.code, message: 'Failed to send verification email.' }));
       })
     );
+  }
+
+  getCurrentUser(): User | null {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      return JSON.parse(userStr);
+    }
+    return null;
   }
 }
