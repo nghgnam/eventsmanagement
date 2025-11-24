@@ -16,24 +16,28 @@
   </div>
 
   <div class="header_navbar_right">
-    <div *ngIf="checkingForLogin" class="header_navbar_user_group" (mouseenter)="showDropdown(true)" (mouseleave)="showDropdown(false)">
-      <img *ngIf="sanitizeImageUrl(userCurrentImage) as safeUrl" [src]="safeUrl" class="header_navbar_avatar" alt="Avatar" />
-      <span class="header_navbar_username">{{ userCurrentname || userCurrentEmail }}</span>
-      <div class="header_navbar_state">
-        <div class="user_dropdown_menu" [ngClass]="{'show_dropdown_menu' : isDropdownOpen}">
-          <div class="options_menu" (click)="goToManageEvent()">Manage Events</div>
-          <div class="options_menu" (click)="goToTicketsManage()">Tickets</div>
-          <div class="options_menu" (click)="goToFollowing()">Following</div>
-          <div class="options_menu border_line" (click)="goToAccountSetting()">Account settings</div>
-          <a class="header_navbar_logout" (click)="onSignOut()"> 
-            LOGOUT
-            <i class="fa-solid fa-right-from-bracket header_navbar_logout_icon"></i>
-          </a>
+    @if (checkingForLogin) {
+      <div class="header_navbar_user_group" (mouseenter)="showDropdown(true)" (mouseleave)="showDropdown(false)">
+        @if (sanitizeImageUrl(userCurrentImage); as safeUrl) {
+          <img [src]="safeUrl" class="header_navbar_avatar" alt="Avatar" />
+        }
+        <span class="header_navbar_username">{{ userCurrentname || userCurrentEmail }}</span>
+        <div class="header_navbar_state">
+          <div class="user_dropdown_menu" [class.show_dropdown_menu]="isDropdownOpen">
+            <div class="options_menu" (click)="goToManageEvent()">Manage Events</div>
+            <div class="options_menu" (click)="goToTicketsManage()">Tickets</div>
+            <div class="options_menu" (click)="goToFollowing()">Following</div>
+            <div class="options_menu border_line" (click)="goToAccountSetting()">Account settings</div>
+            <a class="header_navbar_logout" (click)="onSignOut()"> 
+              LOGOUT
+              <i class="fa-solid fa-right-from-bracket header_navbar_logout_icon"></i>
+            </a>
+          </div>
         </div>
       </div>
-    </div>
+    }
     
-    <ng-container *ngIf="!checkingForLogin">
+    @if (!checkingForLogin) {
       <a class="header_navbar_sign_up" [routerLink]="['/register']" (click)="onNavigate()">
           SIGN UP
       </a>
@@ -41,6 +45,6 @@
           LOGIN
           <i class="fa-solid fa-right-to-bracket header_navbar_login_icon"></i>
       </a>
-    </ng-container>
+    }
   </div>
 </nav>

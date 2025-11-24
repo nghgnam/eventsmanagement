@@ -1,65 +1,92 @@
-<div class="login_form">
-    <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="form_login_container">
-        <div class="form_login_header">
-          <h2>Login</h2>
-        </div>
-      
-        <div class="form_login_body">
-      
-          <div class="form_login_block">
-            <i class="fa-solid fa-user"></i>
-            <input
-              type="email"
-              id="email"
-              formControlName="email"
-              placeholder="Email"
-              [class.invalid]="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)"
-            />
-            <label for="email" class="from_login_label_name">Email</label>
-            <div *ngIf="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)" class="error-message">
-              <small *ngIf="emailCtrl.errors?.['required']">Email is required.</small>
-              <small *ngIf="emailCtrl.errors?.['email']">Please enter a valid email.</small>
-            </div>
-          </div>
-      
-          <div class="form_login_block" style="position: relative;">
-            <i class="fa-solid fa-lock"></i>
-            <input
-              [type]="showPassword ? 'text' : 'password'"
-              id="password"
-              formControlName="password"
-              placeholder="Password"
-              [class.invalid]="passwordCtrl.invalid && (passwordCtrl.dirty || passwordCtrl.touched)"
-            />
-            <label for="password" class="from_login_label_name">Password</label>
-            <i class="fa-solid" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'" (click)="togglePasswordVisibility()" style="cursor: pointer; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);"></i>
-            <div *ngIf="passwordCtrl.invalid && (passwordCtrl.dirty || passwordCtrl.touched)" class="error-message">
-              <small *ngIf="passwordCtrl.errors?.['required']">Password is required.</small>
-            </div>
-          </div>
-      
-          <div class="form_login_forgot-register">
-            <a href="#">Forgot Password?</a>
-            <a [routerLink]="['/register']">Don't have an account? Sign up</a>
-          </div>
-      
-          <div class="form_login_button">
-            <button type="submit" class="btn login_btn" [disabled]="userForm.invalid">LOGIN</button>
-          </div>
-      
-          <div *ngIf="errorMessage" class="error-message2">
-            {{ errorMessage }}
-          </div>
-      
-          <div class="login_form_social">
-            <a href="#"><i class="fa-brands fa-facebook"></i></a>
-            <a href="#"><i class="fa-brands fa-google"></i></a>
-          </div>
-        </div>
-      </form>
-      
-    <div class="background_rightfront">
+<div class="container">
+  <form action="" [formGroup]="userForm" (ngSubmit)="onSubmit()">
+      <h1>Login</h1>
 
-    </div>
+      <div>
 
+          <a mat-raised-button href="" target="_blank" class="google-button">
+              <i class="fa-brands fa-google"></i>
+              <p>Continue with Google </p>
+          </a>
+
+      </div>
+
+
+      <div class="divider">
+          <span class="or-span">OR</span>
+      </div>
+
+      <div>
+          <mat-form-field appearance="outline">
+
+              <mat-label> Email </mat-label>
+
+              <input matInput formControlName="email" placeholder="Enter your email" type="text" />
+              <span matSuffix>
+                  <i class="fa-solid fa-envelope" matSuffix></i>
+              </span>
+
+
+              @if (userForm.controls['email'].invalid && userForm.controls['email'].touched) {
+                <mat-error>
+                  @if (userForm.controls['email'].errors?.['required']) {
+                    <span>Email is required</span>
+                  }
+                  @if (userForm.controls['email'].errors?.['email']) {
+                    <span>Invalid email address</span>
+                  }
+                </mat-error>
+              }
+
+          </mat-form-field>
+      </div>
+
+      <div>
+          <mat-form-field appearance="outline">
+
+              <mat-label> Password </mat-label>
+
+              <input matInput formControlName="password" placeholder="Enter your password"
+                  [type]="showPassword ? 'text' : 'password'" />
+
+              <span matSuffix>
+                  <i class="fa-solid" [class.fa-eye-slash]="!showPassword" [class.fa-eye]="showPassword"
+                      (click)="togglePasswordVisibility()"></i>
+              </span>
+
+              @if (userForm.controls['password'].invalid && userForm.controls['password'].touched) {
+                <mat-error>
+                  @if (userForm.controls['password'].errors?.['required']) {
+                    <span>Password is required</span>
+                  }
+                  @if (userForm.controls['password'].errors?.['minlength']) {
+                    <span>Password must be at least 8 characters long</span>
+                  }
+                </mat-error>
+              }
+
+          </mat-form-field>
+
+          <p><mat-checkbox>Remember me</mat-checkbox></p>
+
+      </div>
+
+      <div>
+
+          <button mat-raised-button color="primary" [disabled]="userForm.invalid">Login</button>
+
+      </div>
+
+      <div class="links">
+          <a [routerLink]="['/auth/forgot-password']" class="forgot-password">Forget your password?</a>
+      </div>
+
+      <div class="line"></div>
+
+      <div>
+
+          <button mat-raised-button color="primary" [routerLink]="['/register']">Create an account</button>
+
+      </div>
+  </form>
 </div>

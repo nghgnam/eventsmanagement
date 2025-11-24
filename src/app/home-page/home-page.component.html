@@ -1,9 +1,10 @@
-<header [ngClass]="{'fixed-header': !isDetailPage, 'relative-header': isDetailPage}">
-    <!-- <app-header-page></app-header-page> -->
+<header [class.fixed-header]="!isDetailPage" [class.relative-header]="isDetailPage">
+    <app-header-navbar></app-header-navbar>
 </header>
 
-<app-body-page *ngIf="showBodyPage">
-
-</app-body-page>
+@if (showBodyPage) {
+  <app-body-page>
+  </app-body-page>
+}
 
 <!-- <app-footer-page></app-footer-page> -->

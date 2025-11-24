@@ -26,12 +26,13 @@
           
           <!-- Slide indicators -->
           <div class="slide-indicators">
-            <span 
-              *ngFor="let slide of slides; let i = index" 
-              class="indicator" 
-              [class.active]="i === currentSlideIndex"
-              (click)="goToSlide(i); onSlideInteraction()">
-            </span>
+            @for (slide of slides; track slide; let i = $index) {
+              <span 
+                class="indicator" 
+                [class.active]="i === currentSlideIndex"
+                (click)="goToSlide(i); onSlideInteraction()">
+              </span>
+            }
           </div>
         </div>
       </div>

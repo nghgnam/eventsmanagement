@@ -6,10 +6,11 @@ import { SharedService } from '../service/shared.service';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FooterPageComponent } from '../footer-page/footer-page.component';
+import { HeaderNavbarComponent } from '../header/header-navbar/header-navbar.component';
 @Component({
   selector: 'app-home-page',
   standalone: true,
-  imports: [RouterModule, BodyPageComponent, CommonModule, FooterPageComponent],
+  imports: [RouterModule, BodyPageComponent, CommonModule, FooterPageComponent, HeaderNavbarComponent],
   templateUrl: './home-page.component.html',
   styleUrls: ['./home-page.component.css']
 })

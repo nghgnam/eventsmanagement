@@ -1,39 +1,53 @@
 <div class="trash-events-container">
     <h2>Cancelled Events</h2>
     
-    <div class="loading-spinner" *ngIf="isLoading">
+    @if (isLoading) {
+      <div class="loading-spinner">
         <i class="fas fa-spinner fa-spin"></i> Loading...
-    </div>
+      </div>
+    }
 
-    <div class="error-message" *ngIf="errorMessage">
+    @if (errorMessage) {
+      <div class="error-message">
         {{ errorMessage }}
-    </div>
+      </div>
+    }
 
-    <div class="events-grid" *ngIf="!isLoading && cancelledEvents.length > 0">
-        <div class="event-card" *ngFor="let event of cancelledEvents">
+    @if (!isLoading && cancelledEvents.length > 0) {
+      <div class="events-grid">
+        @for (event of cancelledEvents; track event.id) {
+          <div class="event-card">
             <div class="event-image">
-                <img [src]="getSafeUrl(event.image_url)" [alt]="event.name" *ngIf="event.image_url">
-                <div class="no-image" *ngIf="!event.image_url">
-                    <i class="fas fa-image"></i>
+              @if (event.image_url) {
+                <img [src]="getSafeUrl(event.image_url)" [alt]="event.name">
+              }
+              @if (!event.image_url) {
+                <div class="no-image">
+                  <i class="fas fa-image"></i>
                 </div>
+              }
             </div>
             <div class="event-details">
-                <h3>{{ event.name }}</h3>
-                <p class="event-description">{{ event.description }}</p>
-                <div class="event-info">
-                    <p><i class="fas fa-calendar"></i> {{ formatDate(event.date_time_options[0].start_time) }}</p>
-                    <p><i class="fas fa-map-marker-alt"></i> {{ event.location.address }}</p>
-                </div>
-                <div class="event-actions">
-                    <button class="btn-restore" (click)="restoreEvent(event)">
-                        <i class="fas fa-rotate-left"></i> Restore Event
-                    </button>
-                </div>
+              <h3>{{ event.name }}</h3>
+              <p class="event-description">{{ event.description }}</p>
+              <div class="event-info">
+                <p><i class="fas fa-calendar"></i> {{ formatDate(event.date_time_options[0].start_time) }}</p>
+                <p><i class="fas fa-map-marker-alt"></i> {{ event.location.address }}</p>
+              </div>
+              <div class="event-actions">
+                <button class="btn-restore" (click)="restoreEvent(event)">
+                  <i class="fas fa-rotate-left"></i> Restore Event
+                </button>
+              </div>
             </div>
-        </div>
-    </div>
+          </div>
+        }
+      </div>
+    }
 
-    <div class="no-events" *ngIf="!isLoading && cancelledEvents.length === 0">
+    @if (!isLoading && cancelledEvents.length === 0) {
+      <div class="no-events">
         <p>No cancelled events found.</p>
-    </div>
+      </div>
+    }
 </div>

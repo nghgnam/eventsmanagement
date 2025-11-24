@@ -2,63 +2,70 @@
   <h2 class="section-header">{{ sectionHeader }}</h2>
   <p class="subsection-header">{{ subsectionHeader }}</p>
 
-  <div *ngIf="isLoading" class="loading">
-    <p>Loading events...</p>
-  </div>
-
-  <div *ngIf="mode === 'single'" style="margin-bottom: 20px;">
-    <div *ngIf="!isLoading && getSingleList.length > 0; else noDataTemplate" class="event-list">
-
-      <div *ngFor="let event of getSingleList" class="event-card">
-        <div class="event-image">
-          <img [src]="getSafeUrl(event.image_url)" alt="{{ event.name }}" />
-        </div>
-        <div class="event-details">
-          <h3 class="event-title">{{ event.name }}</h3>
-          <p class="event-date">
-            <strong>Date:</strong> {{ event.date_time_options[0].start_time | date: 'medium' }}
-          </p>
-          <p class="event-location">
-            <strong>Location:</strong> {{ event.location.address }}
-          </p>
-          <p class="event-status" [ngClass]="ticketStatus[event.id ?? 'unknown']">
-            <strong>Status:</strong> {{ ticketStatus[event.id ?? 'unknown'] | titlecase }}
-          </p>
-        </div>
-        <div class="event-actions">
-          <button (click)="viewDetails(event.id)">View Details</button>
-
-        </div>
-      </div>
+  @if (isLoading) {
+    <div class="loading">
+      <p>Loading events...</p>
     </div>
-  </div>
-  <div *ngIf="mode === 'multiple'">
-    <ng-container *ngFor="let group of getGroupEventData()">
-      <ng-container *ngIf="group.events.length > 0">
-        <h3 style="padding-top: 12px;  border-top: 1px solid #ccc;">{{ group.label }}</h3>
-      <div class="event-list">
-        <div *ngFor="let event of group.events" class="event-card">
-          <div class="event-image">
-            <img [src]="getSafeUrl(event.image_url)" alt="{{ event.name }}" />
-          </div>
-          <div class="event-details">
-            <h3 class="event-title">{{ event.name }}</h3>
-            <p><strong>Ngày:</strong> {{ event.date_time_options[0].start_time | date: 'medium' }}</p>
-            <p><strong>Địa điểm:</strong> {{ event.location.address }}</p>
-            <p><strong>Trạng thái:</strong> {{ ticketStatus[event.id ?? 'unknown'] | titlecase }}</p>
-          </div>
-          <div class="event-actions">
-            <button (click)="viewDetails(event.id)">Chi tiết</button>
-          </div>
+  }
+
+  @if (mode === 'single') {
+    <div style="margin-bottom: 20px;">
+      @if (!isLoading && getSingleList.length > 0) {
+        <div class="event-list">
+          @for (event of getSingleList; track event.id) {
+            <div class="event-card">
+              <div class="event-image">
+                <img [src]="getSafeUrl(event.image_url)" alt="{{ event.name }}" />
+              </div>
+              <div class="event-details">
+                <h3 class="event-title">{{ event.name }}</h3>
+                <p class="event-date">
+                  <strong>Date:</strong> {{ event.date_time_options[0].start_time | date: 'medium' }}
+                </p>
+                <p class="event-location">
+                  <strong>Location:</strong> {{ event.location.address }}
+                </p>
+                <p class="event-status" [class]="ticketStatus[event.id ?? 'unknown']">
+                  <strong>Status:</strong> {{ ticketStatus[event.id ?? 'unknown'] | titlecase }}
+                </p>
+              </div>
+              <div class="event-actions">
+                <button (click)="viewDetails(event.id)">View Details</button>
+              </div>
+            </div>
+          }
         </div>
-      </div>
-      </ng-container>
-    </ng-container>
-  </div>
+      } @else {
+        <div class="no-data">
+          <p>No events available for this category.</p>
+        </div>
+      }
+    </div>
+  }
   
-  <ng-template #noDataTemplate>
-    <div class="no-data">
-      <p>No events available for this category.</p>
-    </div>
-  </ng-template>
+  @if (mode === 'multiple') {
+    @for (group of getGroupEventData(); track group.label) {
+      @if (group.events.length > 0) {
+        <h3 style="padding-top: 12px; border-top: 1px solid #ccc;">{{ group.label }}</h3>
+        <div class="event-list">
+          @for (event of group.events; track event.id) {
+            <div class="event-card">
+              <div class="event-image">
+                <img [src]="getSafeUrl(event.image_url)" alt="{{ event.name }}" />
+              </div>
+              <div class="event-details">
+                <h3 class="event-title">{{ event.name }}</h3>
+                <p><strong>Ngày:</strong> {{ event.date_time_options[0].start_time | date: 'medium' }}</p>
+                <p><strong>Địa điểm:</strong> {{ event.location.address }}</p>
+                <p><strong>Trạng thái:</strong> {{ ticketStatus[event.id ?? 'unknown'] | titlecase }}</p>
+              </div>
+              <div class="event-actions">
+                <button (click)="viewDetails(event.id)">Chi tiết</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  }
 </div>

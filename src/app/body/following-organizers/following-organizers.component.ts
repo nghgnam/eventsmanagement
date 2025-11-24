@@ -33,49 +33,63 @@ interface FollowWithOrganizer extends Follows {
       </div>
 
       <!-- Loading State -->
-      <div class="loading-container" *ngIf="isLoading">
-        <div class="loading-spinner"></div>
-        <p>Loading organizers...</p>
-      </div>
+      @if (isLoading) {
+        <div class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>Loading organizers...</p>
+        </div>
+      }
 
       <!-- No Organizers Message -->
-      <div class="no-organizers" *ngIf="!isLoading && followedOrganizers.length === 0">
-        <i class="fas fa-users"></i>
-        <h3>No followed organizers</h3>
-        <p>Start following organizers to see their events here</p>
-        <button class="btn-primary" routerLink="/body">Discover Organizers</button>
-      </div>
+      @if (!isLoading && followedOrganizers.length === 0) {
+        <div class="no-organizers">
+          <i class="fas fa-users"></i>
+          <h3>No followed organizers</h3>
+          <p>Start following organizers to see their events here</p>
+          <button class="btn-primary" routerLink="/body">Discover Organizers</button>
+        </div>
+      }
 
       <!-- Organizers Grid -->
-      <div class="organizers-grid" *ngIf="!isLoading && followedOrganizers.length > 0">
-        <div class="organizer-card" *ngFor="let follow of followedOrganizers">
-          <div class="organizer-info" *ngIf="follow.organizer">
-            <div class="organizer-avatar-container">
-              <img *ngIf="getSafeImageUrl(follow.organizer.profileImage) as safeUrl" 
-                   [src]="safeUrl" 
-                   [alt]="follow.organizer.fullName" 
-                   class="organizer-avatar"
-                   (error)="handleImageError($event)">
-            </div>
-            <div class="organizer-details">
-              <h3>{{follow.organizer.fullName}}</h3>
-              <p class="company-name">{{follow.organizer.organization?.companyName || 'No company name'}}</p>
-              <div class="follow-info">
-                <span class="status" [class.active]="follow.status === 'active'">{{follow.status}}</span>
-                <span class="follow-date" *ngIf="follow.follow_date">
-                  Followed since: {{follow.follow_date | date:'mediumDate'}}
-                </span>
+      @if (!isLoading && followedOrganizers.length > 0) {
+        <div class="organizers-grid">
+          @for (follow of followedOrganizers; track follow.id) {
+            <div class="organizer-card">
+              @if (follow.organizer) {
+                <div class="organizer-info">
+                  <div class="organizer-avatar-container">
+                    @if (getSafeImageUrl(follow.organizer.profileImage); as safeUrl) {
+                      <img 
+                        [src]="safeUrl" 
+                        [alt]="follow.organizer.fullName" 
+                        class="organizer-avatar"
+                        (error)="handleImageError($event)">
+                    }
+                  </div>
+                  <div class="organizer-details">
+                    <h3>{{follow.organizer.fullName}}</h3>
+                    <p class="company-name">{{follow.organizer.organization?.companyName || 'No company name'}}</p>
+                    <div class="follow-info">
+                      <span class="status" [class.active]="follow.status === 'active'">{{follow.status}}</span>
+                      @if (follow.follow_date) {
+                        <span class="follow-date">
+                          Followed since: {{follow.follow_date | date:'mediumDate'}}
+                        </span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+              <div class="organizer-actions">
+                <button class="unfollow-btn" (click)="unfollowOrganizer(follow.id)">
+                  <i class="fas fa-user-minus"></i>
+                  Unfollow
+                </button>
               </div>
             </div>
-          </div>
-          <div class="organizer-actions">
-            <button class="unfollow-btn" (click)="unfollowOrganizer(follow.id)">
-              <i class="fas fa-user-minus"></i>
-              Unfollow
-            </button>
-          </div>
+          }
         </div>
-      </div>
+      }
     </div>
   `,
   styles: [`

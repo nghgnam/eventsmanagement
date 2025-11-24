@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import { EventsService } from '../../service/events.service';
-import { NgFor, NgIf, CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { EventList } from '../../types/eventstype';
 import { map, Observable, Subscription } from 'rxjs';
 import { Router } from '@angular/router'; 
@@ -11,7 +11,7 @@ import { SafeUrl } from '@angular/platform-browser';
 @Component({
   selector: 'app-body-events-data-listing',
   standalone: true,
-  imports: [NgFor, NgIf, CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './body-events-data-listing.component.html',
   styleUrls: ['./body-events-data-listing.component.css']
 })
