@@ -22,12 +22,16 @@
           <button class="action-button" (click)="toggleFilters()">
             <i class="material-icons">filter_list</i>
             Filters
-            <span class="filter-badge" *ngIf="activeFilters > 0">{{activeFilters}}</span>
+            @if (activeFilters > 0) {
+              <span class="filter-badge">{{activeFilters}}</span>
+            }
           </button>
-          <button class="action-button" *ngIf="activeFilters > 0" (click)="resetFilters()">
+          @if (activeFilters > 0) {
+            <button class="action-button" (click)="resetFilters()">
             <i class="material-icons">clear_all</i>
-            Clear All
-          </button>
+              Clear All
+            </button>
+          }
         </div>
       </div>
     </div>
@@ -47,16 +51,18 @@
         <div class="filter-section">
           <h4>Tags</h4>
           <div class="tags-container">
-            <div class="tag-item" *ngFor="let tag of availableTags">
-              <input type="checkbox" 
-                     [id]="'tag-' + tag"
-                     [(ngModel)]="filters.tags[tag]"
-                     (ngModelChange)="applyFilters()">
-              <label [for]="'tag-' + tag">
-                <i class="material-icons">{{getTagIcon(tag)}}</i>
-                {{tag}}
-              </label>
-            </div>
+            @for (tag of availableTags; track tag) {
+              <div class="tag-item">
+                <input type="checkbox" 
+                       [id]="'tag-' + tag"
+                       [(ngModel)]="filters.tags[tag]"
+                       (ngModelChange)="applyFilters()">
+                <label [for]="'tag-' + tag">
+                  <i class="material-icons">{{getTagIcon(tag)}}</i>
+                  {{tag}}
+                </label>
+              </div>
+            }
           </div>
         </div>
         
@@ -141,57 +147,67 @@
       <!-- Center Content - Events List -->
       <div class="events-content">
         <!-- Loading state -->
-        <div class="loading-container" *ngIf="isLoading">
-          <div class="spinner"></div>
-          <p>Loading events...</p>
-        </div>
+        @if (isLoading) {
+          <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Loading events...</p>
+          </div>
+        }
         
         <!-- No results state -->
-        <div class="no-results" *ngIf="!isLoading && filteredEvents.length === 0">
-          <i class="material-icons">search_off</i>
-          <h2>No events found</h2>
-          <p>Try adjusting your filters or search criteria</p>
-        </div>
+        @if (!isLoading && filteredEvents.length === 0) {
+          <div class="no-results">
+            <i class="material-icons">search_off</i>
+            <h2>No events found</h2>
+            <p>Try adjusting your filters or search criteria</p>
+          </div>
+        }
         
         <!-- Events list -->
-        <div class="events-list" *ngIf="!isLoading && filteredEvents.length > 0">
-          <div class="event-card" *ngFor="let event of filteredEvents">
-            <div class="event-image">
-              <img [src]="event.image_url || 'assets/images/default-event.jpg'" [alt]="event.name">
-              <span class="event-type">{{event.event_type || 'Blood Donation'}}</span>
-            </div>
-            <div class="event-content">
-              <div class="event-header">
-                <h3>{{event.name}}</h3>
-                <div class="event-meta">
-                  <div class="meta-item">
-                    <i class="material-icons">event</i>
-                    <div class="date-time">
-                      <span>{{event.date_time_options[0].start_time | date:'mediumDate'}}</span>
-                      <span>{{event.date_time_options[0].start_time | date:'shortTime'}}</span>
+        @if (!isLoading && filteredEvents.length > 0) {
+          <div class="events-list">
+            @for (event of filteredEvents; track event.id) {
+              <div class="event-card">
+                <div class="event-image">
+                  <img [src]="event.image_url || 'assets/images/default-event.jpg'" [alt]="event.name">
+                  <span class="event-type">{{event.event_type || 'Blood Donation'}}</span>
+                </div>
+                <div class="event-content">
+                  <div class="event-header">
+                    <h3>{{event.name}}</h3>
+                    <div class="event-meta">
+                      <div class="meta-item">
+                        <i class="material-icons">event</i>
+                        <div class="date-time">
+                          <span>{{event.date_time_options[0].start_time | date:'mediumDate'}}</span>
+                          <span>{{event.date_time_options[0].start_time | date:'shortTime'}}</span>
+                        </div>
+                      </div>
+                      <div class="meta-item">
+                        <i class="material-icons">{{event.location.type === 'online' ? 'computer' : 'location_on'}}</i>
+                        <span>{{event.location.type === 'online' ? 'Online Event' : event.location.address}}</span>
+                      </div>
                     </div>
                   </div>
-                  <div class="meta-item">
-                    <i class="material-icons">{{event.location.type === 'online' ? 'computer' : 'location_on'}}</i>
-                    <span>{{event.location.type === 'online' ? 'Online Event' : event.location.address}}</span>
+                  <div class="event-tags">
+                    @for (tag of event.tags; track tag) {
+                      <span class="tag">
+                        <i class="material-icons">{{getTagIcon(tag)}}</i>
+                        {{tag}}
+                      </span>
+                    }
+                  </div>
+                  <div class="event-actions">
+                    <button class="view-details-btn" (click)="viewEventDetails(event.id)">
+                      <i class="material-icons">visibility</i>
+                      View Details
+                    </button>
                   </div>
                 </div>
               </div>
-              <div class="event-tags">
-                <span class="tag" *ngFor="let tag of event.tags">
-                  <i class="material-icons">{{getTagIcon(tag)}}</i>
-                  {{tag}}
-                </span>
-              </div>
-              <div class="event-actions">
-                <button class="view-details-btn" (click)="viewEventDetails(event.id)">
-                  <i class="material-icons">visibility</i>
-                  View Details
-                </button>
-              </div>
-            </div>
+            }
           </div>
-        </div>
+        }
       </div>
 
       <!-- Right Sidebar - Map Preview -->
@@ -213,36 +229,40 @@
   </div>
 
   <!-- Location Confirmation Dialog -->
-  <div class="location-confirm-dialog" *ngIf="showLocationConfirm">
-    <div class="dialog-content">
-      <div class="dialog-header">
-        <span class="material-icons">location_searching</span>
-        <h3>Xác nhận vị trí</h3>
-      </div>
-      <div class="dialog-body">
-        <p>Địa chỉ của bạn có thể không chính xác. Bạn có muốn sử dụng vị trí GPS hiện tại không?</p>
-      </div>
-      <div class="dialog-actions">
-        <button class="btn-secondary" (click)="continueWithAddress()">Tiếp tục với địa chỉ hiện tại</button>
-        <button class="btn-primary" (click)="useGPSLocation()">Sử dụng vị trí GPS</button>
+  @if (showLocationConfirm) {
+    <div class="location-confirm-dialog">
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <span class="material-icons">location_searching</span>
+          <h3>Xác nhận vị trí</h3>
+        </div>
+        <div class="dialog-body">
+          <p>Địa chỉ của bạn có thể không chính xác. Bạn có muốn sử dụng vị trí GPS hiện tại không?</p>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn-secondary" (click)="continueWithAddress()">Tiếp tục với địa chỉ hiện tại</button>
+          <button class="btn-primary" (click)="useGPSLocation()">Sử dụng vị trí GPS</button>
+        </div>
       </div>
     </div>
-  </div>
+  }
 
   <!-- Full Map Modal -->
-  <div class="full-map-modal" *ngIf="isFullMapOpen">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Event Locations</h3>
-        <button class="close-modal" (click)="closeFullMap()">
-          <span class="material-icons">close</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div id="fullMapContainer" #fullMapContainer></div>
+  @if (isFullMapOpen) {
+    <div class="full-map-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Event Locations</h3>
+          <button class="close-modal" (click)="closeFullMap()">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="fullMapContainer" #fullMapContainer></div>
+        </div>
       </div>
     </div>
-  </div>
+  }
 
   <!-- Info Window Template -->
   <ng-template #infoWindowTemplate>

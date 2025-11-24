@@ -74,12 +74,15 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "buildTarget": "donate_blood_project:build:development"
+          },
           "configurations": {
             "production": {
-              "browserTarget": "donate_blood_project:build:production"
+              "buildTarget": "donate_blood_project:build:production"
             },
             "development": {
-              "browserTarget": "donate_blood_project:build:development"
+              "buildTarget": "donate_blood_project:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -87,7 +90,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "donate_blood_project:build"
+            "buildTarget": "donate_blood_project:build"
           }
         },
         "test": {
@@ -147,13 +150,17 @@
         },
         "serve-ssr": {
           "builder": "@angular-devkit/build-angular:ssr-dev-server",
+          "options": {
+            "buildTarget": "donate_blood_project:build:development",
+            "serverTarget": "donate_blood_project:server:development"
+          },
           "configurations": {
             "development": {
-              "browserTarget": "donate_blood_project:build:development",
+              "buildTarget": "donate_blood_project:build:development",
               "serverTarget": "donate_blood_project:server:development"
             },
             "production": {
-              "browserTarget": "donate_blood_project:build:production",
+              "buildTarget": "donate_blood_project:build:production",
               "serverTarget": "donate_blood_project:server:production"
             }
           },
@@ -164,15 +171,17 @@
           "options": {
             "routes": [
               "/"
-            ]
+            ],
+            "buildTarget": "donate_blood_project:build:production",
+            "serverTarget": "donate_blood_project:server:production"
           },
           "configurations": {
             "production": {
-              "browserTarget": "donate_blood_project:build:production",
+              "buildTarget": "donate_blood_project:build:production",
               "serverTarget": "donate_blood_project:server:production"
             },
             "development": {
-              "browserTarget": "donate_blood_project:build:development",
+              "buildTarget": "donate_blood_project:build:development",
               "serverTarget": "donate_blood_project:server:development"
             }
           },

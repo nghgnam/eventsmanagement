@@ -4,11 +4,23 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../service/auth.service';
 import { getAuth, Auth } from 'firebase/auth';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-register-action-demo',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
+  imports: [
+    CommonModule, 
+    RouterModule, 
+    ReactiveFormsModule, 
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule
+  ],
   templateUrl: './register-action-demo.component.html',
   styleUrls: ['./register-action-demo.component.css']
 })
@@ -30,8 +42,8 @@ export class RegisterActionDemoComponent implements OnInit, OnDestroy {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
-      repassword: ['', [Validators.required]]
-    }, { validator: this.passwordMatchValidator });
+      repassword: ['', [Validators.required, Validators.minLength(6)]]
+    }, { validators: this.passwordMatchValidator });
   }
 
   ngOnInit(): void {

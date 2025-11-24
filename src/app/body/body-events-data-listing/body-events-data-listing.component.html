@@ -6,39 +6,47 @@
     </div>
     
     <!-- Events Grid -->
-    <div class="events-container" *ngIf="events$ | async as events">
+    @if (events$ | async; as events) {
+      <div class="events-container">
         <!-- Loading State -->
-        <div class="loading-container" *ngIf="isLoading">
+        @if (isLoading) {
+          <div class="loading-container">
             <div class="loading-spinner"></div>
             <p>Loading Events...</p>
-        </div>
+          </div>
+        }
         
         <!-- No Events Message -->
-        <div class="no-events" *ngIf="!isLoading && displayedEvents.length === 0">
+        @if (!isLoading && displayedEvents.length === 0) {
+          <div class="no-events">
             <i class="fa-solid fa-calendar-xmark"></i>
             <h3>No events found</h3>
             <p>Try changing your filters or location to see more events</p>
-        </div>
+          </div>
+        }
         
         <!-- Events Grid -->
-        <div class="events-grid" *ngIf="!isLoading && displayedEvents.length > 0">
-            <div class="event-card" *ngFor="let event of displayedEvents" (click)="goToDetail(event.id)">
+        @if (!isLoading && displayedEvents.length > 0) {
+          <div class="events-grid">
+            @for (event of displayedEvents; track event.id) {
+              <div class="event-card" (click)="goToDetail(event.id)">
                 <div class="event-image">
                     <img [src]="event.image_url" [alt]="event.name">
                     <div class="event-date-badge">
                         <span class="day">{{ event.date_time_options[0].start_time | date: 'dd' }}</span>
                         <span class="month">{{ event.date_time_options[0].start_time | date: 'MMM' }}</span>
                     </div>
-                    <div class="event-type-badge" *ngIf="event.event_type">
-                        <i class="fa-solid" [ngClass]="{
-                            'fa-music': event.tags?.includes('music'),
-                            'fa-utensils': event.tags?.includes('food'),
-                            'fa-video': event.event_type === 'online',
-                            'fa-ticket': event.event_type === 'offline',
-                            'fa-calendar': event.event_type === 'hybrid'
-                        }"></i>
+                    @if (event.event_type) {
+                      <div class="event-type-badge">
+                        <i class="fa-solid" 
+                           [class.fa-music]="event.tags?.includes('music')"
+                           [class.fa-utensils]="event.tags?.includes('food')"
+                           [class.fa-video]="event.event_type === 'online'"
+                           [class.fa-ticket]="event.event_type === 'offline'"
+                           [class.fa-calendar]="event.event_type === 'hybrid'"></i>
                         <span>{{ event.event_type | titlecase }}</span>
-                    </div>
+                      </div>
+                    }
                 </div>
                 <div class="event-content">
                     <h3 class="event-title">{{ event.name }}</h3>
@@ -54,7 +62,7 @@
                     </div>
                     <div class="event-footer">
                         <div class="event-price" [class.free]="!event.price">
-                            <i class="fa-solid" [ngClass]="{'fa-ticket': event.price, 'fa-gift': !event.price}"></i>
+                            <i class="fa-solid" [class.fa-ticket]="event.price" [class.fa-gift]="!event.price"></i>
                             <span>{{ event.price ? (event.price + ' ' + (event.currency || 'USD')) : 'Free' }}</span>
                         </div>
                         <div class="event-organizer">
@@ -63,16 +71,21 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
   
     <!-- See More Button -->
-    <div class="see-more-container" *ngIf="showSeeMore | async">
+    @if (showSeeMore | async) {
+      <div class="see-more-container">
         <button (click)="showMore()" class="see-more-btn">
-            <span>See More Events</span>
-            <i class="fa-solid fa-arrow-down"></i>
+          <span>See More Events</span>
+          <i class="fa-solid fa-arrow-down"></i>
         </button>
-    </div>
+      </div>
+    }
 </div>
       

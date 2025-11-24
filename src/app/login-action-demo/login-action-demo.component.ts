@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule  , FormGroup, ReactiveFormsModule, FormBuilder, Validators} from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -8,11 +7,26 @@ import { User } from '../types/userstype';
 import { EventsService } from '../service/events.service';
 import { AuthService } from '../service/auth.service';
 import { getAuth } from 'firebase/auth';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-login-action-demo',
   standalone: true,
-  imports: [FormsModule , CommonModule,RouterModule, ReactiveFormsModule],
+  imports: [
+    FormsModule,
+    CommonModule,
+    RouterModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    MatCheckboxModule
+  ],
   templateUrl: './login-action-demo.component.html',
   styleUrls: ['./login-action-demo.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush

@@ -1,28 +1,35 @@
-<div class="user_infomation_container" *ngIf="currentUser">
+@if (currentUser) {
+  <div class="user_infomation_container">
     <div class="container">
         <aside class="sidebar">
             <h2 class="logo">nhnam</h2>
             <div class="user-info">
-                <img *ngIf="sanitizeImageUrl(currentUser.profileImage) as safeUrl" [src]="safeUrl" alt="User Avatar" class="avatar">
+                @if (sanitizeImageUrl(currentUser.profileImage); as safeUrl) {
+                  <img [src]="safeUrl" alt="User Avatar" class="avatar">
+                }
                 <div>
                     <p class="username">{{currentUser.fullName}}</p>
                     <p class="role">{{currentUser.type}}</p>
                 </div>
             </div>
-            <nav class="menu" *ngIf="currentRole === 'member'">
+            @if (currentRole === 'member') {
+              <nav class="menu">
                 <ul>
-                    <li [class.active]="changeTab === 'tab1'" (click)="changeTabSelected('tab1')">Contact Details</li>
-                    <li [class.active]="changeTab === 'tab2'" (click)="changeTabSelected('tab2')">Password and Security</li>
-                    <li [class.active]="changeTab === 'tab3'" (click)="changeTabSelected('tab3')">Organizer</li>
+                  <li [class.active]="changeTab === 'tab1'" (click)="changeTabSelected('tab1')">Contact Details</li>
+                  <li [class.active]="changeTab === 'tab2'" (click)="changeTabSelected('tab2')">Password and Security</li>
+                  <li [class.active]="changeTab === 'tab3'" (click)="changeTabSelected('tab3')">Organizer</li>
                 </ul>
-            </nav>
-            <nav class="menu" *ngIf="currentRole === 'organizer'">
+              </nav>
+            }
+            @if (currentRole === 'organizer') {
+              <nav class="menu">
                 <ul>
-                    <li [class.active]="changeTab === 'tab1'" (click)="changeTabSelected('tab1')">Contact Details</li>
-                    <li [class.active]="changeTab === 'tab2'" (click)="changeTabSelected('tab2')">Password and Security</li>         
-                    <li [class.active]="changeTab === 'tab3'" (click)="changeTabSelected('tab3')">Organizer</li>
+                  <li [class.active]="changeTab === 'tab1'" (click)="changeTabSelected('tab1')">Contact Details</li>
+                  <li [class.active]="changeTab === 'tab2'" (click)="changeTabSelected('tab2')">Password and Security</li>         
+                  <li [class.active]="changeTab === 'tab3'" (click)="changeTabSelected('tab3')">Organizer</li>
                 </ul>
-            </nav>
+              </nav>
+            }
         </aside>
 
         <main class="main-content">
@@ -30,19 +37,26 @@
                 <h2>Account Settings</h2>
             </header>
 
-            <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="card" *ngIf="changeTab === 'tab1'">
+            @if (changeTab === 'tab1') {
+              <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="card">
                 <!-- Alert Messages -->
-                <div class="alert alert-error" *ngIf="errorMessage">
+                @if (errorMessage) {
+                  <div class="alert alert-error">
                     {{ errorMessage }}
-                </div>
-                <div class="alert alert-success" *ngIf="successMessage">
+                  </div>
+                }
+                @if (successMessage) {
+                  <div class="alert alert-success">
                     {{ successMessage }}
-                </div>
+                  </div>
+                }
 
                 <!-- Loading Spinner -->
-                <div class="loading-spinner" *ngIf="isLoading">
+                @if (isLoading) {
+                  <div class="loading-spinner">
                     <div class="spinner"></div>
-                </div>
+                  </div>
+                }
 
                 <div class="section-header">
                 <h3>Contact Details</h3>
@@ -54,11 +68,15 @@
                         <div class="upload-container">
                             <label for="fileInput" class="upload-box">
                                 <div class="upload-content">
-                                    <img id="previewImage" *ngIf="sanitizeImageUrl(imageUrl) as safeUrl" [src]="safeUrl" alt="Preview">
-                                    <div class="upload-placeholder" *ngIf="!imageUrl">
+                                    @if (sanitizeImageUrl(imageUrl); as safeUrl) {
+                                      <img id="previewImage" [src]="safeUrl" alt="Preview">
+                                    }
+                                    @if (!imageUrl) {
+                                      <div class="upload-placeholder">
                                         <i class="upload-icon">📷</i>
                                         <p>Choose Image</p>
-                                    </div>
+                                      </div>
+                                    }
                                 </div>
                             </label>
                             <input type="file" id="fileInput" accept="image/*" (change)="onSelectedFile($event)">
@@ -76,10 +94,16 @@
                                         [class.is-invalid]="firstName?.invalid && firstName?.touched"
                                         placeholder="Enter your first name">
                                 </div>
-                                <div class="error-message" *ngIf="firstName?.invalid && firstName?.touched">
-                                    <span *ngIf="firstName?.errors?.['required']">First name is required</span>
-                                    <span *ngIf="firstName?.errors?.['minlength']">First name must be at least 2 characters</span>
-                                </div>
+                                @if (firstName?.invalid && firstName?.touched) {
+                                  <div class="error-message">
+                                    @if (firstName?.errors?.['required']) {
+                                      <span>First name is required</span>
+                                    }
+                                    @if (firstName?.errors?.['minlength']) {
+                                      <span>First name must be at least 2 characters</span>
+                                    }
+                                  </div>
+                                }
                         </div>
 
                         <div class="form-group">
@@ -90,10 +114,16 @@
                                         [class.is-invalid]="lastName?.invalid && lastName?.touched"
                                         placeholder="Enter your last name">
                                 </div>
-                                <div class="error-message" *ngIf="lastName?.invalid && lastName?.touched">
-                                    <span *ngIf="lastName?.errors?.['required']">Last name is required</span>
-                                    <span *ngIf="lastName?.errors?.['minlength']">Last name must be at least 2 characters</span>
-                                </div>
+                                @if (lastName?.invalid && lastName?.touched) {
+                                  <div class="error-message">
+                                    @if (lastName?.errors?.['required']) {
+                                      <span>Last name is required</span>
+                                    }
+                                    @if (lastName?.errors?.['minlength']) {
+                                      <span>Last name must be at least 2 characters</span>
+                                    }
+                                  </div>
+                                }
                             </div>
                         </div>
 
@@ -104,9 +134,11 @@
                                     <i class="fa-solid fa-earth-asia input-icon"></i>
                                     <select formControlName="countryCode">
                                         <option value="">Select code</option>
-                                        <option *ngFor="let calling of getCountryCallingCodes" [value]="calling.code">
+                                        @for (calling of getCountryCallingCodes; track calling.code) {
+                                          <option [value]="calling.code">
                                             {{calling.code}} - {{calling.dialCode}}
-                                        </option>
+                                          </option>
+                                        }
                                 </select>
                                 </div>
                                 <div class="input-wrapper">
@@ -116,10 +148,16 @@
                                         placeholder="Enter your phone number">
                                 </div>
                             </div>
-                            <div class="error-message" *ngIf="phoneNumber?.invalid && phoneNumber?.touched">
-                                <span *ngIf="phoneNumber?.errors?.['required']">Phone number is required</span>
-                                <span *ngIf="phoneNumber?.errors?.['pattern']">Please enter a valid phone number</span>
-                            </div>
+                            @if (phoneNumber?.invalid && phoneNumber?.touched) {
+                              <div class="error-message">
+                                @if (phoneNumber?.errors?.['required']) {
+                                  <span>Phone number is required</span>
+                                }
+                                @if (phoneNumber?.errors?.['pattern']) {
+                                  <span>Please enter a valid phone number</span>
+                                }
+                              </div>
+                            }
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -130,9 +168,13 @@
                                         [class.is-invalid]="dateOfBirth?.invalid && dateOfBirth?.touched"
                                         placeholder="Enter your birth day">
                                 </div>
-                                <div class="error-message" *ngIf="dateOfBirth?.invalid && dateOfBirth?.touched">
-                                    <span *ngIf="dateOfBirth?.errors?.['required']">Birth day is required</span>
-                            </div>
+                                @if (dateOfBirth?.invalid && dateOfBirth?.touched) {
+                                  <div class="error-message">
+                                    @if (dateOfBirth?.errors?.['required']) {
+                                      <span>Birth day is required</span>
+                                    }
+                                  </div>
+                                }
                         </div>
 
                             <div class="form-group">
@@ -143,10 +185,16 @@
                                         [class.is-invalid]="email?.invalid && email?.touched"
                                         placeholder="Enter your mail">
                                 </div>
-                                <div class="error-message" *ngIf="lastName?.invalid && lastName?.touched">
-                                    <span *ngIf="email?.errors?.['required']">Email is required</span>
-                                    <span *ngIf="email?.errors?.['email']">Email incorecly </span>
-                                </div>
+                                @if (email?.invalid && email?.touched) {
+                                  <div class="error-message">
+                                    @if (email?.errors?.['required']) {
+                                      <span>Email is required</span>
+                                    }
+                                    @if (email?.errors?.['email']) {
+                                      <span>Email incorecly </span>
+                                    }
+                                  </div>
+                                }
                             </div>
                         </div>
                     </div>
@@ -166,9 +214,13 @@
                                 [class.is-invalid]="street?.invalid && street?.touched"
                                 placeholder="Enter your street address">
                         </div>
-                        <div class="error-message" *ngIf="street?.invalid && street?.touched">
-                            <span *ngIf="street?.errors?.['required']">Street address is required</span>
-                        </div>
+                        @if (street?.invalid && street?.touched) {
+                          <div class="error-message">
+                            @if (street?.errors?.['required']) {
+                              <span>Street address is required</span>
+                            }
+                          </div>
+                        }
                     </div>
 
                     <div class="form-row">
@@ -179,14 +231,20 @@
                                 <select id="country" formControlName="country"
                                     [class.is-invalid]="country?.invalid && country?.touched">
                                     <option value="">Select a country</option>
-                                    <option *ngFor="let countryOption of countries" [value]="countryOption.name">
+                                    @for (countryOption of countries; track countryOption.name) {
+                                      <option [value]="countryOption.name">
                                         {{ countryOption.name }}
-                              </option>
+                                      </option>
+                                    }
                             </select>
                             </div>
-                            <div class="error-message" *ngIf="country?.invalid && country?.touched">
-                                <span *ngIf="country?.errors?.['required']">Country is required</span>
-                            </div>
+                            @if (country?.invalid && country?.touched) {
+                              <div class="error-message">
+                                @if (country?.errors?.['required']) {
+                                  <span>Country is required</span>
+                                }
+                              </div>
+                            }
                         </div>
 
                         <div class="form-group">
@@ -198,9 +256,13 @@
                                     [class.is-invalid]="city?.invalid && city?.touched"
                                     placeholder="Enter your city">
                             </div>
-                            <div class="error-message" *ngIf="city?.invalid && city?.touched">
-                                <span *ngIf="city?.errors?.['required']">City is required</span>
-                            </div>
+                            @if (city?.invalid && city?.touched) {
+                              <div class="error-message">
+                                @if (city?.errors?.['required']) {
+                                  <span>City is required</span>
+                                }
+                              </div>
+                            }
                         </div>
                     </div>
                 </div>
@@ -213,18 +275,26 @@
                         </span>
                     </button>
                 </div>
-            </form>
-            <form [formGroup]="userForm" class="card" *ngIf="changeTab=== 'tab2'">
-                <div class="alert alert-error" *ngIf="errorMessage">
+              </form>
+            }
+            @if (changeTab === 'tab2') {
+              <form [formGroup]="userForm" class="card">
+                @if (errorMessage) {
+                  <div class="alert alert-error">
                     {{ errorMessage }}
-                </div>
-                <div class="alert alert-success" *ngIf="successMessage">
+                  </div>
+                }
+                @if (successMessage) {
+                  <div class="alert alert-success">
                     {{ successMessage }}
-                </div>
+                  </div>
+                }
 
-                <div class="loading-spinner" *ngIf="isLoading">
+                @if (isLoading) {
+                  <div class="loading-spinner">
                     <div class="spinner"></div>
-                </div>
+                  </div>
+                }
 
                 <div class="section-header">
                     <h3>Password and Security</h3>
@@ -242,9 +312,13 @@
                                     [class.is-invalid]="password?.invalid && password?.touched"
                                     placeholder="Enter your current password">
                             </div>
-                            <div class="error-message" *ngIf="password?.invalid && password?.touched">
-                                <span *ngIf="password?.errors?.['required']">password is required</span>
-                            </div>
+                            @if (password?.invalid && password?.touched) {
+                              <div class="error-message">
+                                @if (password?.errors?.['required']) {
+                                  <span>password is required</span>
+                                }
+                              </div>
+                            }
                         </div>
                     <div class="form-group">
                             <label for="NewPassword">New Password</label>
@@ -255,10 +329,16 @@
                                     [class.is-invalid]="NewPassword?.invalid && NewPassword?.touched"
                                     placeholder="Enter your new password">
                             </div>
-                            <div class="error-message" *ngIf="NewPassword?.invalid && NewPassword?.touched">
-                                <span *ngIf="NewPassword?.errors?.['required']">New password is required</span>
-                                <span *ngIf="userForm.get('password')?.value === userForm.get('NewPassword')?.value ">New password does not match</span>
-                            </div>
+                            @if (NewPassword?.invalid && NewPassword?.touched) {
+                              <div class="error-message">
+                                @if (NewPassword?.errors?.['required']) {
+                                  <span>New password is required</span>
+                                }
+                                @if (userForm.get('password')?.value === userForm.get('NewPassword')?.value) {
+                                  <span>New password does not match</span>
+                                }
+                              </div>
+                            }
                         </div>
                         <div class="form-actions">
                             <button type="submit" class="btn-primary" [disabled]="userForm.invalid || isSaving" (click)="updatePasswordHandler()">
@@ -269,21 +349,29 @@
                             </button>
                         </div>
                     </div>
-                    <div class="security-container" style="flex: 1"></div>
+                    <div class="security-container" style="flex: 1">                    </div>
                 </div>
-            </form>
+              </form>
+            }
             
-            <form [formGroup]="userForm" class="card" *ngIf="changeTab=== 'tab3'">
-                <div class="alert alert-error" *ngIf="errorMessage">
+            @if (changeTab === 'tab3') {
+              <form [formGroup]="userForm" class="card">
+                @if (errorMessage) {
+                  <div class="alert alert-error">
                     {{ errorMessage }}
-                </div>
-                <div class="alert alert-success" *ngIf="successMessage">
+                  </div>
+                }
+                @if (successMessage) {
+                  <div class="alert alert-success">
                     {{ successMessage }}
-                </div>
+                  </div>
+                }
 
-                <div class="loading-spinner" *ngIf="isLoading">
+                @if (isLoading) {
+                  <div class="loading-spinner">
                     <div class="spinner"></div>
-                </div>
+                  </div>
+                }
 
                 <div class="section-header">
                     <h3>Organizer</h3>
@@ -291,7 +379,8 @@
                 </div>
                 <div class="form-actions" style="    flex-direction: column; align-items: flex-start;">
                     <button type="active" class="btn-primary"  (click)="onChangeType()">Become a Organizer</button>
-                    <div class="active-organizer-form" *ngIf="activeOF">
+                    @if (activeOF) {
+                      <div class="active-organizer-form">
                         <div class="form-group organizer-form-group">
                             <label for="companyName">Company Name</label>
                             <div class="input-wrapper">
@@ -301,9 +390,13 @@
                                     [class.is-invalid]="companyName?.invalid && companyName?.touched"
                                     placeholder="Enter your company">
                             </div>
-                            <div class="error-message" *ngIf="companyName?.invalid && companyName?.touched">
-                                <span *ngIf="companyName?.errors?.['required']">company is required</span>
-                            </div>
+                            @if (companyName?.invalid && companyName?.touched) {
+                              <div class="error-message">
+                                @if (companyName?.errors?.['required']) {
+                                  <span>company is required</span>
+                                }
+                              </div>
+                            }
                         </div>
                         <div class="form-group organizer-form-group">
                             <label for="identifier">Identifier Code</label>
@@ -314,11 +407,16 @@
                                     [class.is-invalid]="identifier?.invalid && identifier?.touched"
                                     placeholder="Enter your Identifier code">
                             </div>
-                            <div class="error-message" *ngIf="identifier?.invalid && identifier?.touched">
-                                <span *ngIf="identifier?.errors?.['required']">Identifier Code is required</span>
-                                <span *ngIf="identifier?.errors?.['pattern']">Please enter a valid identifier code</span>
-
-                            </div>
+                            @if (identifier?.invalid && identifier?.touched) {
+                              <div class="error-message">
+                                @if (identifier?.errors?.['required']) {
+                                  <span>Identifier Code is required</span>
+                                }
+                                @if (identifier?.errors?.['pattern']) {
+                                  <span>Please enter a valid identifier code</span>
+                                }
+                              </div>
+                            }
                         </div>
                         <div class="form-group organizer-form-group">
                             <label for="jobTitle">Job Title</label>
@@ -329,9 +427,13 @@
                                     [class.is-invalid]="jobTitle?.invalid && jobTitle?.touched"
                                     placeholder="Enter your Job title">
                             </div>
-                            <div class="error-message" *ngIf="jobTitle?.invalid && jobTitle?.touched">
-                                <span *ngIf="jobTitle?.errors?.['required']">Job title is required</span>
-                            </div>
+                            @if (jobTitle?.invalid && jobTitle?.touched) {
+                              <div class="error-message">
+                                @if (jobTitle?.errors?.['required']) {
+                                  <span>Job title is required</span>
+                                }
+                              </div>
+                            }
                         </div>
                         <div class="form-group organizer-form-group">
                             <label for="postalCode">Postal Code</label>
@@ -342,21 +444,30 @@
                                     [class.is-invalid]="postalCode?.invalid && postalCode?.touched"
                                     placeholder="Enter your Postal code">
                             </div>
-                            <div class="error-message" *ngIf="postalCode?.invalid && postalCode?.touched">
-                                <span *ngIf="postalCode?.errors?.['required']">Postal is required</span>
-                            </div>
+                            @if (postalCode?.invalid && postalCode?.touched) {
+                              <div class="error-message">
+                                @if (postalCode?.errors?.['required']) {
+                                  <span>Postal is required</span>
+                                }
+                              </div>
+                            }
                         </div>
-                    </div>
-                    <div class="form-actions" *ngIf="activeOF">
+                      </div>
+                    }
+                    @if (activeOF) {
+                      <div class="form-actions">
                         <button type="submit" class="btn-primary"  (click)="activeOrganizer()">
                             <span class="button-content">
                                 Active organizer
                             </span>
                         </button>
-                    </div>
+                      </div>
+                    }
                 </div>
-            </form>
+              </form>
+            }
         </main>
     </div>
-</div>
+  </div>
+}
 <!-- <div class="layout"></div> -->

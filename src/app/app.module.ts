@@ -1,7 +1,5 @@
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule, NO_ERRORS_SCHEMA } from '@angular/core';
 import { AppComponent } from './app.component';
-import { AppRoutingModule } from './app-routing.module';
 import { HttpClientModule } from '@angular/common/http';
 import { HomePageComponent } from './home-page/home-page.component';
 import { LoginActionDemoComponent } from './login-action-demo/login-action-demo.component';
@@ -9,7 +7,6 @@ import { RegisterActionDemoComponent } from './register-action-demo/register-act
 import { UserInfomationComponent } from './user/user-infomation/user-infomation.component';
 import { DetailEventComponent } from './body/detail-event/detail-event.component';
 import { LayoutComponent } from './layout/layout.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HeaderSearchComponent } from './header/header-search/header-search.component';
 import { ManageEventsComponent } from './manage-events/manage-events.component';
 
@@ -18,10 +15,7 @@ import { ManageEventsComponent } from './manage-events/manage-events.component';
     // AppComponent removed from here
   ],
   imports: [
-    BrowserModule,
-    AppRoutingModule,
     HttpClientModule,
-    BrowserAnimationsModule,
     HomePageComponent,
     LoginActionDemoComponent,
     RegisterActionDemoComponent,
@@ -32,6 +26,9 @@ import { ManageEventsComponent } from './manage-events/manage-events.component';
     ManageEventsComponent,
     AppComponent
   ],
-  providers: []
+  providers: [
+
+  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
 })
 export class AppModule { } 

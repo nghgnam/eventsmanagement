@@ -1,7 +1,8 @@
-<div class="details_container" *ngIf="event">
+@if (event) {
+  <div class="details_container">
     <!-- Hero Section with Background Image -->
     <div class="events_background">
-        <div class="events_background2" [ngStyle]="{'background-image': 'url(' + event.image_url + ')'}"></div>
+        <div class="events_background2" [style.background-image]="'url(' + event.image_url + ')'"></div>
         <img [src]="event.image_url" [alt]="event.name" class="background_details">
     </div>
 
@@ -16,8 +17,14 @@
                     <span>{{ showStartTime | date: 'EEEE, MMMM d' }}</span>
                 </div>
                 <h1 class="event_title">{{ event.name }}</h1>
-                <div class="event_type_badge" [ngClass]="{'online': event.event_type === 'online', 'offline': event.event_type === 'offline', 'hybrid': event.event_type === 'hybrid'}">
-                    <i class="fa-solid" [ngClass]="{'fa-video': event.event_type === 'online', 'fa-location-dot': event.event_type === 'offline', 'fa-desktop': event.event_type === 'hybrid'}"></i>
+                <div class="event_type_badge" 
+                     [class.online]="event.event_type === 'online'"
+                     [class.offline]="event.event_type === 'offline'"
+                     [class.hybrid]="event.event_type === 'hybrid'">
+                    <i class="fa-solid" 
+                       [class.fa-video]="event.event_type === 'online'"
+                       [class.fa-location-dot]="event.event_type === 'offline'"
+                       [class.fa-desktop]="event.event_type === 'hybrid'"></i>
                     {{ event.event_type }}
                 </div>
             </div>
@@ -61,16 +68,17 @@
                 <div class="selected_date_and_time_container">
                     <h3 class="available_schedules">Available Schedules</h3>
                     <div class="date_time_options_grid">
-                        <div class="selected_options_date_and_time" *ngFor="let datetime of event.date_time_options; let i = index" 
-                             (click)="getDatetimeClick(i)" 
-                             [ngClass]="{'active': activeBorder === i}">
+                        @for (datetime of event.date_time_options; track datetime.start_time; let i = $index) {
+                          <div class="selected_options_date_and_time" 
+                               (click)="getDatetimeClick(i)" 
+                               [class.active]="activeBorder === i">
                             <div class="date_time_card">
                                 <div class="date_time_header">
                                     <span class="date_day">{{ datetime.start_time | date : "EEEE"}}</span>
                                     <span class="date_month">{{ datetime.start_time | date : "MMMM"}}</span>
                                 </div>
                                 <div class="date_time_body">
-                                    <span class="date_number" [ngClass]="{'selected': isClickActive === i}">{{ datetime.start_time | date : "d"}}</span>
+                                    <span class="date_number" [class.selected]="isClickActive === i">{{ datetime.start_time | date : "d"}}</span>
                                     <span class="date_year">{{ datetime.start_time | date : "y"}}</span>
                                 </div>
                                 <div class="date_time_footer">
@@ -78,7 +86,8 @@
                                     <span class="time">{{ datetime.start_time | date : "h:mm a" }}</span>
                                 </div>
                             </div>
-                        </div>
+                          </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -88,7 +97,7 @@
                 <h2>Location</h2>
             </div>
             <div class="event_location">
-                <i class="fa-solid" [ngClass]="{'fa-video': event.location.type === 'online', 'fa-location-dot': event.location.type === 'offline'}"></i>
+                <i class="fa-solid" [class.fa-video]="event.location.type === 'online'" [class.fa-location-dot]="event.location.type === 'offline'"></i>
                 <span>{{ event.location.type === 'online' ? 'Online Event' : event.location.address }}</span>
             </div>
 
@@ -101,12 +110,16 @@
             </div>
 
             <!-- Tags -->
-            <div class="section_title" *ngIf="event.tags && event.tags.length > 0">
+            @if (event.tags && event.tags.length > 0) {
+              <div class="section_title">
                 <h2>Tags</h2>
-            </div>
-            <div class="event_tag" *ngIf="event.tags && event.tags.length > 0">
-                <p *ngFor="let tag of event.tags">{{tag}}</p>
-            </div>
+              </div>
+              <div class="event_tag">
+                @for (tag of event.tags; track tag) {
+                  <p>{{tag}}</p>
+                }
+              </div>
+            }
 
             <!-- Organizer Details -->
             <div class="section_title">
@@ -124,12 +137,15 @@
             </div>
 
             <!-- More Events from Organizer -->
-            <div class="section_title" *ngIf="events$ | async as events">
+            @if (events$ | async; as events) {
+              <div class="section_title">
                 <h2>More events from this organizer</h2>
-            </div>
-            <div class="events_other" *ngIf="events$ | async as events">
-                <div class="event_other" *ngFor="let e of events">
-                    <div class="event_other_block" *ngIf="event.organizer && e.organizer.name === event.organizer.name" (click)="goToDetail(e.id)">
+              </div>
+              <div class="events_other">
+                @for (e of events; track e.id) {
+                  <div class="event_other">
+                    @if (event.organizer && e.organizer.name === event.organizer.name) {
+                      <div class="event_other_block" (click)="goToDetail(e.id)">
                         <div class="event_other_image">
                             <img [src]="e.image_url" [alt]="e.name">
                             <div class="event_other_date">
@@ -143,9 +159,12 @@
                             <p class="event_other_price">{{e.price ? (e.price | currency) : 'Free'}}</p>
                             <p class="event_other_organizer">{{e.organizer.name}}</p>
                         </div>
-                    </div>
-                </div>
-            </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
         </div>
 
         <!-- Ticket Purchase Section -->
@@ -160,11 +179,14 @@
                     </div>
                 </div>
                 <div class="ticket_price">
-                    <div class="price" *ngIf="totalPrice; else freeText">{{totalPrice | currency}}</div>
-                    <ng-template #freeText>Free</ng-template>
+                    @if (totalPrice) {
+                      <div class="price">{{totalPrice | currency}}</div>
+                    } @else {
+                      <div class="price">Free</div>
+                    }
                     <div class="ticket_status">
                         <i class="fa-solid fa-circle-exclamation" (click)="isChecked()"></i>
-                        <p class="ticket_status_info" [ngClass]="{ 'hidden': isHidden, 'show': !isHidden }">
+                        <p class="ticket_status_info" [class.hidden]="isHidden" [class.show]="!isHidden">
                             Sale ends on {{showEndTime | date: "MMMM d yyyy"}}
                         </p>
                     </div>
@@ -173,4 +195,5 @@
             <button class="reserve_a_spot">Reserve a spot</button>
         </div>
     </div>
-</div>
+  </div>
+}
