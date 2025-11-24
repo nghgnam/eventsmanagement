@@ -1,15 +1,15 @@
-@if (currentUser) {
+@if (currentUser()) {
   <div class="user_infomation_container">
     <div class="container">
         <aside class="sidebar">
             <h2 class="logo">nhnam</h2>
             <div class="user-info">
-                @if (sanitizeImageUrl(currentUser.profileImage); as safeUrl) {
+                @if (sanitizeImageUrl(currentUser()?.profileImage || ''); as safeUrl) {
                   <img [src]="safeUrl" alt="User Avatar" class="avatar">
                 }
                 <div>
-                    <p class="username">{{currentUser.fullName}}</p>
-                    <p class="role">{{currentUser.type}}</p>
+                    <p class="username">{{currentUser()?.fullName || ''}}</p>
+                    <p class="role">{{currentUser()?.type || ''}}</p>
                 </div>
             </div>
             @if (currentRole === 'member') {
@@ -52,7 +52,7 @@
                 }
 
                 <!-- Loading Spinner -->
-                @if (isLoading) {
+                @if (isLoading()) {
                   <div class="loading-spinner">
                     <div class="spinner"></div>
                   </div>
@@ -272,10 +272,10 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn-primary" [disabled]="userForm.invalid || isSaving">
+                    <button type="submit" class="btn-primary" [disabled]="userForm.invalid || isSaving()">
                         <span class="button-content">
-                            <i class="button-icon">{{ isSaving ? '⏳' : '💾' }}</i>
-                            {{ isSaving ? 'Saving...' : 'Save Changes' }}
+                            <i class="button-icon">{{ isSaving() ? '⏳' : '💾' }}</i>
+                            {{ isSaving() ? 'Saving...' : 'Save Changes' }}
                         </span>
                     </button>
                 </div>
@@ -294,7 +294,7 @@
                   </div>
                 }
 
-                @if (isLoading) {
+                @if (isLoading()) {
                   <div class="loading-spinner">
                     <div class="spinner"></div>
                   </div>
@@ -342,10 +342,10 @@
                             }
                         </div>
                         <div class="form-actions">
-                            <button type="submit" class="btn-primary" [disabled]="changePasswordForm.invalid || isSaving" (click)="updatePasswordHandler()">
+                            <button type="submit" class="btn-primary" [disabled]="changePasswordForm.invalid || isSaving()" (click)="updatePasswordHandler()">
                                 <span class="button-content">
-                                    <i class="button-icon">{{ isSaving ? '⏳' : '💾' }}</i>
-                                    {{ isSaving ? 'Saving...' : 'Change password' }}
+                                    <i class="button-icon">{{ isSaving() ? '⏳' : '💾' }}</i>
+                                    {{ isSaving() ? 'Saving...' : 'Change password' }}
                                 </span>
                             </button>
                         </div>
@@ -368,7 +368,7 @@
                   </div>
                 }
 
-                @if (isLoading) {
+                @if (isLoading()) {
                   <div class="loading-spinner">
                     <div class="spinner"></div>
                   </div>
@@ -451,7 +451,7 @@
                         </div>
                       </div>
                       <div class="form-actions">
-                        <button type="submit" class="btn-primary" (click)="activeOrganizer()" [disabled]="OrganizerForm.invalid || isSaving">
+                        <button type="submit" class="btn-primary" (click)="activeOrganizer()" [disabled]="OrganizerForm.invalid || isSaving()">
                             <span class="button-content">
                                 Active organizer
                             </span>

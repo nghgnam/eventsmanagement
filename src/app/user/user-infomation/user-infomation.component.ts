@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy,  ViewChild, ElementRef, signal } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
 import { Organizer, User, UserType } from '../../types/userstype';
 import { UsersService } from '../../service/users.service';
@@ -42,18 +42,17 @@ interface FollowWithOrganizer extends Follows {
   imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './user-infomation.component.html',
   styleUrls: ['./user-infomation.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserInfomationComponent implements OnInit, OnDestroy {
   user$: Observable<User[]>;
-  currentUser: User | undefined;
+  currentUser = signal< User | undefined>(undefined);
   imageUrl: string | undefined;
   private subscriptions: Subscription[] = [];
   userForm: FormGroup;
   changePasswordForm: FormGroup;
   OrganizerForm: FormGroup;
-  isLoading = false;
-  isSaving = false;
+  isLoading = signal(false);
+  isSaving = signal(false);
   errorMessage = '';
   successMessage = '';
   changeTab : string  = 'tab1';
@@ -79,7 +78,6 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     private cloudinaryService: CloudinaryService,
     private sanitizer: DomSanitizer,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef,
     private location: AddressInformationService,
     private authService: AuthService
   ) {
@@ -173,7 +171,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     
 
     
-    this.isLoading = true;
+    this.isLoading.set(true);
     const authInstance = getAuth();
     this.countries = this.getCountryList();
     try {
@@ -194,35 +192,34 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
         const userId = user.uid;
         const userSubscription = this.userService.getCurrentUserById(userId)
           .pipe(finalize(() => {
-            this.isLoading = false;
-            this.cdr.detectChanges();
+            this.isLoading.set(false);
           }))
           .subscribe({
             next: (dataUser) => {
               if (dataUser) {
                 
                 this.currentRole = dataUser.type
-                this.currentUser = dataUser;
+                this.currentUser.set(dataUser);
                 this.imageUrl = dataUser.profileImage;           
                 this.updateFormWithUserData(dataUser);
-                this.cdr.detectChanges();
+                
               } else {
                 console.error('No user data found');
                 this.errorMessage = 'No user data found. Please try logging in again.';
-                this.cdr.detectChanges();
+                
               }
             },
             error: (error) => {
               console.error('Error fetching user data:', error);
               this.errorMessage = 'Failed to load user data. Please try again later.';
-              this.cdr.detectChanges();
+              
             }
           });
         this.subscriptions.push(userSubscription);
       } else {
-        this.isLoading = false;
+        this.isLoading.set(false);
         this.errorMessage = 'Please log in to view your profile';
-        this.cdr.detectChanges();
+        
       }
     });
 
@@ -318,7 +315,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
         console.error(`Error setting value for ${key}:`, error);
       }
     });
-    this.cdr.detectChanges();
+    
   }
 
   isOrangizer(user: User) :user is Organizer{
@@ -370,19 +367,19 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.errorMessage = '';
 
     this.cloudinaryService.upLoadImage(file).subscribe({
       next: (response: CloudinaryResponse) => {
           this.imageUrl = response.secure_url;
         this.userForm.patchValue({ profileImage: response.secure_url });
-        this.isLoading = false;
+        this.isLoading.set(false);
       },
       error: (error: Error) => {
         console.error('Error uploading image:', error);
         this.errorMessage = 'Failed to upload image. Please try again.';
-        this.isLoading = false;
+        this.isLoading.set(false);
       }
     });
   }
@@ -424,12 +421,12 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       return;
     }
   
-    if (!this.currentUser?.id) {
+    if (!this.currentUser()?.id) {
       this.errorMessage = 'No user data available';
       return;
     }
   
-    this.isSaving = true;
+    this.isSaving.set(true);
     this.errorMessage = '';
     this.successMessage = '';
   
@@ -444,13 +441,13 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   
       if (!updatedDOB) {
         this.errorMessage = 'Invalid date format';
-        this.isSaving = false;
+        this.isSaving.set(false);
         return;
       }
   
     } else {
       this.errorMessage = 'Invalid date format';
-      this.isSaving = false;
+      this.isSaving.set(false);
       return;
     }
   
@@ -479,23 +476,23 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       dateOfBirth: updatedDOB
     };
   
-    this.userService.updateUserProfile(String(this.currentUser.id), updatedUser)
+    this.userService.updateUserProfile(String(this.currentUser()?.id || ''), updatedUser)
       .pipe(finalize(() => {
-        this.isSaving = false;
-        this.cdr.detectChanges();
+        this.isSaving.set(false);
+        
       }))
       .subscribe({
         next: () => {
           this.successMessage = 'Profile updated successfully';
           setTimeout(() => {
             this.successMessage = '';
-            this.cdr.detectChanges();
+            
           }, 3000);
         },
         error: (error) => {
           console.error('Error updating user:', error);
           this.errorMessage = 'Failed to update profile. Please try again.';
-          this.cdr.detectChanges();
+          
         }
       });
   }
@@ -505,19 +502,19 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     const user = authInstance.currentUser;
     let updateOrganizer = {};
 
-    this.isSaving = true;
+    this.isSaving.set(true);
     this.errorMessage = '';
     this.successMessage = '';
 
     if (!user) {
       this.errorMessage = 'User not authenticated';
-      this.isSaving = false;
+      this.isSaving.set(false);
       return;
     }
 
-    if (!this.currentUser?.id) {
+    if (!this.currentUser()?.id) {
       this.errorMessage = 'User ID not found';
-      this.isSaving = false;
+      this.isSaving.set(false);
       return;
     }
 
@@ -529,7 +526,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
 
       if (!companyName || !identifier || !jobTitle || !postalCode) {
         this.errorMessage = 'Please fill in all organization details';
-        this.isSaving = false;
+        this.isSaving.set(false);
         return;
       }
 
@@ -544,23 +541,23 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       } as Partial<Organizer>;
     }
 
-    this.userService.activeOrganizer(String(this.currentUser.id), updateOrganizer)
+    this.userService.activeOrganizer(String(this.currentUser()?.id || ''), updateOrganizer)
       .pipe(finalize(() => {
-        this.isSaving = false;
-        this.cdr.detectChanges();
+        this.isSaving.set(false);
+        
       }))
       .subscribe({
         next: () => {
           this.successMessage = "Organizer activated successfully";
           setTimeout(() => {
             this.successMessage = '';
-            this.cdr.detectChanges();
+            
           }, 3000);
         },
         error: (error) => {
           console.error('Error activating organizer:', error);
           this.errorMessage = "Failed to activate organizer. Please try again.";
-          this.cdr.detectChanges();
+          
         }
       });
   }
@@ -591,7 +588,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       return;
     }
   
-    this.isSaving = true;
+    this.isSaving.set(true);
     this.errorMessage = '';
     this.successMessage = '';
   
@@ -612,7 +609,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       console.error('Failed to update password wrong current password');
       this.errorMessage = 'Failed to update password, wrong current password';
     } finally {
-      this.isSaving = false;
+        this.isSaving.set(false);
     }
   }
   
@@ -635,8 +632,8 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   get postalCode() {return this.OrganizerForm.get('postalCode')}
 
   private loadFollowedOrganizers() {
-    if (this.currentUser?.type === 'member') {
-      const sub = this.userService.getFollowedOrganizers(this.currentUser.id).subscribe({
+    if (this.currentUser()?.type === 'member') {
+      const sub = this.userService.getFollowedOrganizers(this.currentUser()?.id || '').subscribe({
         next: async (follows: Follows[]) => {
           // Load organizer information for each follow
           const followsWithOrganizers = await Promise.all(
@@ -650,12 +647,12 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
             })
           );
           this.followedOrganizers = followsWithOrganizers;
-          this.cdr.detectChanges();
+          
         },
         error: (error: Error) => {
           console.error('Error loading followed organizers:', error);
           this.errorMessage = 'Failed to load followed organizers';
-          this.cdr.detectChanges();
+          
         }
       });
       this.subscriptions.push(sub);
@@ -665,7 +662,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   unfollowOrganizer(followId: string | undefined) {
     if (!followId) return;
 
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.errorMessage = '';
     this.successMessage = '';
 
@@ -673,14 +670,14 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       next: () => {
         this.followedOrganizers = this.followedOrganizers.filter(f => f.id !== followId);
         this.successMessage = 'Successfully unfollowed organizer';
-        this.isLoading = false;
-        this.cdr.detectChanges();
+        this.isLoading.set(false);
+        
       },
       error: (error: Error) => {
         console.error('Error unfollowing organizer:', error);
         this.errorMessage = 'Failed to unfollow organizer';
-        this.isLoading = false;
-        this.cdr.detectChanges();
+        this.isLoading.set(false);
+        
       }
     });
     this.subscriptions.push(sub);

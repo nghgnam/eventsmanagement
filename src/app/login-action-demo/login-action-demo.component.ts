@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule  , FormGroup, ReactiveFormsModule, FormBuilder, Validators} from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -12,7 +12,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { ChangeDetectorRef } from '@angular/core';
 @Component({
   selector: 'app-login-action-demo',
   standalone: true,
@@ -37,8 +36,8 @@ export class LoginActionDemoComponent implements OnInit{
   userForm: FormGroup;
   showPassword: boolean = false; 
   auth = getAuth();
-  errorMessage: string = '';
-  isLoading: boolean = false;
+  errorMessage = signal<string>('');
+  isLoading = signal<boolean>(false);
   private unsubscribeFn: any;
 
 
@@ -48,7 +47,6 @@ export class LoginActionDemoComponent implements OnInit{
     private authService: AuthService, 
     private router: Router,
     private fb : FormBuilder,
-    private cdr: ChangeDetectorRef
   ){
     this.userForm = this.fb.group({
       email: ['' , [Validators.required , Validators.email]],
@@ -71,47 +69,46 @@ export class LoginActionDemoComponent implements OnInit{
   }
 
   onSubmit(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading.set(true);
+    this.errorMessage.set('');
     if(this.userForm.invalid){
-      this.errorMessage = 'Please fill in all required fields correctly';
+      this.errorMessage.set('Please fill in all required fields correctly');
       return;
     }
     const email = this.userForm.get('email')?.value;
     const password = this.userForm.get('password')?.value;
     this.authService.login(email, password).subscribe({
       next: () => {
-        this.isLoading = false;
+        this.isLoading.set(false);
         this.router.navigate(['/body']);
       },
       error: (error) => {
-        this.isLoading = false;
+        this.isLoading.set(false);
         console.error('Login error:', error);
         
         switch (error.code) {
           case 'auth/invalid-credential':
-            this.errorMessage = 'Invalid email or password. Please try again.';
+            this.errorMessage.set('Invalid email or password. Please try again.');
             
             break;
           case 'auth/user-not-found':
-            this.errorMessage = 'No account found with this email.';
+              this.errorMessage.set('No account found with this email.');
             break;
           case 'auth/wrong-password':
-            this.errorMessage = 'Incorrect password.';
+            this.errorMessage.set('Incorrect password.');
             break;
           case 'auth/too-many-requests':
-            this.errorMessage = 'Too many failed login attempts. Please try again later.';
+            this.errorMessage.set('Too many failed login attempts. Please try again later.');
             break;
           case 'auth/user-disabled':
-            this.errorMessage = 'This account has been disabled.';
+            this.errorMessage.set('This account has been disabled.');
             break;
           default:
-            this.errorMessage = 'An error occurred during login. Please try again.';
+            this.errorMessage.set('An error occurred during login. Please try again.');
         }
       }
     });  
     
-    this.cdr.markForCheck();
   }
 get emailCtrl() { return this.userForm.get('email')!; }
 get passwordCtrl() { return this.userForm.get('password')!; }

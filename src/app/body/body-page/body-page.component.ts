@@ -6,8 +6,7 @@ import { BodyEventsListingComponent } from '../body-events-listing/body-events-l
   standalone: true,
   imports: [BodySlideshowComponent,BodyEventsListingComponent],
   templateUrl: './body-page.component.html',
-  styleUrls: ['./body-page.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./body-page.component.css']
 })
 export class BodyPageComponent {
 }
