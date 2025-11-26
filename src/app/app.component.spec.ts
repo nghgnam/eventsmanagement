@@ -1,9 +1,13 @@
 import { TestBed } from '@angular/core/testing';
+import { getTestBedProviders } from 'test-setup';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
+    
     await TestBed.configureTestingModule({
+      providers: getTestBedProviders(),
+      providers: getTestBedProviders(),
       imports: [AppComponent],
     }).compileComponents();
   });

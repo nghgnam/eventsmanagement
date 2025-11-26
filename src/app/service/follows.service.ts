@@ -1,7 +1,6 @@
-import { Injectable } from '@angular/core';
-import { Firestore, collection, query, where, getDocs, doc, setDoc, deleteDoc } from '@angular/fire/firestore';
-import { Observable, from } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Injectable, inject } from '@angular/core';
+import { CollectionReference, Firestore, collection, deleteDoc, doc, getDocs, query, setDoc, where } from '@angular/fire/firestore';
+import { Observable, from, of } from 'rxjs';
 
 export interface Follow {
   id?: string;
@@ -15,16 +14,23 @@ export interface Follow {
 @Injectable({
   providedIn: 'root'
 })
-export class FollowsService {
-  private followsCollection;
+export class FollowsService{
+  private followsCollection: CollectionReference | undefined;
+  private firestore = inject(Firestore);
 
-  constructor(private firestore: Firestore) {
-    this.followsCollection = collection(this.firestore, 'follows');
+
+  constructor(){
+    if(this.firestore){
+      this.followsCollection = collection(this.firestore, 'follows');
+    }
   }
 
   // Get all follows for a user
   getFollowsByUser(userId: string): Observable<Follow[]> {
-    const q = query(this.followsCollection, where('followerId', '==', userId));
+    if(!this.followsCollection){
+      return of([]);
+    }
+    const q = query(this.followsCollection as CollectionReference, where('followerId', '==', userId));
     return from(getDocs(q).then(snapshot => {
       const follows: Follow[] = [];
       snapshot.forEach(doc => {
@@ -39,7 +45,10 @@ export class FollowsService {
 
   // Follow an organizer
   followOrganizer(follow: Follow): Observable<void> {
-    const followDoc = doc(this.followsCollection);
+    if(!this.followsCollection){
+      return of(undefined);
+    }
+    const followDoc = doc(this.followsCollection as CollectionReference);
     return from(setDoc(followDoc, {
       ...follow,
       createdAt: new Date()
@@ -48,14 +57,17 @@ export class FollowsService {
 
   // Unfollow an organizer
   unfollowOrganizer(followId: string): Observable<void> {
-    const followDoc = doc(this.followsCollection, followId);
+    if(!this.followsCollection){
+      return of(undefined);
+    }
+    const followDoc = doc(this.followsCollection as CollectionReference, followId);
     return from(deleteDoc(followDoc));
   }
 
   // Check if user is following an organizer
   isFollowing(followerId: string, organizerId: string): Observable<boolean> {
     const q = query(
-      this.followsCollection,
+      this.followsCollection as CollectionReference,
       where('followerId', '==', followerId),
       where('organizerId', '==', organizerId)
     );

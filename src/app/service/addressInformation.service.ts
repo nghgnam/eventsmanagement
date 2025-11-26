@@ -1,31 +1,29 @@
 import { Observable } from "rxjs";
-import { Inject, Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 @Injectable({
     providedIn: 'root'
 })
 
 export class AddressInformationService{
+    private http = inject(HttpClient);
+
     private wardsUrl = 'assets/location/wards.json';
     private districtsUrl = 'assets/location/districts.json';
     private citiesUrl = 'assets/location/cities.json';
 
 
-    constructor(private http: HttpClient){
 
+    getCities(): Observable<string[]>{
+        return this.http.get<string[]>(this.citiesUrl)
     }
 
-
-    getCities(): Observable<any>{
-        return this.http.get<any>(this.citiesUrl)
+    getDistricts(): Observable<string[]>{
+        return this.http.get<string[]>(this.districtsUrl)
     }
 
-    getDistricts(): Observable<any>{
-        return this.http.get<any>(this.districtsUrl)
-    }
-
-    getWards(): Observable<any>{
-        return this.http.get<any>(this.wardsUrl)
+    getWards(): Observable<string[]>{
+        return this.http.get<string[]>(this.wardsUrl)
     }
 
 }

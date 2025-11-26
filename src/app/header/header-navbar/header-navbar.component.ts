@@ -1,15 +1,14 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
-import { SharedService } from '../../service/shared.service';
-import { auth } from '../../config/firebase.config';
-import { getAuth, signOut } from 'firebase/auth';
-import { AuthService } from '../../service/auth.service';
-import { UsersService } from '../../service/users.service';
-import { Observable, Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { User } from '../../types/userstype';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { SafeUrlService } from '../../service/santizer.service';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { SafeUrl } from '@angular/platform-browser';
+import { Router, RouterModule } from '@angular/router';
+import { getAuth, signOut, Unsubscribe } from 'firebase/auth';
+import { Observable, Subscription } from 'rxjs';
+import { AuthService } from '../../core/services/auth.service';
+import { SafeUrlService } from '../../core/services/santizer.service';
+import { SharedService } from '../../core/services/shared.service';
+import { UsersService } from '../../core/services/users.service';
+import { User } from '../../core/models/userstype';
 import { HeaderSearchComponent } from '../header-search/header-search.component';
 
 @Component({
@@ -20,6 +19,12 @@ import { HeaderSearchComponent } from '../header-search/header-search.component'
   styleUrls: ['./header-navbar.component.css']
 })
 export class HeaderNavbarComponent implements OnInit, OnDestroy {
+  private sharedService = inject(SharedService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private usersService = inject(UsersService);
+  private sanitizer = inject(SafeUrlService);
+
   user: User | undefined;
   user$: Observable<User[]> | undefined;
   userCurrentId: string | undefined;
@@ -28,22 +33,16 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
   userCurrentEmail: string | undefined;
   isDropdownOpen: boolean = false;
   auth = getAuth();
-  currentUserType: string | undefined;
+  currentUserType: string | null | undefined;
   
   checkingForLogin: boolean = false;
   users: User[] = [];
   mobileMenuOpen = false;
   isMobile = false;
   private subscriptions: Subscription[] = [];
-  private authStateSubscription: any;
+  private authStateSubscription: Unsubscribe | undefined;
 
-  constructor(
-    private sharedService: SharedService, 
-    private authService: AuthService, 
-    private router: Router, 
-    private usersService: UsersService, 
-    private sanitizer: SafeUrlService
-  ) {
+  constructor() {
     this.user$ = this.usersService.users$;
   }
 

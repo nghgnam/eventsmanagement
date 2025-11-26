@@ -1,20 +1,22 @@
-import { Injectable } from "@angular/core";
-import { Firestore, collection, doc, getDoc, getDocs, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "@angular/fire/firestore";
+import { Injectable, inject } from "@angular/core";
+import { Firestore, collection, doc, getDoc, getDocs, onSnapshot, updateDoc } from "@angular/fire/firestore";
+import { addDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { BehaviorSubject, Observable, from, map, switchMap } from "rxjs";
-import { User, Organizer } from "../types/userstype";
-import { Follows } from '../types/followtype';
-import { query, where, addDoc, deleteDoc, DocumentReference } from 'firebase/firestore';
 import { db } from '../config/firebase.config';
+import { Follows } from '../core/models/followtype';
+import { Organizer, User } from "../core/models/userstype";
 
 @Injectable({
     providedIn: 'root'
 })
 
 export class UsersService{
+    private firestore = inject(Firestore);
+
     private usersSubject = new BehaviorSubject<User[]>([])
     users$ = this.usersSubject.asObservable();
 
-    constructor(private firestore: Firestore) {
+    constructor() {
         this.fetchUsers();
     }
 
@@ -115,7 +117,7 @@ export class UsersService{
                                 continue;
                             }
 
-                            const orgData = (organizerData as any).organization;
+                            const orgData = (organizerData as Organizer).organization;
                             let companyName = 'No company name';
                             if (orgData && typeof orgData.companyName === 'string') {
                                 companyName = orgData.companyName;

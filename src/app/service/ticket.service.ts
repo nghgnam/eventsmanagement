@@ -1,12 +1,9 @@
-import { Injectable, Query } from '@angular/core';
-import { auth } from '../config/firebase.config';
-import { Observable, of, from, BehaviorSubject, forkJoin } from 'rxjs';
-import { TicketType } from '../types/ticketstype';
-import { addDoc, collection, DocumentData, getDocs, onSnapshot, query, QuerySnapshot, Timestamp, updateDoc, where } from 'firebase/firestore';
-import { doc, getDoc } from 'firebase/firestore';
-import { catchError, debounceTime, map, mergeMap, switchMap, tap, toArray } from 'rxjs/operators';
+import { Injectable } from '@angular/core';
+import { addDoc, collection, getDocs, onSnapshot, query, Timestamp, updateDoc, where } from 'firebase/firestore';
+import { BehaviorSubject, forkJoin, from, Observable, of } from 'rxjs';
+import { catchError, map, mergeMap, tap } from 'rxjs/operators';
 import { db } from '../config/firebase.config';
-import { error } from 'console';
+import { TicketType } from '../core/models/ticketstype';
 
 @Injectable({
     providedIn: 'root'
@@ -57,12 +54,9 @@ export class TicketService {
             paid: false,
             expire_at: Timestamp.fromDate(new Date(expire_at)),
         })).pipe(
-            map(docRef =>{
+            map(() =>{
                 
                 return { user_id: userId, event_id: eventId, total_price: total_price, status: 'unused', create_at: new Date() } as unknown as TicketType;
-            }),catchError((error: any) =>{
-                
-                return [];
             })
         )
     }
@@ -182,7 +176,7 @@ export class TicketService {
                     tap(()=> {
                       console.log(`Ticket with ID ${doc.id} has been updated to expired.`);
                     }),
-                    catchError((error: any) => {
+                    catchError((error) => {
                       console.error(`Error updating ticket with ID ${doc.id}:`, error);
                       return of(null); 
                     })

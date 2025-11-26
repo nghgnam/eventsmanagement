@@ -1,21 +1,25 @@
-import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { isPlatformBrowser } from '@angular/common';
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { getAnalytics, isSupported } from "firebase/analytics";
-import { environment } from "../../environments/environment";
+import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { environment } from "../../environments/environment";
 @Injectable({
   providedIn: 'root'
 })
 export class FirebaseService {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private app: any;
   private analytics: any;
   private firestore: any;
   private auth: any;
-  constructor(@Inject(PLATFORM_ID) private platformId: object) {
+  private platformId = inject<object>(PLATFORM_ID);
+  // eslint-disable-next-line @angular-eslint/prefer-inject
+  constructor() {
     if (isPlatformBrowser(this.platformId)) {
-      this.app = initializeApp(environment.firebaseConfig);
+      this.app = initializeApp(environment.firebase);
       this.firestore = getFirestore(this.app);  
       this.auth = getAuth(this.app);
       isSupported().then(supported => {

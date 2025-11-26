@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 declare namespace L {
   function map(id: string): Map;
   function tileLayer(url: string, options?: any): TileLayer;
@@ -10,8 +11,9 @@ declare namespace L {
     setView(center: [number, number], zoom: number): this;
     remove(): void;
     getCenter(): LatLng;
-    on(event: string, handler: Function): this;
-    off(event: string, handler: Function): this;
+    // Thay Function bằng định nghĩa hàm cụ thể
+    on(event: string, handler: (event: any) => void): this;
+    off(event: string, handler: (event: any) => void): this;
   }
 
   interface TileLayer {
@@ -21,8 +23,9 @@ declare namespace L {
   interface Marker {
     addTo(map: Map): this;
     remove(): void;
-    on(event: string, handler: Function): this;
-    off(event: string, handler: Function): this;
+    // Thay Function bằng định nghĩa hàm cụ thể
+    on(event: string, handler: (event: any) => void): this;
+    off(event: string, handler: (event: any) => void): this;
     getLatLng(): LatLng;
     bindPopup(content: string | HTMLElement, options?: any): this;
   }
@@ -47,4 +50,4 @@ declare global {
   interface Window {
     L: typeof L;
   }
-} 
+}

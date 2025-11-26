@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
   templateUrl: './body-slideshow.component.html',
   styleUrls: ['./body-slideshow.component.css']
 })
-export class BodySlideshowComponent implements OnInit, OnDestroy {
+export class BodySlideshowComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('slideContainer') slideContainer!: ElementRef;
   
   slides = [
@@ -30,7 +30,8 @@ export class BodySlideshowComponent implements OnInit, OnDestroy {
   ];
 
   currentSlideIndex = 0;
-  private autoSlideInterval: any;
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  private autoSlideInterval: any = undefined;
   autoSlideTime = 5000; // 5 seconds
   isTransitioning = false;
   slideDirection: 'left' | 'right' = 'right';

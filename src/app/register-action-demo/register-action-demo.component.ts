@@ -1,13 +1,13 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
-import { AuthService } from '../service/auth.service';
-import { getAuth, Auth } from 'firebase/auth';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { Router, RouterModule } from '@angular/router';
+import { getAuth } from 'firebase/auth';
+import { AuthService } from '../core/services/auth.service';
 
 @Component({
   selector: 'app-register-action-demo',
@@ -25,20 +25,20 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrls: ['./register-action-demo.component.css']
 })
 export class RegisterActionDemoComponent implements OnInit, OnDestroy {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private fb = inject(FormBuilder);
+
   auth = getAuth();
   currentuserverify = this.auth.currentUser;
   registerForm: FormGroup;
   showPassword: boolean = false;
   showToast: boolean = false;
-  private emailVerificationCheckInterval: any;
+  private emailVerificationCheckInterval: number | undefined;
   errorMessage: string = '';
   isLoading: boolean = false;
 
-  constructor(
-    private authService: AuthService,
-    private router: Router,
-    private fb: FormBuilder
-  ) {
+  constructor() {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
@@ -103,13 +103,14 @@ export class RegisterActionDemoComponent implements OnInit, OnDestroy {
     const { email, password } = this.registerForm.value;
 
     this.authService.register(email, password).subscribe({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       next: (user: any) => {
         console.log('Registration successful:', user);
         this.showToast = true;
         this.auth.onAuthStateChanged(user => {
           if (user) {
             this.checkEmailVerified(email, password);
-            this.emailVerificationCheckInterval = setInterval(() => {
+            this.emailVerificationCheckInterval = window.setInterval(() => {
               this.checkEmailVerified(email, password);
             }, 5000);
           }

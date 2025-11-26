@@ -1,0 +1,412 @@
+<div class="brower-event-container">
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <span>Event Management</span>
+            </div>
+            <div class="user-info">
+                <img [src]="sanitizeImageUrl(currentUser?.profile?.avatar)" alt="User Avatar" class="avatar">
+                <div>
+                    <h4 class="username">{{currentUser?.profile?.fullName}}</h4>
+                    <p class="role">{{currentUser?.account?.role}}</p>
+                </div>
+            </div>
+            <div class="menu">
+                <ul>
+                    <li [class.active]="activeTab === 'upcoming'" (click)="setActiveTab('upcoming')">
+                        <span>Upcoming Events</span>
+                    </li>
+                    <li [class.active]="activeTab === 'past'" (click)="setActiveTab('past')">
+                        <span>Past Events</span>
+                    </li>
+
+                    <li [class.active]="activeTab === 'delete'" (click)="setActiveTab('delete')" >
+                        <span>Cancelled Events</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+
+            
+
+            <!-- Header -->
+            <div class="header">
+                <h2>
+                    {{activeTab === 'upcoming' ? 'Upcoming Events' : 'Past Events'}}
+                </h2>
+                <button class="create-event-btn" (click)="toggleCreateEventForm()" >
+                    Create New Event
+                </button>
+            </div>
+
+            <!-- Alert Messages -->
+            @if (errorMessage) {
+              <div class="alert alert-error">
+                {{errorMessage}}
+              </div>
+            }
+            @if (successMessage) {
+              <div class="alert alert-success">
+                {{successMessage}}
+              </div>
+            }
+
+            <!-- Create Event Form -->
+            @if (showCreateEventForm) {
+              <div class="card create-event-form">
+                <h3>Create New Event</h3>
+                <form [formGroup]="eventForm" (ngSubmit)="onSubmit()">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Event Name *</label>
+                            <div class="input-with-icon">
+                                <input type="text" id="name" formControlName="name" placeholder="Enter event name">
+                            </div>
+                            @if (eventForm.get('name')?.touched && eventForm.get('name')?.errors?.['required']) {
+                              <div class="error-message">
+                                Event name is required
+                              </div>
+                            }
+                            @if (eventForm.get('name')?.touched && eventForm.get('name')?.errors?.['minlength']) {
+                              <div class="error-message">
+                                Event name must be at least 3 characters
+                              </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="description">Description *</label>
+                            <div class="input-with-icon">
+                                <textarea id="description" formControlName="description"
+                                    placeholder="Enter event description"></textarea>
+                            </div>
+                            @if (eventForm.get('description')?.touched && eventForm.get('description')?.errors?.['required']) {
+                              <div class="error-message">
+                                Description is required
+                              </div>
+                            }
+                            @if (eventForm.get('description')?.touched && eventForm.get('description')?.errors?.['minlength']) {
+                              <div class="error-message">
+                                Description must be at least 10 characters
+                              </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="startDate">Start Date *</label>
+                            <div class="input-with-icon">
+                                <input type="datetime-local" id="startDate" formControlName="startDate">
+                            </div>
+                            @if (eventForm.get('startDate')?.touched && eventForm.get('startDate')?.errors?.['required']) {
+                              <div class="error-message">
+                                Start date is required
+                              </div>
+                            }
+                        </div>
+                        <div class="form-group">
+                            <label for="endDate">End Date *</label>
+                            <div class="input-with-icon">
+                                <input type="datetime-local" id="endDate" formControlName="endDate">
+                            </div>
+                            @if (eventForm.get('endDate')?.touched && eventForm.get('endDate')?.errors?.['required']) {
+                              <div class="error-message">
+                                End date is required
+                              </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="location">Location *</label>
+                            <div class="input-with-icon">
+                                <input type="text" id="location" formControlName="location" placeholder="Enter event location">
+                            </div>
+                            @if (eventForm.get('location')?.touched && eventForm.get('location')?.errors?.['required']) {
+                              <div class="error-message">
+                                Location is required
+                              </div>
+                            }
+                        </div>
+                        <div class="form-group">
+                            <label for="eventType">Event Type *</label>
+                            <div class="input-with-icon">
+                                <select id="eventType" formControlName="eventType">
+                                    <option value="offline">Offline</option>
+                                    <option value="online">Online</option>
+                                    <option value="hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                            @if (eventForm.get('eventType')?.touched && eventForm.get('eventType')?.errors?.['required']) {
+                              <div class="error-message">
+                                Event type is required
+                              </div>
+                            }
+                        </div>
+                    </div>
+                    @if (isOffline || isHybird) {
+                      <div class="form-group">
+                        <label for="details_address">Address</label>
+                        <div class="input-with-icon">
+                          <span class="material-icons input-icon">home</span>
+                          <input type="text" id="details_address" formControlName="details_address"
+                              [class.is-invalid]="details_address?.invalid && details_address?.touched"
+                              placeholder="Enter your details_address address">
+                        </div>
+                        @if (details_address?.invalid && details_address?.touched) {
+                          <div class="error-message">
+                            @if (details_address?.errors?.['required']) {
+                              <span>Street address is required</span>
+                            }
+                          </div>
+                        }
+                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label for="districts">Districts</label>
+                          <div class="input-with-icon">
+                            <span class="material-icons input-icon">location_city</span>
+                            <select id="districts" formControlName="districts"
+                                [class.is-invalid]="districts?.invalid && districts?.touched">
+                              <option [ngValue]="null">Select a district</option>
+                              @for (districtOption of districtsWithCities; track districtOption.code) {
+                                <option [ngValue]="districtOption">
+                                  {{ districtOption.name }}
+                                </option>
+                              }
+                            </select>
+                          </div>
+                          @if (districts?.invalid && districts?.touched) {
+                            <div class="error-message">
+                              @if (districts?.errors?.['required']) {
+                                <span>District is required</span>
+                              }
+                            </div>
+                          }
+                        </div>
+
+                        <div class="form-group">
+                          <label for="wards">Wards</label>
+                          <div class="input-with-icon">
+                            <span class="material-icons input-icon">public</span>
+                            <select id="wards" formControlName="wards"
+                                [class.is-invalid]="wards?.invalid && wards?.touched">
+                              <option [ngValue]="null">Select a ward</option>
+                              @for (wardOption of wardsWithDistricts; track wardOption.code) {
+                                <option [ngValue]="wardOption">
+                                  {{ wardOption.name }}
+                                </option>
+                              }
+                            </select>
+                          </div>
+                          @if (wards?.invalid && wards?.touched) {
+                            <div class="error-message">
+                              @if (wards?.errors?.['required']) {
+                                <span>Ward is required</span>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label for="country">Country</label>
+                          <div class="input-with-icon">
+                            <span class="material-icons input-icon">public</span>
+                            <select id="country" formControlName="country"
+                                [class.is-invalid]="country?.invalid && country?.touched">
+                              <option value="">Select a country</option>
+                              @for (countryOption of countries; track countryOption.name) {
+                                <option [value]="countryOption.name">
+                                  {{ countryOption.name }}
+                                </option>
+                              }
+                            </select>
+                          </div>
+                          @if (country?.invalid && country?.touched) {
+                            <div class="error-message">
+                              @if (country?.errors?.['required']) {
+                                <span>Country is required</span>
+                              }
+                            </div>
+                          }
+                        </div>
+
+                        <div class="form-group">
+                          <label for="city">City</label>
+                          <div class="input-with-icon">
+                            <span class="material-icons input-icon">location_city</span>
+                            <select id="city" formControlName="city"
+                                [class.is-invalid]="city?.invalid && city?.touched">
+                              <option [ngValue]="null">Select a city</option>
+                              @for (cityOption of citiesValue; track cityOption.code) {
+                                <option [ngValue]="cityOption">
+                                  {{ cityOption.name }}
+                                </option>
+                              }
+                            </select>
+                          </div>
+                          @if (city?.invalid && city?.touched) {
+                            <div class="error-message">
+                              @if (city?.errors?.['required']) {
+                                <span>City is required</span>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="price">Price</label>
+                            <div class="input-with-icon">
+                                <input type="number" id="price" formControlName="price" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="maxAttendees">Max Attendees</label>
+                            <div class="input-with-icon">
+                                <input type="number" id="maxAttendees" formControlName="maxAttendees" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tags">Tags (comma separated)</label>
+                            <div class="input-with-icon">
+                                <input type="text" id="tags" formControlName="tags"
+                                    placeholder="e.g., Business, Technology">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="image">Event Image</label>
+                            <div class="image-upload-container">
+                                @if (imagePreviewUrl) {
+                                  <div class="image-preview">
+                                    <img [src]="imagePreviewUrl" alt="Event image preview">
+                                    <button type="button" class="remove-image" (click)="removeImage()">
+                                      X
+                                    </button>
+                                  </div>
+                                }
+                                @if (!imagePreviewUrl) {
+                                  <div class="image-upload-area" (click)="triggerImageUpload()">
+                                    <p>Click to upload image</p>
+                                    <p class="image-hint">Recommended: 1200x630px, max 5MB</p>
+                                  </div>
+                                }
+                                <input type="file" id="image" (change)="onImageSelected($event)" accept="image/*" class="hidden-input">
+                            </div>
+                            @if (imageError) {
+                              <div class="error-message">
+                                {{imageError}}
+                              </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" (click)="toggleCreateEventForm()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-primary" [disabled]="!eventForm.valid || isLoading">
+                            {{isLoading ? 'Creating...' : 'Create Event'}}
+                        </button>
+                    </div>
+                </form>
+              </div>
+            }
+
+            <!-- Events List -->
+            @if (!showCreateEventForm) {
+              <div class="card events-list">
+                @if (isLoading) {
+                  <div class="loading-spinner">
+                    Loading events...
+                  </div>
+                }
+                
+                @if (!isLoading) {
+                  <div class="events-grid">
+                    @for (event of getFilteredEvents(); track event.id) {
+                      <div class="event-card">
+                        @if (getEventImage(event)) {
+                          <div class="event-image">
+                            <img [src]="getEventImage(event)" alt="Event image">
+                          </div>
+                        }
+                        <div class="event-header">
+                            <h3>{{event.core.name}}</h3>
+                            <span class="event-status" [class]="getEventStatus(event).toLowerCase()">
+                                {{getEventStatus(event)}}
+                            </span>
+                        </div>
+                        <div class="event-details">
+                            <p class="event-description">{{getEventDescription(event)}}</p>
+                            <div class="event-info">
+                                <div class="info-item">
+                                    <span class="material-icons">schedule</span>
+                                    <span>Start: {{formatDate(getEventStartTimeValue(event))}}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="material-icons">location_on</span>
+                                    <span>{{getEventLocationLabel(event)}}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="material-icons">groups</span>
+                                    <span>{{event.engagement.attendeesCount}} / {{event.tickets.maxAttendees ?? event.tickets.capacity ?? 'Unlimited'}} attendees</span>
+                                </div>
+                                @if (getEventPrice(event)) {
+                                  <div class="info-item">
+                                    <span>Price: {{getEventPriceLabel(event)}}</span>
+                                  </div>
+                                }
+                            </div>
+                            <div class="event-actions">
+                              @if (getEventStatus(event) !== 'Past') {
+                                <button class="btn-edit" (click)="editEvent(event)">
+                                  <span class="material-icons">edit</span> Edit
+                                </button>
+                              }
+                              @if (getEventStatus(event) !== 'Cancelled') {
+                                <button class="btn-delete" (click)="confirmDelete(event)">
+                                  <span class="material-icons">delete</span> Delete
+                                </button>
+                              }
+                              @if (getEventStatus(event) === 'Cancelled') {
+                                <button class="btn-restore" (click)="restoreEvent(event)">
+                                  <span class="material-icons">restore</span> Restore
+                                </button>
+                              }
+                            </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (!isLoading && getFilteredEvents().length === 0) {
+                  <div class="no-events">
+                    <p>No {{activeTab}} events found.</p>
+                    <button class="btn-primary" (click)="toggleCreateEventForm()">
+                      Create Your First Event
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+        </div>
+    </div>
+</div>

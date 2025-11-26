@@ -1,7 +1,7 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { EventList } from '../../types/eventstype';
-import { EventsService } from '../../service/events.service';
+import { EventList } from '../../core/models/eventstype';
+import { EventsService } from '../../core/services/events.service';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
@@ -12,16 +12,14 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
   styleUrls: ['./trash-events.component.css']
 })
 export class TrashEventsComponent implements OnInit {
+  private eventsService = inject(EventsService);
+  private sanitizer = inject(DomSanitizer);
+
   cancelledEvents: EventList[] = [];
   isLoading: boolean = false;
   errorMessage: string = '';
   @Output() restored = new EventEmitter<void>();
 
-
-  constructor(
-    private eventsService: EventsService,
-    private sanitizer: DomSanitizer
-  ) {}
 
   ngOnInit() {
     this.loadCancelledEvents();

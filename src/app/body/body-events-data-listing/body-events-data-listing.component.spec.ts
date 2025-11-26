@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { getTestBedProviders } from '../../test-setup';
 
 import { BodyEventsDataListingComponent } from './body-events-data-listing.component';
 
@@ -7,7 +8,10 @@ describe('BodyEventsDataListingComponent', () => {
   let fixture: ComponentFixture<BodyEventsDataListingComponent>;
 
   beforeEach(async () => {
+    
     await TestBed.configureTestingModule({
+      providers: getTestBedProviders(),
+      providers: getTestBedProviders(),
       imports: [BodyEventsDataListingComponent]
     })
     .compileComponents();

@@ -1,12 +1,12 @@
-import { Component, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Output, EventEmitter, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { BodyEventsDataListingComponent } from '../body-events-data-listing/body-events-data-listing.component';
 import { AllEventsListingComponent } from '../all-events-listing/all-events-listing.component';
-import { UsersService } from '../../service/users.service';
-import { AuthService } from '../../service/auth.service';
+import { UsersService } from '../../core/services/users.service';
+import { AuthService } from '../../core/services/auth.service';
 import { getAuth } from 'firebase/auth';
-import { User } from '../../types/userstype';
+import { User } from '../../core/models/userstype';
 
 @Component({
   selector: 'app-body-events-listing',
@@ -16,6 +16,9 @@ import { User } from '../../types/userstype';
   styleUrls: ['./body-events-listing.component.css']
 })
 export class BodyEventsListingComponent implements OnInit {
+  private usersService = inject(UsersService);
+  private authService = inject(AuthService);
+
   @Output() filterChanged = new EventEmitter<string>();
   @Output() locationChanged = new EventEmitter<string>();
   selectedFilter: string = 'all';
@@ -39,11 +42,6 @@ export class BodyEventsListingComponent implements OnInit {
     { label: 'Music', value: 'music' },
     { label: 'Food & Drink', value: 'food' }
   ];
-
-  constructor(
-    private usersService: UsersService,
-    private authService: AuthService
-  ) {}
 
   ngOnInit(): void {
     this.checkUserAuth();
@@ -125,7 +123,7 @@ export class BodyEventsListingComponent implements OnInit {
           
           // Update user's current location in the database if logged in
           if (this.currentUser) {
-            this.usersService.updateUserLocation(this.currentUser.id, {
+            this.usersService.updateUserLocation(this.currentUser.id as string, {
               latitude,
               longitude,
               timestamp: Date.now()

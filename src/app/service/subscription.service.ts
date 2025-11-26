@@ -1,13 +1,11 @@
 import { Injectable } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
-import { BehaviorSubject, Observable, of , from} from "rxjs";
-import { EventList } from "../types/eventstype";
-import { auth, db } from "../config/firebase.config";
-import { collection, getDocs, onSnapshot, query, where, addDoc, updateDoc, Timestamp, increment } from 'firebase/firestore';
-import { doc, getDoc } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, increment, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
+import { BehaviorSubject, Observable, from, of } from "rxjs";
 import { catchError, distinctUntilChanged, map, switchMap, tap } from "rxjs/operators";
-import { Subscriptions } from "../types/subscriptionstype";
-import { Follows } from "../types/followtype";
+import { db } from "../config/firebase.config";
+import { EventList } from "../core/models/eventstype";
+import { Follows } from "../core/models/followtype";
+import { Subscriptions } from "../core/models/subscriptionstype";
 @Injectable({
   providedIn: 'root'
 })
@@ -204,7 +202,6 @@ export class SubscriptionService {
     return from(getDocs(q)).pipe(
       switchMap(snapshot => {
         if (!snapshot.empty) {
-          const docId = snapshot.docs[0].id;
           const docRef = snapshot.docs[0].ref;
   
           return from(
@@ -228,7 +225,7 @@ export class SubscriptionService {
     );
   }
 
-  addFollow(userId: string, organizerId: string, eventId?: string): Observable<void> {
+  addFollow(userId: string, organizerId: string): Observable<void> {
     if (!userId || !organizerId) {
       console.error('User ID or Organizer ID is undefined');
       return of(void 0);
@@ -290,7 +287,7 @@ export class SubscriptionService {
     );
   }
   
-  toggleFollowStatus(userId: string, organizerId: string, eventId?: string): Observable<void> {
+  toggleFollowStatus(userId: string, organizerId: string): Observable<void> {
     if (!userId || !organizerId) {
       console.error('User ID or Organizer ID is undefined');
       return of(void 0);

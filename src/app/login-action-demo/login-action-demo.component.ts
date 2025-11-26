@@ -1,17 +1,15 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule  , FormGroup, ReactiveFormsModule, FormBuilder, Validators} from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { Observable } from 'rxjs';
-import { User } from '../types/userstype';
-import { EventsService } from '../service/events.service';
-import { AuthService } from '../service/auth.service';
-import { getAuth } from 'firebase/auth';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { Router, RouterModule } from '@angular/router';
+import { getAuth, Unsubscribe } from 'firebase/auth';
+import { AuthService } from '../core/services/auth.service';
+import { EventsService } from '../core/services/events.service';
 @Component({
   selector: 'app-login-action-demo',
   standalone: true,
@@ -29,8 +27,13 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
   templateUrl: './login-action-demo.component.html',
   styleUrls: ['./login-action-demo.component.css']
 })
-export class LoginActionDemoComponent implements OnInit{
-  email: any;
+export class LoginActionDemoComponent implements OnInit, OnDestroy{
+  private eventsService = inject(EventsService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private fb = inject(FormBuilder);
+
+  email: string | null = null;
   password: string = ''; 
 
   userForm: FormGroup;
@@ -38,16 +41,10 @@ export class LoginActionDemoComponent implements OnInit{
   auth = getAuth();
   errorMessage = signal<string>('');
   isLoading = signal<boolean>(false);
-  private unsubscribeFn: any;
+  private unsubscribeFn: Unsubscribe | undefined;
 
 
-
-  constructor(
-    private eventsService : EventsService, 
-    private authService: AuthService, 
-    private router: Router,
-    private fb : FormBuilder,
-  ){
+  constructor(){
     this.userForm = this.fb.group({
       email: ['' , [Validators.required , Validators.email]],
       password: ['' , [Validators.required]]

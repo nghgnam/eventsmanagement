@@ -1,11 +1,9 @@
-import { HttpClient } from '@angular/common/http';
-import { from, map, switchMap, Observable, throwError } from 'rxjs';
 import { Injectable } from '@angular/core';
-import { getAuth, createUserWithEmailAndPassword, Auth, UserCredential, sendEmailVerification, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
-import { environment } from '../../environments/environment';
-import { Member, Organizer, User, UserRole, UserType } from '../types/userstype';
-import { addDoc, collection, doc, getFirestore, setDoc, Timestamp } from 'firebase/firestore';
+import { Auth, createUserWithEmailAndPassword, getAuth, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, UserCredential } from 'firebase/auth';
+import { doc, getFirestore, setDoc, Timestamp } from 'firebase/firestore';
+import { from, map, Observable, switchMap, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { Member, Organizer, User, UserRole, UserType } from '../core/models/userstype';
 
 @Injectable({
   providedIn: 'root',
@@ -91,7 +89,7 @@ export class AuthService {
     );
   } 
 
-  login(email: string, password: string): Observable<String> {
+  login(email: string, password: string): Observable<string> {
     return from(signInWithEmailAndPassword(this.auth, email, password)).pipe(
       switchMap((userCredential: UserCredential) => {
         return from(userCredential.user.getIdToken());

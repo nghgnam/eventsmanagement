@@ -183,7 +183,7 @@ export class NotificationComponent implements OnInit, OnDestroy {
   @Input() message: string = '';
   @Input() type: 'success' | 'error' = 'success';
   @Input() isVisible: boolean = false;
-  private timeoutId: any;
+  private timeoutId: ReturnType<typeof setTimeout> | undefined;
 
   ngOnInit() {
     if (this.isVisible) {
@@ -209,6 +209,7 @@ export class NotificationComponent implements OnInit, OnDestroy {
       clearTimeout(this.timeoutId);
     }
     this.timeoutId = setTimeout(() => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       this.isVisible = false;
     }, 3000);
   }

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { getTestBedProviders } from '../../../test-setup';
 
 import { BodyPageComponent } from './body-page.component';
 
@@ -8,7 +9,8 @@ describe('BodyPageComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BodyPageComponent]
+      imports: [BodyPageComponent],
+      providers: getTestBedProviders()
     })
     .compileComponents();
 

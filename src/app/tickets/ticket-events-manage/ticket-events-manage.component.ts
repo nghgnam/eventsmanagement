@@ -1,19 +1,19 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { animate, state, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { auth } from '../../config/firebase.config';
-import { forkJoin, Observable, Subscription, of } from 'rxjs';
-import { TicketType } from '../../types/ticketstype';
-import { SafeUrlService } from '../../service/santizer.service';
-import { EventList } from '../../types/eventstype';
-import { EventsService } from '../../service/events.service';
-import { TicketService } from '../../service/ticket.service';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { SafeUrl } from '@angular/platform-browser';
-import { UsersService } from '../../service/users.service';
-import { User } from '../../types/userstype';
-import { catchError, switchMap, tap, finalize } from 'rxjs/operators';
+import { Router } from '@angular/router';
+import { Observable, Subscription, forkJoin, of } from 'rxjs';
+import { catchError, finalize, switchMap, tap } from 'rxjs/operators';
+import { auth } from '../../config/firebase.config';
+import { EventsService } from '../../core/services/events.service';
+import { SafeUrlService } from '../../core/services/santizer.service';
+import { TicketService } from '../../core/services/ticket.service';
+import { UsersService } from '../../core/services/users.service';
+import { EventList } from '../../core/models/eventstype';
+import { TicketType } from '../../core/models/ticketstype';
+import { User } from '../../core/models/userstype';
 import { TabContentTicketsComponent } from '../tab-content-tickets/tab-content-tickets.component';
-import { trigger, state, style, transition, animate } from '@angular/animations';
 
 interface TicketData {
   activeTickets: TicketType[];
@@ -40,9 +40,15 @@ interface TicketData {
   ]
 })
 export class TicketEventsManageComponent implements OnInit, OnDestroy {
+  private ticketService = inject(TicketService);
+  private eventsService = inject(EventsService);
+  private sanitizer = inject(SafeUrlService);
+  private usersService = inject(UsersService);
+  private router = inject(Router);
+
   private subscriptions: Subscription[] = [];
-  private events$: Observable<EventList[]>;
-  private user$: Observable<User[]>;
+  private events$: Observable<EventList[]> = of([]);
+  private user$: Observable<User[]> = of([]);
   
   user: User | undefined;
   isLoading = true;
@@ -68,13 +74,7 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy {
   changeTab: string = 'tab1';
   currentUser = auth.currentUser;
 
-  constructor(
-    private ticketService: TicketService,
-    private eventsService: EventsService,
-    private sanitizer: SafeUrlService,
-    private usersService: UsersService,
-    private router: Router
-  ) {
+  ngOnInit(): void {
     this.events$ = this.eventsService.events$;
     this.user$ = this.usersService.users$;
     
@@ -85,9 +85,6 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy {
         this.router.navigate(['/login']);
       }
     });
-  }
-
-  ngOnInit(): void {
     if (this.currentUser) {
       this.loadUserData();
     } else {
@@ -124,7 +121,7 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy {
           this.ticket = ticketData;
           this.listTicketsEventId = this.ticket
             .map((ticket: TicketType) => ticket.event_id)
-            .filter((eventId: string | undefined): eventId is string => typeof eventId === 'string');
+            .filter((eventId: string | null | undefined): eventId is string => typeof eventId === 'string' && eventId !== null);
         }
       }),
       switchMap(() => {
@@ -160,7 +157,7 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy {
     // Process active tickets
     this.listUpcomingTickets = activeTickets
       .map((ticket: TicketType) => ticket.event_id)
-      .filter((eventId: string | undefined): eventId is string => typeof eventId === 'string');
+      .filter((eventId: string | null | undefined): eventId is string => typeof eventId === 'string' && eventId !== null);
     this.eventsService.getEventByListId(this.listUpcomingTickets).subscribe(events => {
       this.eventUpcoming = events;
     });
@@ -168,7 +165,7 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy {
     // Process unpaid valid tickets
     this.listUnpaidTicketValid = unpaidTicketsValid
       .map((ticket: TicketType) => ticket.event_id)
-      .filter((eventId: string | undefined): eventId is string => typeof eventId === 'string');
+      .filter((eventId: string | null | undefined): eventId is string => typeof eventId === 'string' && eventId !== null);
     this.eventsService.getEventByListId(this.listUnpaidTicketValid).subscribe(events => {
       this.eventUnpaidValid = events;
     });
@@ -176,7 +173,7 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy {
     // Process unpaid expired tickets
     this.listUnpaidTicketExpired = unpaidTicketsExpired
       .map((ticket: TicketType) => ticket.event_id)
-      .filter((eventId: string | undefined): eventId is string => typeof eventId === 'string');
+      .filter((eventId: string | null | undefined): eventId is string => typeof eventId === 'string' && eventId !== null);
     this.eventsService.getEventByListId(this.listUnpaidTicketExpired).subscribe(events => {
       this.eventUnpaidExpired = events;
     });
@@ -184,7 +181,7 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy {
     // Process used tickets
     this.listTicketsUsed = usedTickets
       .map((ticket: TicketType) => ticket.event_id)
-      .filter((eventId: string | undefined): eventId is string => typeof eventId === 'string');
+      .filter((eventId: string | null | undefined): eventId is string => typeof eventId === 'string' && eventId !== null);
     this.eventsService.getEventByListId(this.listTicketsUsed).subscribe(events => {
       this.eventUsed = events;
     });
@@ -192,7 +189,7 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy {
     // Process canceled tickets
     this.listTicketsCancel = canceledTickets
       .map((ticket: TicketType) => ticket.event_id)
-      .filter((eventId: string | undefined): eventId is string => typeof eventId === 'string');
+      .filter((eventId: string | null | undefined): eventId is string => typeof eventId === 'string' && eventId !== null);
     this.eventsService.getEventByListId(this.listTicketsCancel).subscribe(events => {
       this.eventCancel = events;
     });
@@ -200,7 +197,7 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy {
     // Process expired tickets
     this.listTicketExpired = expiredTickets
       .map((ticket: TicketType) => ticket.event_id)
-      .filter((eventId: string | undefined): eventId is string => typeof eventId === 'string');
+      .filter((eventId: string | null | undefined): eventId is string => typeof eventId === 'string' && eventId !== null);
     this.eventsService.getEventByListId(this.listTicketExpired).subscribe(events => {
       this.eventPart = events;
     });

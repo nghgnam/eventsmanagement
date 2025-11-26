@@ -1,28 +1,29 @@
-import { Component, OnInit } from '@angular/core';
-import { RouterModule } from '@angular/router';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { UsersService } from '../../service/users.service';
-import { User } from '../../types/userstype';
-import { getAuth } from 'firebase/auth';
-import { Router } from '@angular/router';
+import { Component, OnInit, inject } from '@angular/core';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { EventList } from '../../types/eventstype';
-import { EventsService } from '../../service/events.service';
-import { CloudinaryService } from '../../service/cloudinary.service';
-import { Observable, from } from 'rxjs';
-import { AddressInformationService } from '../../service/addressInformation.service';
-import { getCountries, getCountryCallingCode } from 'libphonenumber-js';
+import { Router, RouterModule } from '@angular/router';
+import { getAuth } from 'firebase/auth';
 import * as countries from 'i18n-iso-countries';
 import en from 'i18n-iso-countries/langs/en.json';
-import { skip, distinctUntilChanged, debounceTime, switchMap } from 'rxjs/operators';
+import { from } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { AddressInformationService } from '../../core/services/addressInformation.service';
+import { AuthService } from '../../core/services/auth.service';
+import { CloudinaryService } from '../../core/services/cloudinary.service';
+import { EventsService } from '../../core/services/events.service';
+import { UsersService } from '../../core/services/users.service';
+import { EventList } from '../../core/models/eventstype';
+import { User } from '../../core/models/userstype';
+import { CreateEventComponent } from '../create-event/create-event.component';
 import { EditEventComponent } from '../edit-event/edit-event.component';
 import { TrashEventsComponent } from '../trash-events/trash-events.component';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../config/firebase.config';
-import { Timestamp } from 'firebase/firestore';
-import { AuthService } from '../../service/auth.service';
-import { CreateEventComponent } from '../create-event/create-event.component';
+
+interface CloudinaryResponse {
+  secure_url: string;
+}
 
 @Component({
   selector: 'app-manage-events',
@@ -32,6 +33,16 @@ import { CreateEventComponent } from '../create-event/create-event.component';
   styleUrls: ['./manage-events.component.css']
 })
 export class ManageEventsComponent implements OnInit {
+  private usersService = inject(UsersService);
+  private router = inject(Router);
+  private sanitizer = inject(DomSanitizer);
+  private eventService = inject(EventsService);
+  private cloudinaryService = inject(CloudinaryService);
+  private fb = inject(FormBuilder);
+  private location = inject(AddressInformationService);
+  private authService = inject(AuthService);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
   editEventid: string | undefined
   currentUser: User | undefined;
@@ -50,7 +61,7 @@ export class ManageEventsComponent implements OnInit {
   EditEvents: EventList[] = [];
 
   countries: { code: string, name: string }[] = [];
-  citiesValue: any[] =[];
+  citiesValue: string[] =[];
   districtsValue: any[] = [];
   wardsValue:any[]  = [];
   
@@ -69,16 +80,7 @@ export class ManageEventsComponent implements OnInit {
   showDeleteDialog: boolean = false;
   eventToDelete: EventList | null = null;
 
-  constructor(
-    private usersService: UsersService,
-    private router: Router,
-    private sanitizer: DomSanitizer,
-    private eventService: EventsService,
-    private cloudinaryService: CloudinaryService,
-    private fb: FormBuilder,
-    private location: AddressInformationService,
-    private authService: AuthService
-  ) {
+  constructor() {
     this.eventForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
@@ -110,13 +112,13 @@ export class ManageEventsComponent implements OnInit {
 
   ngOnInit(): void {
     this.location.getCities().subscribe(dataCities =>{
-      this.citiesValue = dataCities;      
+      this.citiesValue = dataCities as string[];      
     })
     this.location.getDistricts().subscribe(dataDistricts =>{
-      this.districtsValue = dataDistricts;
+      this.districtsValue = dataDistricts as unknown[];
     })
     this.location.getWards().subscribe(dataWards =>{
-      this.wardsValue = dataWards;
+      this.wardsValue = dataWards as unknown[];
     })
 
     this.eventForm.get('city')?.valueChanges
@@ -285,8 +287,9 @@ export class ManageEventsComponent implements OnInit {
     try {
       return new Promise((resolve, reject) => {
         this.cloudinaryService.upLoadImage(this.selectedImage!).subscribe({
-          next: (response) => {
-            resolve(response.secure_url);
+          next: (response: unknown) => {
+            const responseData = response as CloudinaryResponse;
+            resolve(responseData.secure_url);
           },
           error: (error) => {
             console.error('Error uploading image:', error);
@@ -333,10 +336,10 @@ export class ManageEventsComponent implements OnInit {
       
       
 
-      const wards = this.getTrimmedString((this.eventForm.get('wards')?.value).name);
-      const districts = this.getTrimmedString((this.eventForm.get('districts')?.value).name);
-      const city = this.getTrimmedString((this.eventForm.get('city')?.value).name);
-      const country =this.eventForm.get('country')?.value;
+      const wards = this.getTrimmedString((this.eventForm.get('wards')?.value)?.name);
+      const districts = this.getTrimmedString((this.eventForm.get('districts')?.value)?.name);
+      const city = this.getTrimmedString((this.eventForm.get('city')?.value)?.name || '');
+      const country =this.eventForm.get('country')?.value || '';
       const addressDetails = `${formData.details_address}, ${wards} ,${districts}, ${city}, ${country}`
       const location = await this.getLanLongFromAddress(addressDetails);
       if (!location) {
@@ -346,34 +349,100 @@ export class ManageEventsComponent implements OnInit {
       }
       const lat = location.lat;
       const lon = location.lon;
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const tags = formData.tags
+        ? formData.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => !!tag)
+        : [];
+      const nowIso = new Date().toISOString();
+      
       const newEvent: Partial<EventList> = {
-        name: formData.name,
-        description: formData.description,
-        content: formData.description, // Using description as content for now
-        date_time_options: [{
-          start_time: formData.startDate,
-          end_time: formData.endDate,
-          time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        }],
+        core: {
+          id: '',
+          name: formData.name,
+          shortDescription: formData.description?.slice(0, 140) ?? '',
+          description: formData.description,
+          content: formData.description,
+          category: [],
+          tags,
+          eventType: formData.eventType,
+          price: formData.price ?? 0
+        },
+        status: {
+          visibility: 'public',
+          featured: false,
+          state: 'published',
+          deletedAt: null
+        },
+        media: {
+          coverImage: imageUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg',
+          primaryImage: imageUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg',
+          gallery: imageUrl ? [imageUrl] : [],
+          image_url: imageUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg'
+        },
+        schedule: {
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          dateTimeOptions: [{
+            start_time: formData.startDate,
+            end_time: formData.endDate,
+            time_zone: timezone
+          }],
+          timezone
+        },
         location: {
           type: formData.eventType,
           address: addressDetails,
+          city: city ? (typeof city === 'string' ? { name: city } : city) : null,
+          district: districts ? (typeof districts === 'string' ? { name: districts } : districts) : null,
+          ward: wards ? (typeof wards === 'string' ? { name: wards } : wards) : null,
+          country: country ? (typeof country === 'string' ? { name: country } : { name: country }) : null,
           coordinates: {
+            lat,
+            lng: lon,
             latitude: lat,
             longitude: lon
           }
         },
+        organizer: {
+          id: String(this.currentUser?.id || '0'),
+          name: this.currentUser?.fullName || this.currentUser?.profile?.fullName || '',
+          followers: this.currentUser?.social?.followers ?? 0,
+          profileImage: this.currentUser?.profileImage || this.currentUser?.profile?.avatar || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'
+        },
+        tickets: {
+          catalog: [],
+          capacity: formData.maxAttendees ?? null,
+          maxAttendees: formData.maxAttendees ?? null
+        },
+        engagement: {
+          attendeesCount: 0,
+          likesCount: 0,
+          viewCount: 0,
+          searchTerms: []
+        },
+        metadata: {
+          currency: 'VND'
+        },
+        timeline: {
+          createdAt: nowIso,
+          updatedAt: nowIso
+        },
+        // Legacy fields for backward compatibility
+        name: formData.name,
+        description: formData.description,
+        content: formData.description,
+        date_time_options: [{
+          start_time: formData.startDate,
+          end_time: formData.endDate,
+          time_zone: timezone
+        }],
         image_url: imageUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg',
         price: formData.price,
         max_attendees: formData.maxAttendees,
-        tags: formData.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag),
+        tags,
         event_type: formData.eventType,
-        organizer: {
-          id: String(this.currentUser?.id || '0'),
-          name: this.currentUser?.fullName || '',
-          followers: 0,
-          profileImage: this.currentUser?.profileImage || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'
-        }
+        created_at: nowIso,
+        updated_at: nowIso
       };
 
       this.eventService.addEvent(newEvent as EventList).subscribe({
@@ -386,7 +455,7 @@ export class ManageEventsComponent implements OnInit {
           this.loadOrganizerEvents();
           this.isLoading = false;
         },
-        error: (error: any) => {
+        error: (error) => {
           console.error('Error creating event:', error);
           this.errorMessage = 'Failed to create event';
           this.isLoading = false;
@@ -420,22 +489,27 @@ export class ManageEventsComponent implements OnInit {
 
   getComingUpEvents(event: EventList): boolean {
     const today = new Date();
-    return event.date_time_options.some(option => {
-      const start = new Date(option.start_time);
-      const end = new Date(option.end_time);
+    const dateTimeOptions = event.date_time_options || event.schedule?.dateTimeOptions || [];
+    return dateTimeOptions.some((option: any) => {
+      const start = new Date(option.start_time || option.startDate || '');
+      const end = new Date(option.end_time || option.endDate || '');
       return start > today || end > today;
     });
   }
 
   getTotalRevenue(event: EventList): number {
-    if (event.price && event.attendees_count) {
-      return event.price * event.attendees_count;
+    const price = event.core?.price ?? event.price ?? 0;
+    const attendeesCount = event.engagement?.attendeesCount ?? event.attendees_count ?? 0;
+    if (price && attendeesCount) {
+      return price * attendeesCount;
     }
     return 0;
   }
 
-  formatDate(date: string): string {
-    return new Date(date).toLocaleDateString('en-US', {
+  formatDate(date: string | Date | null | undefined): string {
+    if (!date) return 'N/A';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -445,12 +519,20 @@ export class ManageEventsComponent implements OnInit {
   }
 
   getEventStatus(event: EventList): string {
-    if (event.status === 'cancelled') {
+    const statusState = typeof event.status === 'string' ? event.status : event.status?.state;
+    if (statusState === 'cancelled') {
       return 'Cancelled';
     }
     const today = new Date();
-    const startDate = new Date(event.date_time_options[0].start_time);
-    const endDate = new Date(event.date_time_options[0].end_time);
+    const dateTimeOptions = event.date_time_options || event.schedule?.dateTimeOptions || [];
+    if (dateTimeOptions.length === 0) {
+      return 'Draft';
+    }
+    const firstOption = dateTimeOptions[0] as Record<string, unknown>;
+    const startTime = firstOption['start_time'] || firstOption['startDate'] || '';
+    const endTime = firstOption['end_time'] || firstOption['endDate'] || '';
+    const startDate = startTime ? new Date(startTime as string) : new Date();
+    const endDate = endTime ? new Date(endTime as string) : new Date();
 
     if (startDate > today) {
       return 'Upcoming';
@@ -524,7 +606,7 @@ export class ManageEventsComponent implements OnInit {
     }
   }
 
-  getTrimmedString(value: any): string {
+  getTrimmedString(value: string | undefined): string {
     return typeof value === 'string' ? value.trim() : '';
   }
 

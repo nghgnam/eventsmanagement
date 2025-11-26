@@ -1,35 +1,29 @@
-import { Injectable } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
-import { BehaviorSubject, Observable, of, from, throwError, forkJoin } from "rxjs";
-import { EventList } from "../types/eventstype";
-import { auth, db } from "../config/firebase.config";
-import { collection, getDocs, onSnapshot, query, where, addDoc, increment, updateDoc, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { inject, Injectable } from "@angular/core";
+import { addDoc, collection, CollectionReference, doc, Firestore, getDoc, getDocs, increment, query, Timestamp, updateDoc, where } from 'firebase/firestore';
+import { BehaviorSubject, forkJoin, from, Observable, of, throwError } from "rxjs";
 import { catchError, map, tap } from "rxjs/operators";
+import { db } from "../config/firebase.config";
+import { EventList } from "../core/models/eventstype";
 
 @Injectable({
   providedIn: 'root'
 })
-export class EventsService {
-  private eventsConlection = collection(db, "events");
+export class EventsService{
+  private firestore = inject(Firestore);
+  private eventsConlection: CollectionReference | undefined;
   private eventsSubject = new BehaviorSubject<EventList[]>([]);
   events$ = this.eventsSubject.asObservable();
 
-  constructor(private http: HttpClient) {
-    this.eventsConlectionData.subscribe(events => {
-      this.eventsSubject.next(events);
-    });
+
+  constructor() {
+    if(this.firestore){
+      this.eventsConlection = collection(this.firestore, 'events');
+    } 
   }
 
-  private eventsConlectionData: Observable<EventList[]> = new Observable(observer => {
-    return onSnapshot(this.eventsConlection, (snapshot) => {
-      const events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as unknown as EventList[];
-      observer.next(events);
-    }, error => observer.error(error));
-  });
-
   fetchEvents(): void {
-    this.eventsConlectionData.subscribe(events => {
-      this.eventsSubject.next(events);
+    this.getAllEvents().subscribe({
+      error: (error) => console.error('Failed to fetch events:', error)
     });
   }
 
@@ -189,7 +183,10 @@ export class EventsService {
   }
 
   updateeventLikes(eventId: string, isLiked: boolean): Observable<void> {
-    const eventDocRef = doc(this.eventsConlection, eventId);
+    if(!this.eventsConlection){
+      return of(undefined);
+    }
+    const eventDocRef = doc(this.eventsConlection as CollectionReference, eventId);
     const change = isLiked ? 1 : -1;
 
     return from(updateDoc(eventDocRef, { likes_count: increment(change) }))

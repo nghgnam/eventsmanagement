@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { BodySlideshowComponent } from '../body-slideshow/body-slideshow.component';
+import { Component } from '@angular/core';
 import { BodyEventsListingComponent } from '../body-events-listing/body-events-listing.component';
+import { BodySlideshowComponent } from '../body-slideshow/body-slideshow.component';
 @Component({
   selector: 'app-body-page',
   standalone: true,

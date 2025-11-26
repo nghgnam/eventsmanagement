@@ -1,12 +1,13 @@
 import { DomSanitizer, SafeUrl } from "@angular/platform-browser";
-import { Inject, Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 @Injectable({
     providedIn: 'root'
 })
 export class SafeUrlService{
-    constructor(private sanitizer: DomSanitizer){
+    private sanitizer = inject(DomSanitizer);
 
-    }
+    /** Inserted by Angular inject() migration for backwards compatibility */
+    constructor(){}
 
     sanitizeImageUrl(url: string | undefined): SafeUrl | undefined {
         if (!url) return undefined;

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { getTestBedProviders } from '../../test-setup';
 
 import { HeaderSearchComponent } from './header-search.component';
 
@@ -7,7 +8,10 @@ describe('HeaderSearchComponent', () => {
   let fixture: ComponentFixture<HeaderSearchComponent>;
 
   beforeEach(async () => {
+    
     await TestBed.configureTestingModule({
+      providers: getTestBedProviders(),
+      providers: getTestBedProviders(),
       imports: [HeaderSearchComponent]
     })
     .compileComponents();

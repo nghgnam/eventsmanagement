@@ -1,16 +1,16 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { EventsService } from '../../service/events.service';
-import { EventList } from '../../types/eventstype';
 import { CommonModule } from '@angular/common';
-import { forkJoin, Observable, Subject, Subscription } from 'rxjs';
-import { SafeUrlService } from '../../service/santizer.service';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { SafeUrl } from '@angular/platform-browser';
-import { SubscriptionService } from '../../service/subscription.service';
+import { ActivatedRoute, Router } from '@angular/router';
 import { getAuth } from 'firebase/auth';
-import { NotificationComponent } from '../../shared/components/notification/notification.component';
+import { forkJoin, Observable, Subject, Subscription } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
-import { TicketService } from '../../service/ticket.service';
+import { EventList } from '../../core/models/eventstype';
+import { EventsService } from '../../core/services/events.service';
+import { SafeUrlService } from '../../core/services/santizer.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
+import { TicketService } from '../../core/services/ticket.service';
+import { NotificationComponent } from '../../shared/components/notification/notification.component';
 @Component({
   selector: 'app-detail-event',
   standalone: true,
@@ -19,6 +19,13 @@ import { TicketService } from '../../service/ticket.service';
   styleUrls: ['./detail-event.component.css']
 })
 export class DetailEventComponent implements OnInit, OnDestroy {
+  private route = inject(ActivatedRoute);
+  private eventsService = inject(EventsService);
+  private router = inject(Router);
+  private sanitizer = inject(SafeUrlService);
+  private subscript = inject(SubscriptionService);
+  private ticketsService = inject(TicketService);
+
   event: EventList | undefined | null = null;
   events$: Observable<EventList[]> | undefined;
   showStartTime: string | undefined;
@@ -46,18 +53,9 @@ export class DetailEventComponent implements OnInit, OnDestroy {
 
   private subscriptions: Subscription[] = [];
 
-  constructor(
-    private route: ActivatedRoute,
-    private eventsService: EventsService,
-    private router: Router,
-    private sanitizer: SafeUrlService,
-    private subscript: SubscriptionService,
-    private ticketsService: TicketService
-  ) {
+  constructor() {
     this.events$ = this.eventsService.events$;
   }
-
-
   ngOnInit() {
 
     const routeSub = this.route.paramMap.pipe(
@@ -92,7 +90,7 @@ export class DetailEventComponent implements OnInit, OnDestroy {
 
             
             if (organizerId && userId) {
-              this.subscript.checkFollowStatus(userId, organizerId).subscribe(isFollowing => {
+              this.subscript.checkFollowStatus(userId, organizerId as string).subscribe(isFollowing => {
                 this.hasFollow = isFollowing;
                 console.log('Follow status:', isFollowing);
               });
@@ -100,7 +98,7 @@ export class DetailEventComponent implements OnInit, OnDestroy {
               
               forkJoin({
                 subscriberCount: this.subscript.getSubscriberCount(eventId),
-                followerCount: this.subscript.getAllFollower(userId, organizerId)
+                followerCount: this.subscript.getAllFollower(userId, organizerId as string)
               }).subscribe({
                 next: ({ subscriberCount, followerCount }) => {
                   if (subscriberCount !== -1) {
@@ -225,8 +223,7 @@ export class DetailEventComponent implements OnInit, OnDestroy {
             this.isEventFull = isFull;
           });
         });
-        this.ticketsService.createTicket
-        (
+        this.ticketsService.createTicket(
           userId, 
           eventId, 
           this.totalPrice ?? 0,
@@ -291,8 +288,8 @@ export class DetailEventComponent implements OnInit, OnDestroy {
     }
   
     const action = !this.hasFollow
-      ? this.subscript.addFollow(currentUserId, organizerId, this.event?.id)
-      : this.subscript.toggleFollowStatus(currentUserId, organizerId, this.event?.id);
+      ? this.subscript.addFollow(currentUserId, organizerId as string, this.event?.id)
+      : this.subscript.toggleFollowStatus(currentUserId, organizerId as string);
   
     action.pipe(finalize(() => this.isFollowLoading = false)).subscribe({
       next: () => {
@@ -300,7 +297,7 @@ export class DetailEventComponent implements OnInit, OnDestroy {
         console.log(`Follow status updated: ${this.hasFollow}`);
   
         // Cập nhật số lượng followers
-        this.subscript.getAllFollower(currentUserId, organizerId).subscribe(followerCount => {
+        this.subscript.getAllFollower(currentUserId, organizerId as string).subscribe(followerCount => {
           if (followerCount !== -1 && this.event?.organizer) {
             this.event.organizer.followers = followerCount;
             console.log('Updated follower count:', followerCount);
@@ -313,7 +310,7 @@ export class DetailEventComponent implements OnInit, OnDestroy {
             : 'Đã hủy theo dõi người tổ chức'
         );
       },
-      error: (error: any) => {
+      error: (error) => {
         console.error('Follow action failed:', error);
         this.showError('Có lỗi xảy ra khi thực hiện hành động');
       }

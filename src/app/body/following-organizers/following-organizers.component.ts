@@ -1,18 +1,19 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { UsersService } from '../../service/users.service';
-import { AuthService } from '../../service/auth.service';
+import { UsersService } from '../../core/services/users.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Subscription } from 'rxjs';
-import { Follows } from '../../types/followtype';
-import { User } from '../../types/userstype';
+import { Follows } from '../../core/models/followtype';
+import { User } from '../../core/models/userstype';
 import { auth } from '../../config/firebase.config';
-import { SafeUrlService } from '../../service/santizer.service';
+import { SafeUrlService } from '../../core/services/santizer.service';
 import { SafeUrl } from '@angular/platform-browser';
+import { TimestampLike } from '../../core/models/eventstype';
 
 interface FollowWithOrganizer extends Follows {
     organizer?: {
-        id: string;
+        id: string | number;
         fullName: string;
         profileImage?: string;
         organization?: {
@@ -73,7 +74,7 @@ interface FollowWithOrganizer extends Follows {
                       <span class="status" [class.active]="follow.status === 'active'">{{follow.status}}</span>
                       @if (follow.follow_date) {
                         <span class="follow-date">
-                          Followed since: {{follow.follow_date | date:'mediumDate'}}
+                          Followed since: {{ formatFollowDate(follow.follow_date) | date:'mediumDate' }}
                         </span>
                       }
                     </div>
@@ -354,17 +355,15 @@ interface FollowWithOrganizer extends Follows {
   `]
 })
 export class FollowingOrganizersComponent implements OnInit, OnDestroy {
+  private usersService = inject(UsersService);
+  private authService = inject(AuthService);
+  private sanitizerService = inject(SafeUrlService);
+
   followedOrganizers: FollowWithOrganizer[] = [];
   isLoading = true;
   private subscriptions: Subscription[] = [];
   currentUser: User | null = null;
   defaultAvatar = 'assets/images/default-avatar.png';
-
-  constructor(
-    private usersService: UsersService,
-    private authService: AuthService,
-    private sanitizerService: SafeUrlService
-  ) {}
 
   ngOnInit() {
     // Listen to auth state changes
@@ -392,6 +391,23 @@ export class FollowingOrganizersComponent implements OnInit, OnDestroy {
     return this.sanitizerService.sanitizeImageUrl(url);
   }
 
+  formatFollowDate(value: TimestampLike | Date | string | null | undefined): Date | string | null {
+    if (!value) {
+      return null;
+    }
+    if (value instanceof Date) {
+      return value;
+    }
+    const possibleTimestamp = value as { toDate?: () => Date };
+    if (typeof possibleTimestamp?.toDate === 'function') {
+      try {
+        return possibleTimestamp.toDate();
+      // eslint-disable-next-line no-empty
+      } catch {}
+    }
+    return typeof value === 'string' ? value : null;
+  }
+
   handleImageError(event: Event): void {
     const imgElement = event.target as HTMLImageElement;
     imgElement.src = this.defaultAvatar;
@@ -414,13 +430,28 @@ export class FollowingOrganizersComponent implements OnInit, OnDestroy {
           console.log('No follows found');
         } else {
           console.log('Processing follows:', follows.length);
-          this.followedOrganizers = follows.filter(follow => {
-            if (!follow.organizer) {
-              console.warn('Follow missing organizer data:', follow.id);
-              return false;
-            }
-            return true;
-          });
+          this.followedOrganizers = follows
+            .filter(follow => {
+              if (!follow.organizer || !follow.organizer.fullName) {
+                console.warn('Follow missing organizer data:', follow.id);
+                return false;
+              }
+              return true;
+            })
+            .map(follow => {
+              const organizer = follow.organizer!;
+              return {
+                ...follow,
+                organizer: {
+                  id: organizer.id ?? '',
+                  fullName: organizer.fullName ?? '',
+                  profileImage: organizer.profileImage ?? undefined,
+                  organization: {
+                    companyName: organizer.organization?.companyName ?? ''
+                  }
+                }
+              } as FollowWithOrganizer;
+            });
           console.log('Filtered follows:', this.followedOrganizers.length);
         }
         this.isLoading = false;

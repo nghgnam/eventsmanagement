@@ -1,11 +1,11 @@
-import { Component, OnInit, ElementRef, ViewChild, HostListener } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { EventsService } from '../../service/events.service';
+import { EventsService } from '../../core/services/events.service';
 import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { EventList } from '../../types/eventstype';
+import { EventList } from '../../core/models/eventstype';
 
 @Component({
   selector: 'app-header-search',
@@ -15,6 +15,10 @@ import { EventList } from '../../types/eventstype';
   styleUrls: ['./header-search.component.css']
 })
 export class HeaderSearchComponent implements OnInit {
+  private fb = inject(FormBuilder);
+  private eventsService = inject(EventsService);
+  private router = inject(Router);
+
   @ViewChild('searchContainer') searchContainer!: ElementRef;
   
   searchForm: FormGroup;
@@ -22,11 +26,7 @@ export class HeaderSearchComponent implements OnInit {
   isLoading = false;
   showResults = false;
 
-  constructor(
-    private fb: FormBuilder,
-    private eventsService: EventsService,
-    private router: Router
-  ) {
+  constructor() {
     this.searchForm = this.fb.group({
       searchQuery: ['']
     });

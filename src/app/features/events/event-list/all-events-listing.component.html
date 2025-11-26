@@ -1,0 +1,80 @@
+<div class="all-events-section">
+    <div class="section-header">
+        <h2>All Events</h2>
+        <p>Discover all available events in our platform</p>
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading) {
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading Events...</p>
+      </div>
+    }
+
+    <!-- No Events Message -->
+    @if (!isLoading && displayedEvents.length === 0) {
+      <div class="no-events">
+        <i class="fa-solid fa-calendar-xmark"></i>
+        <h3>No events found</h3>
+        <p>There are no events available at the moment</p>
+      </div>
+    }
+
+    <!-- Events Grid -->
+    @if (!isLoading && displayedEvents.length > 0) {
+      <div class="events-grid">
+        @for (event of displayedEvents; track event.id) {
+          <div class="event-card" (click)="goToDetail(event.id)">
+            <div class="event-image">
+              <img [src]="getEventImage(event)" [alt]="event.core.name || 'Event image'">
+              <div class="event-date-badge">
+                <span class="day">{{ getEventStartDate(event) | date: 'dd' }}</span>
+                <span class="month">{{ getEventStartDate(event) | date: 'MMM' }}</span>
+              </div>
+              <div class="event-type-badge" 
+                   [class.online]="getEventType(event) === 'online'"
+                   [class.offline]="getEventType(event) === 'offline'"
+                   [class.hybrid]="getEventType(event) === 'hybrid'">
+                {{ getEventType(event) }}
+              </div>
+            </div>
+            <div class="event-content">
+              <h3 class="event-title">{{ event.core.name }}</h3>
+              <div class="event-details">
+                <div class="event-info">
+                  <i class="fa-solid fa-clock"></i>
+                  <span>{{ getEventStartDate(event) | date: 'shortTime' }}</span>
+                </div>
+                <div class="event-info">
+                  <i class="fa-solid fa-location-dot"></i>
+                  <span>{{ getEventLocationLabel(event) }}</span>
+                </div>
+              </div>
+              @if (getEventTags(event).length > 0) {
+                <div class="event-tags">
+                  @for (tag of getEventTags(event).slice(0, 2); track tag) {
+                    <span class="event-tag">{{ tag }}</span>
+                  }
+                  @if (getEventTags(event).length > 2) {
+                    <span class="event-tag-more">+{{ getEventTags(event).length - 2 }}</span>
+                  }
+                </div>
+              }
+              <div class="event-footer">
+                <div class="event-price" [class.free]="!getEventPrice(event)">
+                  {{ getEventPriceLabel(event) }}
+                </div>
+                <div class="event-organizer">
+                  <img
+                    [src]="getOrganizerImage(event)"
+                    [alt]="getOrganizerName(event)">
+                  <span>{{ getOrganizerName(event) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+</div> 

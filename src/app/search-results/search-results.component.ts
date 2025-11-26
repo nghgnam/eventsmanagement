@@ -1,12 +1,11 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AfterViewInit, Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
-import { EventsService } from '../service/events.service';
-import { EventList } from '../types/eventstype';
-import { Subscription } from 'rxjs';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import * as L from 'leaflet';
+import { Subscription } from 'rxjs';
+import { EventsService } from '../core/services/events.service';
+import { EventList } from '../core/models/eventstype';
 
 @Component({
   selector: 'app-search-results',
@@ -16,6 +15,10 @@ import * as L from 'leaflet';
   styleUrls: ['./search-results.component.css']
 })
 export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private eventsService = inject(EventsService);
+
   @ViewChild('mapContainer') mapContainer!: ElementRef;
 
   events: EventList[] = [];
@@ -47,12 +50,6 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
   isFullMapOpen: boolean = false;
   showLocationConfirm: boolean = false;
   selectedEvent: EventList | null = null;
-
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private eventsService: EventsService
-  ) {}
 
   ngOnInit(): void {
     this.subscription.add(
@@ -94,18 +91,22 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
 
     // Add new markers
     this.filteredEvents.forEach(event => {
-      if (event.location.type === 'offline' && event.location.coordinates) {
-        const marker = L.marker([
-          event.location.coordinates.latitude,
-          event.location.coordinates.longitude
-        ]).addTo(map);
+      const cityCoordinates = event.location.city?.coordinates;
+      const latitude = cityCoordinates?.latitude;
+      const longitude = cityCoordinates?.longitude;
+      if (
+        event.location.type === 'offline' &&
+        typeof latitude === 'number' &&
+        typeof longitude === 'number'
+      ) {
+        const marker = L.marker([latitude, longitude]).addTo(map);
 
         const startTime = event.date_time_options[0]?.start_time || 'TBD';
         marker.bindPopup(`
           <div class="marker-popup">
             <h3>${event.name}</h3>
             <p>${event.location.address || 'No address provided'}</p>
-            <p>${event.event_type}</p>
+            <p>${event.event_type || 'No event type provided'}</p>
             <p>Start Time: ${startTime}</p>
           </div>
         `);
@@ -200,17 +201,20 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   calculateDistance(event: EventList): number | null {
-    if (!this.userLocation || !event.location?.coordinates) {
-      console.log("cannot get location")
-      console.log(this.userLocation)
-      console.log(event.location?.coordinates)
+    const coordinates = event.location.coordinates;
+    if (
+      !this.userLocation ||
+      !coordinates ||
+      typeof coordinates.latitude !== 'number' ||
+      typeof coordinates.longitude !== 'number'
+    ) {
       return null;
     }
     
     const userLat = this.userLocation.latitude;
     const userLng = this.userLocation.longitude;
-    const eventLat = event.location.coordinates.latitude;
-    const eventLng = event.location.coordinates.longitude;
+    const eventLat = coordinates.latitude;
+    const eventLng = coordinates.longitude;
 
     const R = 6371; // Radius of the Earth in km
     const dLat = this.deg2rad(eventLat - userLat);
@@ -300,7 +304,7 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
   applyFilters(): void {
     // Update selected tags from filters
     this.selectedTags = Object.entries(this.filters.tags)
-      .filter(([_, selected]) => selected)
+      .filter(([selected]) => selected)
       .map(([tag]) => tag);
     
     // Update selected location type
@@ -347,7 +351,7 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
       // Filter by tags
       if (Object.keys(this.filters.tags).length > 0) {
         const hasSelectedTag = Object.entries(this.filters.tags)
-          .filter(([_, checked]) => checked)
+          .filter(([checked]) => checked)
           .some(([tag]) => event.tags?.includes(tag));
         if (!hasSelectedTag) return false;
       }
@@ -380,7 +384,13 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
       }
 
       // Filter by distance if user location is available
-      if (this.userLocation && event.location.type === 'offline' && event.location.coordinates) {
+      const cityCoordinates = event.location.city?.coordinates;
+      if (
+        this.userLocation &&
+        event.location.type === 'offline' &&
+        typeof cityCoordinates?.latitude === 'number' &&
+        typeof cityCoordinates?.longitude === 'number'
+      ) {
         const distance = this.calculateDistance(event);
         if (distance === null || distance > this.filters.maxDistance) {
           return false;
@@ -414,7 +424,13 @@ export class SearchResultsComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   formatDistance(event: EventList): string {
-    if (!this.userLocation || event.location.type === 'online' || !event.location.coordinates) {
+    const cityCoordinates = event.location.city?.coordinates;
+    if (
+      !this.userLocation ||
+      event.location.type === 'online' ||
+      typeof cityCoordinates?.latitude !== 'number' ||
+      typeof cityCoordinates?.longitude !== 'number'
+    ) {
       return '';
     }
 

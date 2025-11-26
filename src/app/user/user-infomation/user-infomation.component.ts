@@ -1,24 +1,21 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy,  ViewChild, ElementRef, signal } from '@angular/core';
-import { Observable, Subscription } from 'rxjs';
-import { Organizer, User, UserType } from '../../types/userstype';
-import { UsersService } from '../../service/users.service';
 import { CommonModule } from '@angular/common';
-import { auth } from '../../config/firebase.config';
-import { getAuth, updatePassword } from 'firebase/auth';
-import { ActivatedRoute, Router } from '@angular/router';
-import { CloudinaryService } from '../../service/cloudinary.service';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { getCountries, getCountryCallingCode } from 'libphonenumber-js';
+import { ActivatedRoute, Router } from '@angular/router';
+import { EmailAuthProvider, getAuth, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import { Timestamp } from 'firebase/firestore';
 import * as countries from 'i18n-iso-countries';
 import en from 'i18n-iso-countries/langs/en.json';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { finalize } from 'rxjs/operators';
-import { Timestamp } from 'firebase/firestore';
-import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { skip } from 'rxjs/operators';
-import { AddressInformationService } from '../../service/addressInformation.service';
-import { AuthService } from '../../service/auth.service';
-import { Follows } from '../../types/followtype';
+import { getCountries, getCountryCallingCode } from 'libphonenumber-js';
+import { Observable, Subscription } from 'rxjs';
+import { finalize, skip } from 'rxjs/operators';
+import { AddressInformationService } from '../../core/services/addressInformation.service';
+import { AuthService } from '../../core/services/auth.service';
+import { CloudinaryService } from '../../core/services/cloudinary.service';
+import { UsersService } from '../../core/services/users.service';
+import { Follows } from '../../core/models/followtype';
+import { Organizer, User } from '../../core/models/userstype';
 
 
 interface CloudinaryResponse {
@@ -26,15 +23,30 @@ interface CloudinaryResponse {
 }
 
 interface FollowWithOrganizer extends Follows {
-    organizer?: {
-        id: string;
-        fullName: string;
-        profileImage?: string;
-        organization?: {
-            companyName: string;
-        };
+  organizer?: {
+    id: string | number;
+    fullName: string;
+    profileImage?: string;
+    organization?: {
+      companyName: string;
     };
+  };
 }
+
+interface LocationBase {
+  code: string;
+  name: string;
+}
+
+interface LocationWithParent extends LocationBase {
+  parent_code: string;
+}
+
+type City = LocationBase;
+type District = LocationWithParent;
+type Ward = LocationWithParent;
+
+type NamedLocationValue = LocationBase | { name?: string } | string | null | undefined;
 
 @Component({
   selector: 'app-user-infomation',
@@ -44,8 +56,17 @@ interface FollowWithOrganizer extends Follows {
   styleUrls: ['./user-infomation.component.css'],
 })
 export class UserInfomationComponent implements OnInit, OnDestroy {
+  private userService = inject(UsersService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private cloudinaryService = inject(CloudinaryService);
+  private sanitizer = inject(DomSanitizer);
+  private fb = inject(FormBuilder);
+  private location = inject(AddressInformationService);
+  private authService = inject(AuthService);
+
   user$: Observable<User[]>;
-  currentUser = signal< User | undefined>(undefined);
+  currentUser = signal<User | undefined>(undefined);
   imageUrl: string | undefined;
   private subscriptions: Subscription[] = [];
   userForm: FormGroup;
@@ -55,32 +76,22 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   isSaving = signal(false);
   errorMessage = '';
   successMessage = '';
-  changeTab : string  = 'tab1';
+  changeTab: string = 'tab1';
   newpassword: string = '';
-  countries: { code: string, name: string }[] = [];
-  getCountryCallingCodes: { code: string, dialCode: string }[] = [];
-  currentRole: string ='';
-  activeOF: boolean =  false;
-  citiesValue: any[] =[];
-  districtsValue: any[] = [];
-  wardsValue:any[]  = [];
+  countries: { code: string; name: string }[] = [];
+  getCountryCallingCodes: { code: string; dialCode: string }[] = [];
+  currentRole: string = '';
+  activeOF = false;
+  citiesValue: City[] = [];
+  districtsValue: District[] = [];
+  wardsValue: Ward[] = [];
+  districtsWithCities: District[] = [];
+  wardsWithDistricts: Ward[] = [];
+  currentCity = '';
 
-  districtsWithCities:any[] = [];
-  wardsWithDistricts:any[] = [];
-  currentCity: string ="";
+  followedOrganizers: FollowWithOrganizer[] | Follows[] = [];
 
-  followedOrganizers: FollowWithOrganizer[] = [];
-
-  constructor(
-    private userService: UsersService, 
-    private router: Router, 
-    private route: ActivatedRoute, 
-    private cloudinaryService: CloudinaryService,
-    private sanitizer: DomSanitizer,
-    private fb: FormBuilder,
-    private location: AddressInformationService,
-    private authService: AuthService
-  ) {
+  constructor() {
     this.user$ = this.userService.users$;
     this.userForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
@@ -118,65 +129,59 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
 
-    this.route.queryParams.subscribe(tab =>{
-      {
-        this.changeTab  = tab['changeTab']
-        this.errorMessage = "Please become Organizer to active"
-      }
-    })
+    this.route.queryParams.subscribe(tab => {
+      this.changeTab = tab['changeTab'];
+      this.errorMessage = 'Please become Organizer to active';
+    });
 
+    this.location.getCities().subscribe(dataCities => {
+      this.citiesValue = dataCities as unknown as City[];
+    });
+    this.location.getDistricts().subscribe(dataDistricts => {
+      this.districtsValue = dataDistricts as unknown as District[];
+    });
+    this.location.getWards().subscribe(dataWards => {
+      this.wardsValue = dataWards as unknown as Ward[];
+    });
+    this.userForm
+      .get('city')
+      ?.valueChanges.pipe(skip(1))
+      .subscribe(selectedCity => {
+        const cityValue = selectedCity as City | undefined;
+        if (cityValue?.code) {
+          this.districtsWithCities = this.districtsValue.filter(
+            d => d.parent_code === cityValue.code,
+          );
 
-    this.location.getCities().subscribe(dataCities =>{
-      this.citiesValue = dataCities;      
-    })
-    this.location.getDistricts().subscribe(dataDistricts =>{
-      this.districtsValue = dataDistricts;
-    })
-    this.location.getWards().subscribe(dataWards =>{
-      this.wardsValue = dataWards;
-    })
-    this.userForm.get('city')?.valueChanges
-    .pipe(skip(1))
-    .subscribe(selectedCity =>{
-      if(selectedCity){
-        this.districtsWithCities = this.districtsValue.filter(
-          d => d.parent_code === selectedCity.code
-        );
+          this.userForm.get('districts')?.reset();
+          this.wardsWithDistricts = [];
+        } else {
+          this.districtsWithCities = [];
+          this.wardsWithDistricts = [];
+        }
+      });
 
-        this.userForm.get('districts')?.reset();
-        this.wardsWithDistricts = []
-      }
-      else{
-        this.districtsWithCities = [];
-        this.wardsWithDistricts = [];
+    this.userForm
+      .get('districts')
+      ?.valueChanges.pipe(skip(1))
+      .subscribe(selectedDistricts => {
+        const districtValue = selectedDistricts as District | undefined;
+        if (districtValue?.code) {
+          this.wardsWithDistricts = this.wardsValue.filter(
+            d => d.parent_code === districtValue.code,
+          );
 
-      }
-    })
-
-    this.userForm.get('districts')?.valueChanges
-    .pipe(skip(1))
-    .subscribe(selectedDistricts =>{
-      if(selectedDistricts){
-        this.wardsWithDistricts = this.wardsValue.filter(
-          d => d.parent_code === selectedDistricts.code
-        );
-
-        this.userForm.get('wards')?.reset();
-        console.log(this.wardsWithDistricts)
-      }
-      else{
-        this.wardsWithDistricts = [];
-      }
-    })
-    
-
-    
+          this.userForm.get('wards')?.reset();
+        } else {
+          this.wardsWithDistricts = [];
+        }
+      });
     this.isLoading.set(true);
     const authInstance = getAuth();
     this.countries = this.getCountryList();
     try {
       const countryCodes = getCountries() || [];
-      this.getCountryCallingCodes = countryCodes.map(code => ({
+      this.getCountryCallingCodes = countryCodes.map((code: string) => ({
         code,
         dialCode: getCountryCallingCode(code)?.toString() || ''
       }));
@@ -198,9 +203,10 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
             next: (dataUser) => {
               if (dataUser) {
                 
-                this.currentRole = dataUser.type
+                const userType = dataUser.type ?? dataUser.account?.type;
+                this.currentRole = userType ?? '';
                 this.currentUser.set(dataUser);
-                this.imageUrl = dataUser.profileImage;           
+                this.imageUrl = dataUser.profile?.avatar ?? dataUser.profileImage ?? '';           
                 this.updateFormWithUserData(dataUser);
                 
               } else {
@@ -228,43 +234,55 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     this.loadFollowedOrganizers();
   }
 
-  private updateFormWithUserData(user: User): void {   
-    
+  private updateFormWithUserData(user: User): void {
+    const dobValue = user.profile?.dob ?? user.timestamps?.createdAt ?? user.dateOfBirth;
     let formattedDOB = '';
-    if (user.dateOfBirth) {
+    if (dobValue) {
       try {
-        if (typeof user.dateOfBirth.toDate === 'function') {
-          formattedDOB = user.dateOfBirth.toDate().toISOString().split('T')[0];
+        if (typeof dobValue === 'object' && 'toDate' in dobValue && typeof dobValue.toDate === 'function') {
+          formattedDOB = dobValue.toDate().toISOString().split('T')[0];
         }
-        else if (user.dateOfBirth instanceof Date) {
-          formattedDOB = user.dateOfBirth.toISOString().split('T')[0];
+        else if (dobValue instanceof Date) {
+          formattedDOB = dobValue.toISOString().split('T')[0];
         }
-        else if (typeof user.dateOfBirth === 'string') {
-          formattedDOB = new Date(user.dateOfBirth).toISOString().split('T')[0];
+        else if (typeof dobValue === 'string') {
+          formattedDOB = new Date(dobValue).toISOString().split('T')[0];
         }
       } catch (error) {
         console.error('Error formatting date:', error);
       }
     }
-    let organization: Organizer['organization'] 
-    const address = user.address || {};
+    
+    // Get organization from nested structure or legacy field
+    let organization: Organizer['organization'] | undefined;
     if(this.isOrangizer(user)){
       organization = user.organization || {};
     }
+    
+    // Get address from nested contact or legacy field
+    const address = user.contact?.address ?? user.address ?? {};
+    
+    // Get user data from nested structure or legacy fields
+    const firstName = user.profile?.firstName ?? user.firstName ?? '';
+    const lastName = user.profile?.lastName ?? user.lastName ?? '';
+    const phoneNumber = user.contact?.phone ?? user.phoneNumber ?? '';
+    const email = user.account?.email ?? user.email ?? '';
+    const profileImage = user.profile?.avatar ?? user.profileImage ?? '';
+    
     Object.keys(this.userForm.controls).forEach(key => {
       try {
-        switch(key) {
+        switch (key) {
           case 'firstName':
-            this.userForm.get(key)?.setValue(user.firstName || '');
+            this.userForm.get(key)?.setValue(firstName);
             break;
           case 'lastName':
-            this.userForm.get(key)?.setValue(user.lastName || '');
+            this.userForm.get(key)?.setValue(lastName);
             break;
           case 'phoneNumber':
-            this.userForm.get(key)?.setValue(user.phoneNumber || '');
+            this.userForm.get(key)?.setValue(phoneNumber);
             break;
           case 'email':
-            this.userForm.get(key)?.setValue(user.email || '');
+            this.userForm.get(key)?.setValue(email);
             break;
           case 'dateOfBirth':
             this.userForm.get(key)?.setValue(formattedDOB);
@@ -285,7 +303,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
             this.userForm.get(key)?.setValue(address.city || '');
             break;
           case 'profileImage':
-            this.userForm.get(key)?.setValue(user.profileImage || '');
+            this.userForm.get(key)?.setValue(profileImage);
             break;
           case 'password':
             this.userForm.get(key)?.setValue('');  
@@ -297,18 +315,18 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     });
     Object.keys(this.OrganizerForm.controls).forEach(key => {
       try {
-        switch(key) {
+        switch (key) {
           case 'companyName'  :
-            this.userForm.get(key)?.setValue(organization?.companyName || '');
+            this.OrganizerForm.get(key)?.setValue(organization?.companyName || '');
             break;
           case 'identifier'  :
-            this.userForm.get(key)?.setValue(organization?.identifier || '');
+            this.OrganizerForm.get(key)?.setValue(organization?.identifier || '');
             break;
           case 'jobTitle'  :
-            this.userForm.get(key)?.setValue(organization?.jobTitle || '');
+            this.OrganizerForm.get(key)?.setValue(organization?.jobTitle || '');
             break;
           case 'postalCode'  :
-            this.userForm.get(key)?.setValue(organization?.postalCode || '');
+            this.OrganizerForm.get(key)?.setValue(organization?.postalCode || '');
             break;      
         }
       } catch (error) {
@@ -318,21 +336,22 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     
   }
 
-  isOrangizer(user: User) :user is Organizer{
-    return user.type === 'organizer'
-  } 
+  isOrangizer(user: User): user is Organizer {
+    const userType = user.type ?? user.account?.type;
+    return userType === 'organizer';
+  }
 
   ngOnDestroy(): void {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
-  getCountryList(): { code: string, name: string }[] {
+  getCountryList(): { code: string; name: string }[] {
     try {
-    const countryObj = countries.getNames("en", { select: "official" }) || {};
-    return Object.entries(countryObj).map(([code, name]) => ({
-      code,
-      name
-    }));
+      const countryObj = countries.getNames('en', { select: 'official' }) || {};
+      return Object.entries(countryObj).map(([code, name]) => ({
+        code,
+        name,
+      }));
     } catch (error) {
       console.error('Error getting country list:', error);
       return [];
@@ -371,12 +390,13 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
 
     this.cloudinaryService.upLoadImage(file).subscribe({
-      next: (response: CloudinaryResponse) => {
-          this.imageUrl = response.secure_url;
-        this.userForm.patchValue({ profileImage: response.secure_url });
+      next: (response: unknown) => {
+        const responseData = response as CloudinaryResponse;
+        this.imageUrl = responseData.secure_url;
+        this.userForm.patchValue({ profileImage: responseData.secure_url });
         this.isLoading.set(false);
       },
-      error: (error: Error) => {
+      error: (error: unknown) => {
         console.error('Error uploading image:', error);
         this.errorMessage = 'Failed to upload image. Please try again.';
         this.isLoading.set(false);
@@ -398,14 +418,14 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   }
   
   
-  getTrimmedString(value: any): string {
+  getTrimmedString(value: unknown): string {
     return typeof value === 'string' ? value.trim() : '';
   }
   
   // Hàm kiểm tra và chuyển đổi ngày sinh
-  convertDOB(dobValue: any): Timestamp | null {
+  convertDOB(dobValue: unknown): Timestamp | null {
     try {
-      const convertedDOB = new Date(dobValue);
+      const convertedDOB = new Date(dobValue as string);
       if (!isNaN(convertedDOB.getTime())) {
         return Timestamp.fromDate(convertedDOB);
       }
@@ -413,6 +433,20 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       console.error('Error converting date:', error);
     }
     return null;
+  }
+
+  private getLocationName(controlName: string): string {
+    const controlValue = this.userForm.get(controlName)?.value as NamedLocationValue;
+    if (!controlValue) {
+      return '';
+    }
+    if (typeof controlValue === 'string') {
+      return this.getTrimmedString(controlValue);
+    }
+    if (typeof controlValue === 'object' && 'name' in controlValue) {
+      return this.getTrimmedString(controlValue.name);
+    }
+    return '';
   }
   
   onSubmit(): void {
@@ -452,13 +486,47 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
     }
   
     // Lấy giá trị từ form và trim
-    const wards = this.getTrimmedString((this.userForm.get('wards')?.value).name);
-    const districts = this.getTrimmedString((this.userForm.get('districts')?.value).name);
-    const city = this.getTrimmedString((this.userForm.get('city')?.value).name);
+    const wards = this.getLocationName('wards');
+    const districts = this.getLocationName('districts');
+    const city = this.getLocationName('city');
     const firstName = this.getTrimmedString(this.userForm.get('firstName')?.value);
     const lastName = this.getTrimmedString(this.userForm.get('lastName')?.value);
   
+    const currentUserData = this.currentUser();
+    const existingAccount = currentUserData?.account ?? {};
+    const existingProfile = currentUserData?.profile ?? {};
+    const existingContact = currentUserData?.contact ?? {};
+    const existingOrganization = currentUserData?.organization ?? {};
+    
     const updatedUser: Partial<User> = {
+      // Nested structure
+      account: {
+        ...existingAccount,
+        email: this.userForm.get('email')?.value ?? existingAccount.email
+      },
+      profile: {
+        ...existingProfile,
+        firstName,
+        lastName,
+        fullName: `${firstName} ${lastName}`,
+        age,
+        avatar: this.userForm.get('profileImage')?.value ?? existingProfile.avatar,
+        dob: updatedDOB
+      },
+      contact: {
+        ...existingContact,
+        phone: this.getTrimmedString(this.userForm.get('phoneNumber')?.value) ?? existingContact.phone,
+        address: {
+          ...existingContact.address,
+          details_address: this.getTrimmedString(this.userForm.get('details_address')?.value),
+          wards,
+          districts,
+          city,
+          country: this.getTrimmedString(this.userForm.get('country')?.value)
+        }
+      },
+      organization: currentUserData?.type === 'organizer' ? existingOrganization : null,
+      // Legacy fields for backward compatibility
       firstName,
       lastName,
       fullName: `${firstName} ${lastName}`,
@@ -500,7 +568,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   activeOrganizer(){
     const authInstance = getAuth();
     const user = authInstance.currentUser;
-    let updateOrganizer = {};
+    let updateOrganizer: Partial<Organizer> = {};
 
     this.isSaving.set(true);
     this.errorMessage = '';
@@ -563,9 +631,8 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
   }
 
  
-  onChangeType():void{
-    this.activeOF =! this.activeOF
-    console.log(this.activeOF)
+  onChangeType(): void {
+    this.activeOF = !this.activeOF;
   }
   changeTabSelected(tab: string): void{
     this.changeTab = tab
@@ -605,7 +672,7 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
       await updatePassword(user, newPassword);
   
       this.successMessage = 'Password updated successfully!';
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to update password wrong current password');
       this.errorMessage = 'Failed to update password, wrong current password';
     } finally {
@@ -637,14 +704,18 @@ export class UserInfomationComponent implements OnInit, OnDestroy {
         next: async (follows: Follows[]) => {
           // Load organizer information for each follow
           const followsWithOrganizers = await Promise.all(
-            follows.map(async (follow) => {
-              if (!follow.organizer_id) return follow;
-              const organizer = await this.userService.getCurrentUserById(follow.organizer_id).toPromise();
+            follows.map(async (follow: Follows) => {
+              if (!follow.organizer_id) {
+                return follow;
+              }
+              const organizer = await this.userService
+                .getCurrentUserById(String(follow.organizer_id))
+                .toPromise();
               return {
                 ...follow,
-                organizer
+                organizer,
               } as FollowWithOrganizer;
-            })
+            }),
           );
           this.followedOrganizers = followsWithOrganizers;
           

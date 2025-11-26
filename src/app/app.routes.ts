@@ -1,14 +1,12 @@
 import { Routes } from '@angular/router';
-import { RegisterActionDemoComponent } from './register-action-demo/register-action-demo.component';
-import { LoginActionDemoComponent } from './login-action-demo/login-action-demo.component';
-import { HomePageComponent } from './home-page/home-page.component';
-import { AppComponent } from './app.component';
-import { DetailEventComponent } from './body/detail-event/detail-event.component';
-import { LayoutRouterComponent } from './layout-router/layout-router.component';
 import { BodyPageComponent } from './body/body-page/body-page.component';
-import { UserInfomationComponent } from './user/user-infomation/user-infomation.component';
-import { ManageEventsComponent } from './management-event/manage-events/manage-events.component'
+import { DetailEventComponent } from './body/detail-event/detail-event.component';
+import { HomePageComponent } from './home-page/home-page.component';
+import { LayoutRouterComponent } from './layout-router/layout-router.component';
+import { LoginActionDemoComponent } from './login-action-demo/login-action-demo.component';
+import { RegisterActionDemoComponent } from './register-action-demo/register-action-demo.component';
 import { TicketEventsManageComponent } from './tickets/ticket-events-manage/ticket-events-manage.component';
+import { UserInfomationComponent } from './user/user-infomation/user-infomation.component';
 export const routes: Routes = [
   {
     path: '',

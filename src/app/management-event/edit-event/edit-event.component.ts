@@ -1,21 +1,24 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CommonModule } from '@angular/common';
-import { auth } from '../../config/firebase.config';
-import { EventList } from '../../types/eventstype';
-import { SafeUrlService } from '../../service/santizer.service';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { CloudinaryService } from '../../service/cloudinary.service';
-import * as countries from 'i18n-iso-countries';
-import { EventsService } from '../../service/events.service';
-import en from 'i18n-iso-countries/langs/en.json';
-import { UsersService } from '../../service/users.service';
-import { Observable, Subject } from 'rxjs';
-import { tap, takeUntil, finalize, debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { Timestamp } from 'firebase/firestore';
+import { Component, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../config/firebase.config';
-import { AddressInformationService } from '../../service/addressInformation.service';
+import { Timestamp, doc, updateDoc } from 'firebase/firestore';
+import * as countries from 'i18n-iso-countries';
+import en from 'i18n-iso-countries/langs/en.json';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, takeUntil, tap } from 'rxjs/operators';
+import { auth, db } from '../../config/firebase.config';
+import { AddressInformationService } from '../../core/services/addressInformation.service';
+import { CloudinaryService } from '../../core/services/cloudinary.service';
+import { EventsService } from '../../core/services/events.service';
+import { SafeUrlService } from '../../core/services/santizer.service';
+import { UsersService } from '../../core/services/users.service';
+import { EventList } from '../../core/models/eventstype';
+
+interface CloudinaryResponse {
+  secure_url: string;
+}
 
 @Component({
   selector: 'app-edit-event',
@@ -25,6 +28,14 @@ import { AddressInformationService } from '../../service/addressInformation.serv
   styleUrls: ['./edit-event.component.css']
 })
 export class EditEventComponent implements OnInit, OnDestroy {
+  private eventsService = inject(EventsService);
+  private sanitizer = inject(SafeUrlService);
+  private fb = inject(FormBuilder);
+  private cloudinary = inject(CloudinaryService);
+  private usersService = inject(UsersService);
+  router = inject(Router);
+  private location = inject(AddressInformationService);
+
   @Input() eventId: string | undefined;
   @Input() countries: { code: string, name: string}[] = [];
   @Input() citiesValue: any[] = [];
@@ -50,15 +61,7 @@ export class EditEventComponent implements OnInit, OnDestroy {
   private lastGeocodingRequest: number = 0;
   private readonly GEOCODING_DELAY = 1000;
 
-  constructor(
-    private eventsService: EventsService,
-    private sanitizer: SafeUrlService,
-    private fb: FormBuilder,
-    private cloudinary: CloudinaryService,
-    private usersService: UsersService,
-    public router: Router,
-    private location: AddressInformationService
-  ) {
+  constructor() {
     countries.registerLocale(en);
     this.initializeForm();
   }
@@ -139,10 +142,12 @@ export class EditEventComponent implements OnInit, OnDestroy {
     this.usersService.getCurrentUserById(this.currentUserId).pipe(
       takeUntil(this.destroy$),
       tap(data => {
-        if (data?.type !== 'organizer') {
+        const userType = data?.type ?? data?.account?.type;
+        if (userType !== 'organizer') {
           this.errorMessage = 'Only organizers can edit events';
         } else {
-          this.successMessage = `Welcome Organizer ${data.fullName}`;
+          const userName = data?.fullName ?? data?.profile?.fullName ?? data?.account?.username ?? 'Organizer';
+          this.successMessage = `Welcome Organizer ${userName}`;
           this.loadEventData();
         }
       })
@@ -183,17 +188,43 @@ export class EditEventComponent implements OnInit, OnDestroy {
 
     console.log('Updating form with event data:', event);
 
+    // Get event data from nested structure or legacy fields
+    const eventName = event.core?.name ?? event.name ?? '';
+    const eventDescription = event.core?.description ?? event.description ?? '';
+    const eventContent = event.core?.content ?? event.content ?? '';
+    const eventPrice = event.core?.price ?? event.price ?? 0;
+    const eventType = event.core?.eventType ?? event.event_type ?? 'offline';
+    const eventTags = event.core?.tags ?? event.tags ?? [];
+    const maxAttendees = event.tickets?.maxAttendees ?? event.max_attendees ?? 1;
+    const imageUrl = event.media?.coverImage ?? event.media?.primaryImage ?? event.image_url ?? '';
+
+    // Get date from nested schedule or legacy date_time_options
+    const dateTimeOptions = event.date_time_options || event.schedule?.dateTimeOptions || [];
+    const firstOption = (dateTimeOptions[0] || {}) as Record<string, unknown>;
+    const startTime = (firstOption['start_time'] || firstOption['startDate'] || event.schedule?.startDate || '') as string;
+    const endTime = (firstOption['end_time'] || firstOption['endDate'] || event.schedule?.endDate || '') as string;
+
     // Convert dates to local datetime-local format
-    const startDate = new Date(event.date_time_options[0]?.start_time || '');
-    const endDate = new Date(event.date_time_options[0]?.end_time || '');
+    const startDate = startTime ? new Date(startTime) : new Date();
+    const endDate = endTime ? new Date(endTime) : new Date();
     
     const formattedStartDate = startDate.toISOString().slice(0, 16);
     const formattedEndDate = endDate.toISOString().slice(0, 16);
 
     // Find matching city, district and ward objects
-    const city = this.citiesValue.find(c => c.name === event.location?.city?.name);
-    const district = this.districtsValue.find(d => d.name === event.location?.districts?.name);
-    const ward = this.wardsValue.find(w => w.name === event.location?.wards?.name);
+    const locationCity = event.location?.city;
+    const locationDistrict = event.location?.district ?? event.location?.districts;
+    const locationWard = event.location?.ward ?? event.location?.wards;
+    const locationCountry = event.location?.country;
+
+    const cityName = typeof locationCity === 'string' ? locationCity : locationCity?.name;
+    const districtName = typeof locationDistrict === 'string' ? locationDistrict : locationDistrict?.name;
+    const wardName = typeof locationWard === 'string' ? locationWard : locationWard?.name;
+    const countryName = typeof locationCountry === 'string' ? locationCountry : locationCountry?.name;
+
+    const city = this.citiesValue.find(c => c.name === cityName);
+    const district = this.districtsValue.find(d => d.name === districtName);
+    const ward = this.wardsValue.find(w => w.name === wardName);
 
     console.log('Found location data:', { city, district, ward });
 
@@ -213,31 +244,31 @@ export class EditEventComponent implements OnInit, OnDestroy {
     }
 
     const formData = {
-      name: event.name || '',
-      description: event.description || '',
-      content: event.content || '',
+      name: eventName,
+      description: eventDescription,
+      content: eventContent,
       startDate: formattedStartDate,
       endDate: formattedEndDate,
-      eventType: event.event_type || 'offline',
+      eventType: eventType,
       details_address: event.location?.address || '',
       districts: district || '',
       wards: ward || '',
-      country: event.location?.country || '',
+      country: countryName || '',
       city: city || '',
-      price: event.price || 0,
-      maxAttendees: event.max_attendees || 1,
-      tags: event.tags?.join(', ') || '',
-      image: event.image_url || ''
+      price: eventPrice,
+      maxAttendees: maxAttendees,
+      tags: eventTags.join(', '),
+      image: imageUrl
     };
 
     console.log('Setting form data:', formData);
     this.eventForm.patchValue(formData);
 
-    if (event.image_url) {
-      this.imagePreviewUrl = event.image_url;
+    if (imageUrl) {
+      this.imagePreviewUrl = imageUrl;
     }
 
-    this.updateEventTypeState(event.event_type);
+    this.updateEventTypeState(eventType);
   }
 
   private updateEventTypeState(type: string): void {
@@ -307,11 +338,10 @@ export class EditEventComponent implements OnInit, OnDestroy {
     this.successMessage = '';
 
     try {
-      let imageUrl = this.eventForm.get('image')?.value;
-
-      if (this.selectedFile) {
-        imageUrl = await this.uploadImage();
-      }
+      // let imageUrl = this.eventForm.get('image')?.value;
+      // if (this.selectedFile) {
+      //   imageUrl = await this.uploadImage();
+      // }
 
       const eventData = this.prepareEventData();
       await this.updateEvent(eventData);
@@ -332,7 +362,10 @@ export class EditEventComponent implements OnInit, OnDestroy {
     if (!this.selectedFile) throw new Error('No image selected');
     return new Promise((resolve, reject) => {
       this.cloudinary.upLoadImage(this.selectedFile!).subscribe({
-        next: (response) => resolve(response.secure_url),
+        next: (response: unknown) => {
+          const responseData = response as CloudinaryResponse;
+          resolve(responseData.secure_url);
+        },
         error: (error) => reject(error)
       });
     });
@@ -341,40 +374,108 @@ export class EditEventComponent implements OnInit, OnDestroy {
   private prepareEventData(): Partial<EventList> {
     const formData = this.eventForm.value;
     const addressDetails = formData.details_address || '';
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const tags = formData.tags
+      ? formData.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => !!tag)
+      : [];
+    
+    const cityName = typeof formData.city === 'string' ? formData.city : formData.city?.name;
+    const districtName = typeof formData.districts === 'string' ? formData.districts : formData.districts?.name;
+    const wardName = typeof formData.wards === 'string' ? formData.wards : formData.wards?.name;
+    const countryName = typeof formData.country === 'string' ? formData.country : formData.country?.name || formData.country;
+
+    const existingCoordinates = this.eventData?.location?.coordinates || { lat: 0, lng: 0, latitude: 0, longitude: 0 };
+    const coordinates = {
+      lat: existingCoordinates.lat ?? existingCoordinates.latitude ?? 0,
+      lng: existingCoordinates.lng ?? existingCoordinates.longitude ?? 0,
+      latitude: existingCoordinates.latitude ?? existingCoordinates.lat ?? 0,
+      longitude: existingCoordinates.longitude ?? existingCoordinates.lng ?? 0
+    };
+
+    const existingStatus = this.eventData?.status;
+    const statusState = typeof existingStatus === 'string' ? existingStatus : existingStatus?.state ?? 'published';
 
     return {
+      core: {
+        id: this.eventData?.id ?? '',
+        name: formData.name,
+        shortDescription: formData.description?.slice(0, 140) ?? '',
+        description: formData.description,
+        content: formData.content,
+        category: this.eventData?.core?.category ?? [],
+        tags,
+        eventType: formData.eventType,
+        price: formData.price ?? 0
+      },
+      status: {
+        visibility: typeof existingStatus === 'object' ? (existingStatus.visibility ?? 'public') : 'public',
+        featured: typeof existingStatus === 'object' ? (existingStatus.featured ?? false) : false,
+        state: statusState,
+        deletedAt: typeof existingStatus === 'object' ? existingStatus.deletedAt : null
+      },
+      media: {
+        coverImage: this.imagePreviewUrl || this.eventData?.media?.coverImage || this.eventData?.image_url || '',
+        primaryImage: this.imagePreviewUrl || this.eventData?.media?.primaryImage || this.eventData?.image_url || '',
+        gallery: this.imagePreviewUrl ? [this.imagePreviewUrl] : (this.eventData?.media?.gallery ?? []),
+        image_url: this.imagePreviewUrl || this.eventData?.image_url || ''
+      },
+      schedule: {
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        dateTimeOptions: [{
+          start_time: formData.startDate,
+          end_time: formData.endDate,
+          time_zone: timezone
+        }],
+        timezone
+      },
+      location: {
+        type: formData.eventType,
+        address: addressDetails,
+        city: cityName ? (typeof formData.city === 'object' ? formData.city : { name: cityName }) : null,
+        district: districtName ? (typeof formData.districts === 'object' ? formData.districts : { name: districtName }) : null,
+        ward: wardName ? (typeof formData.wards === 'object' ? formData.wards : { name: wardName }) : null,
+        country: countryName ? (typeof formData.country === 'object' && formData.country.name ? formData.country : { name: countryName }) : null,
+        coordinates
+      },
+      organizer: this.eventData?.organizer || {
+        id: '',
+        name: '',
+        followers: 0
+      },
+      tickets: {
+        catalog: this.eventData?.tickets?.catalog ?? [],
+        capacity: formData.maxAttendees ?? null,
+        maxAttendees: formData.maxAttendees ?? null
+      },
+      engagement: this.eventData?.engagement ?? {
+        attendeesCount: 0,
+        likesCount: 0,
+        viewCount: 0,
+        searchTerms: []
+      },
+      metadata: this.eventData?.metadata ?? {},
+      timeline: {
+        createdAt: this.eventData?.timeline?.createdAt ?? this.eventData?.created_at ?? Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        created_at: this.eventData?.created_at ?? Timestamp.now(),
+        updated_at: Timestamp.now()
+      },
+      // Legacy fields for backward compatibility
       name: formData.name,
       description: formData.description,
       content: formData.content,
       date_time_options: [{
         start_time: formData.startDate,
         end_time: formData.endDate,
-        time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        time_zone: timezone
       }],
-      location: {
-        type: formData.eventType,
-        address: addressDetails,
-        districts: formData.districts,
-        wards: formData.wards,
-        country: formData.country,
-        city: formData.city,
-        coordinates: this.eventData?.location?.coordinates || {
-          latitude: 0,
-          longitude: 0
-        }
-      },
       image_url: this.imagePreviewUrl || this.eventData?.image_url || '',
       price: formData.price,
       max_attendees: formData.maxAttendees,
-      tags: formData.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag),
+      tags,
       event_type: formData.eventType,
-      organizer: this.eventData?.organizer || {
-        id: '',
-        name: '',
-        followers: 0
-      },
-      status: this.eventData?.status || 'published',
-      created_at: this.eventData?.created_at || Timestamp.now(),
+      created_at: this.eventData?.created_at ?? Timestamp.now(),
       updated_at: Timestamp.now()
     };
   }

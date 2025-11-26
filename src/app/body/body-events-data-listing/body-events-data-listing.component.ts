@@ -1,11 +1,11 @@
-import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
-import { EventsService } from '../../service/events.service';
+import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, inject } from '@angular/core';
+import { EventsService } from '../../core/services/events.service';
 import { CommonModule } from '@angular/common';
-import { EventList } from '../../types/eventstype';
+import { EventList } from '../../core/models/eventstype';
 import { map, Observable, Subscription } from 'rxjs';
 import { Router } from '@angular/router'; 
 import { RouterModule } from '@angular/router';
-import { SafeUrlService } from '../../service/santizer.service';
+import { SafeUrlService } from '../../core/services/santizer.service';
 import { SafeUrl } from '@angular/platform-browser';
 
 @Component({
@@ -15,7 +15,11 @@ import { SafeUrl } from '@angular/platform-browser';
   templateUrl: './body-events-data-listing.component.html',
   styleUrls: ['./body-events-data-listing.component.css']
 })
-export class BodyEventsDataListingComponent implements OnInit, OnDestroy, OnChanges { 
+export class BodyEventsDataListingComponent implements OnInit, OnDestroy, OnChanges {
+  private eventsService = inject(EventsService);
+  private router = inject(Router);
+  private sanitizer = inject(SafeUrlService);
+ 
   @Input() selectedFilter: string = '';
   @Input() location: string = '';
   
@@ -26,10 +30,9 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy, OnChan
   isLoading = true;
   private subscription: Subscription = new Subscription();
 
-  constructor(private eventsService: EventsService, private router: Router, private sanitizer: SafeUrlService) {
+  constructor() {
     this.events$ = this.eventsService.events$;
   }
-
   ngOnInit() {
     this.eventsService.fetchEvents(); 
     const sub = this.events$.subscribe(events => {
@@ -60,14 +63,15 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy, OnChan
 
     if (this.selectedFilter) {
       switch (this.selectedFilter) {
-        case 'today':
+        case 'today': {
           const today = new Date();
           filtered = filtered.filter(event => {
             const eventDate = new Date(event.date_time_options[0].start_time);
             return eventDate.toDateString() === today.toDateString();
           });
           break;
-        case 'weekend':
+        }
+        case 'weekend': {
           const now = new Date();
           const weekendStart = new Date(now);
           weekendStart.setDate(now.getDate() + (6 - now.getDay()));
@@ -81,12 +85,15 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy, OnChan
             return eventDate >= weekendStart && eventDate <= weekendEnd;
           });
           break;
-        case 'free':
+        }
+        case 'free': {
           filtered = filtered.filter(event => !event.price || event.price === 0);
           break;
-        case 'online':
+        }
+        case 'online': {
           filtered = filtered.filter(event => event.event_type === 'online');
           break;
+        }
       }
     }
 
@@ -128,7 +135,7 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy, OnChan
 
     this.eventsService.updateeventLikes(event.id, event.isLiked).subscribe({
       next: () => console.log('Like status updated successfully!'),
-      error: (error: any) => console.error('Error updating like status:', error)
+      error: (error) => console.error('Error updating like status:', error)
     });
   }
 

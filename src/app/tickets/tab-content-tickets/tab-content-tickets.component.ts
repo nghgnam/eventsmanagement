@@ -1,11 +1,11 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { EventList } from '../../types/eventstype';
-import { SafeUrlService } from '../../service/santizer.service';
+import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { SafeUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
-import { TicketType } from '../../types/ticketstype';
-import { GroupEventData, GroupEventDataType } from '../../types/groupEventDatType';
+import { SafeUrlService } from '../../core/services/santizer.service';
+import { EventList } from '../../core/models/eventstype';
+import { GroupEventData, GroupEventDataType } from '../../core/models/groupEventDatType';
+import { TicketType } from '../../core/models/ticketstype';
 @Component({
   selector: 'app-tab-content-tickets',
   standalone: true,
@@ -14,6 +14,9 @@ import { GroupEventData, GroupEventDataType } from '../../types/groupEventDatTyp
   styleUrls: ['./tab-content-tickets.component.css']
 })
 export class TabContentTicketsComponent implements OnChanges {
+  private sanitizer = inject(SafeUrlService);
+  private router = inject(Router);
+
   @Input() dataEvent: EventList[] | { valid: EventList[]; expired: EventList[]; } = { valid: [], expired: [] };
   @Input() errorMessage: string = '';
   @Input() successMessage: string = '';
@@ -42,9 +45,9 @@ export class TabContentTicketsComponent implements OnChanges {
       return [];
     }
     console.log("dataEvent", this.dataEvent);
-
+    
     return Object.entries(this.dataEvent as GroupEventData)
-    .filter(([_, events]) => Array.isArray(events) && events.length > 0)
+    .filter(([events]) => Array.isArray(events) && events.length > 0)
     .map(([key, events]) => ({
       label: this.formatGroupLabel(key),
       events: events
@@ -75,8 +78,9 @@ export class TabContentTicketsComponent implements OnChanges {
       this.calculateTicketStatuses();
     }
   }
+
+  constructor(){}
   
-  constructor(private sanitizer: SafeUrlService, private router: Router) { }
   getSafeUrl(url: string | undefined): SafeUrl | undefined {
     return this.sanitizer.sanitizeImageUrl(url);
   }
@@ -90,10 +94,13 @@ export class TabContentTicketsComponent implements OnChanges {
 
     const allEvents = this.getAllEvent();
     allEvents.forEach(event =>{
-      const ticket = this.dataTicket?.find(t => t.event_id === event.id);
-      if(event.id){
-        this.ticketStatus[event.id] = ticket ?  ticket?.status: 'unknown'
+      if(!event.id){
+        return;
       }
+      const eventId: string = event.id;
+      const ticket = this.dataTicket?.find(t => t.event_id === eventId);
+      const resolvedStatus = (ticket?.status ?? 'unknown') as string;
+      this.ticketStatus[eventId] = resolvedStatus;
     })
     
   }

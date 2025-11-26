@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -10,20 +10,20 @@ export class LocationService {
   private districtsUrl = 'assets/AddressVietNam/districts.json';
   private wardsUrl = 'assets/AddressVietNam/wards.json';
 
-  constructor(private http: HttpClient) {}
+  private http = inject(HttpClient);
 
   // Tải dữ liệu các thành phố
-  getCities(): Observable<any> {
-    return this.http.get<any>(this.citiesUrl);
+  getCities(): Observable<string[]> {
+    return this.http.get<string[]>(this.citiesUrl);
   }
 
   // Tải dữ liệu các quận/huyện
-  getDistricts(): Observable<any> {
-    return this.http.get<any>(this.districtsUrl);
+  getDistricts(): Observable<string[]> {
+    return this.http.get<string[]>(this.districtsUrl);
   }
 
   // Tải dữ liệu các phường/xã
-  getWards(): Observable<any> {
-    return this.http.get<any>(this.wardsUrl);
+  getWards(): Observable<string[]> {
+    return this.http.get<string[]>(this.wardsUrl);
   }
 }

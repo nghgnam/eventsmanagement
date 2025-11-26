@@ -1,12 +1,12 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { EventsService } from '../../service/events.service';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { EventsService } from '../../core/services/events.service';
 import { CommonModule } from '@angular/common';
-import { EventList } from '../../types/eventstype';
+import { EventList } from '../../core/models/eventstype';
 import { Observable, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { SafeUrl } from '@angular/platform-browser';
-import { SafeUrlService } from '../../service/santizer.service';
+import { SafeUrlService } from '../../core/services/santizer.service';
 @Component({
   selector: 'app-all-events-listing',
   standalone: true,
@@ -15,12 +15,16 @@ import { SafeUrlService } from '../../service/santizer.service';
   styleUrls: ['./all-events-listing.component.css']
 })
 export class AllEventsListingComponent implements OnInit, OnDestroy {
+  private eventsService = inject(EventsService);
+  private router = inject(Router);
+  private sanitizer = inject(SafeUrlService);
+
   events$: Observable<EventList[]>;
   displayedEvents: EventList[] = [];
   isLoading = true;
   private subscription: Subscription = new Subscription();
 
-  constructor(private eventsService: EventsService, private router: Router, private sanitizer: SafeUrlService) {
+  constructor() {
     this.events$ = this.eventsService.events$;
   }
 

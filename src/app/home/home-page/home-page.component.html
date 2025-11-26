@@ -1,0 +1,10 @@
+<header [class.fixed-header]="!isDetailPage" [class.relative-header]="isDetailPage">
+    <app-header-navbar></app-header-navbar>
+</header>
+
+@if (showBodyPage) {
+  <app-body-page>
+  </app-body-page>
+}
+
+<!-- <app-footer-page></app-footer-page> -->

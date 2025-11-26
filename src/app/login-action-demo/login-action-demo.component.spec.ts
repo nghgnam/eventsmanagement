@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { getTestBedProviders } from '../test-setup';
 
 import { LoginActionDemoComponent } from './login-action-demo.component';
 
@@ -7,7 +8,10 @@ describe('LoginActionDemoComponent', () => {
   let fixture: ComponentFixture<LoginActionDemoComponent>;
 
   beforeEach(async () => {
+    
     await TestBed.configureTestingModule({
+      providers: getTestBedProviders(),
+      providers: getTestBedProviders(),
       imports: [LoginActionDemoComponent]
     })
     .compileComponents();

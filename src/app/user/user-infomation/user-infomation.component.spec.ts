@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { getTestBedProviders } from '../../test-setup';
 
 import { UserInfomationComponent } from './user-infomation.component';
 
@@ -7,7 +8,10 @@ describe('UserInfomationComponent', () => {
   let fixture: ComponentFixture<UserInfomationComponent>;
 
   beforeEach(async () => {
+    
     await TestBed.configureTestingModule({
+      providers: getTestBedProviders(),
+      providers: getTestBedProviders(),
       imports: [UserInfomationComponent]
     })
     .compileComponents();

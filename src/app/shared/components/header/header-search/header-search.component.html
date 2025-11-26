@@ -1,0 +1,76 @@
+<div class="search-container" #searchContainer>
+  <form [formGroup]="searchForm" (ngSubmit)="onSubmit()" class="search-form">
+    <div class="search-input-wrapper">
+      <input 
+        type="text" 
+        formControlName="searchQuery"
+        placeholder="Search events..."
+        (focus)="onFocus()"
+        (blur)="onBlur($event)"
+        class="search-input"
+        autocomplete="off"
+      >
+    </div>
+  </form>
+
+  <!-- Search Results -->
+  @if (showResults) {
+    <div class="search-results">
+      @if (isLoading) {
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <span>Searching...</span>
+        </div>
+      }
+
+      @if (!isLoading) {
+        <div class="results-list">
+          @if (searchResults.length === 0) {
+            <div class="no-results">
+              <span class="material-icons">search_off</span>
+              <p>No events found</p>
+              <p class="hint">Try different keywords</p>
+            </div>
+          }
+          
+          @for (event of searchResults; track event.id) {
+            <div 
+              class="result-item"
+              (click)="onResultClick(event)"
+            >
+              @if (getEventImage(event); as imageUrl) {
+                <div class="event-image">
+                  <img [src]="imageUrl" [alt]="getEventName(event)">
+                </div>
+              }
+        <div class="event-info">
+          <h4>{{getEventName(event)}}</h4>
+          <p class="event-date">
+            <span class="material-icons">calendar_today</span>
+            @if (getEventStartDate(event); as startDate) {
+              {{startDate | date:'mediumDate'}}
+            } @else {
+              Date not specified
+            }
+          </p>
+          <p class="event-location">
+            <span class="material-icons">location_on</span>
+            {{getEventLocationLabel(event)}}
+          </p>
+          <p class="event-type">
+            <span class="material-icons">category</span>
+            {{getEventTypeLabel(event)}}
+          </p>
+          <p class="event-organizer">
+            <span class="material-icons">person</span>
+            {{getOrganizerName(event)}}
+          </p>
+        </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
+  
