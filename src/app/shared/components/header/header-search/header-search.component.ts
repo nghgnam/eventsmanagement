@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { EventsService } from '../../../../core/services/events.service';
 import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
-import { EventList, TimestampLike } from '../../../../core/models/eventstype';
+import { EventList } from '../../../../core/models/eventstype';
 
 @Component({
   selector: 'app-header-search',
@@ -21,16 +21,18 @@ export class HeaderSearchComponent implements OnInit {
 
   @ViewChild('searchContainer') searchContainer!: ElementRef;
   
-  searchForm!: FormGroup;
+  searchForm: FormGroup;
   searchResults: EventList[] = [];
   isLoading = false;
   showResults = false;
 
-
-  ngOnInit() {
+  constructor() {
     this.searchForm = this.fb.group({
       searchQuery: ['']
     });
+  }
+
+  ngOnInit() {
     this.searchForm.get('searchQuery')?.valueChanges
       .pipe(
         debounceTime(300),
@@ -98,60 +100,5 @@ export class HeaderSearchComponent implements OnInit {
       this.router.navigate(['/detail', event.id]);
       this.showResults = false;
     }
-  }
-
-  getEventImage(event: EventList): string {
-    return (
-      event.media?.primaryImage ||
-      event.media?.coverImage ||
-      'assets/images/default-event.jpg'
-    );
-  }
-
-  getEventName(event: EventList): string {
-    return event.core?.name ?? 'Untitled Event';
-  }
-
-  getEventStartDate(event: EventList): Date | null {
-    const option = this.getPrimaryScheduleOption(event);
-    const value = option ? option['start_time'] ?? option['startTime'] : event.schedule?.startDate;
-    return this.toDate(value);
-  }
-
-  getEventLocationLabel(event: EventList): string {
-    if (event.location?.type === 'online') {
-      return 'Online Event';
-    }
-    return event.location?.address || 'No address specified';
-  }
-
-  getEventTypeLabel(event: EventList): string {
-    return event.core?.eventType ?? 'General';
-  }
-
-  getOrganizerName(event: EventList): string {
-    return event.organizer?.name ?? 'Unknown organizer';
-  }
-
-  private getPrimaryScheduleOption(event: EventList): Record<string, TimestampLike | string | number | null | undefined> | undefined {
-    return (event.schedule?.dateTimeOptions as Record<string, TimestampLike | string | number | null | undefined>[])?.[0];
-  }
-
-  private toDate(value: TimestampLike | string | number | Date | null | undefined): Date | null {
-    if (!value) return null;
-    if (value instanceof Date) return value;
-    if (typeof value === 'string' || typeof value === 'number') {
-      const parsed = new Date(value);
-      return isNaN(parsed.getTime()) ? null : parsed;
-    }
-    if ((value as { toDate?: () => Date })?.toDate instanceof Function) {
-      return (value as { toDate?: () => Date })?.toDate?.() ?? null;
-    }
-    if (typeof value === 'object' && typeof (value as { _seconds: number })._seconds === 'number') {
-      const seconds = (value as { _seconds: number })._seconds;
-      const nanos = (value as { _nanoseconds?: number })._nanoseconds ?? 0;
-      return new Date(seconds * 1000 + nanos / 1e6);
-    }
-    return null;
   }
 }

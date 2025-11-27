@@ -4,7 +4,7 @@
       <a routerLink="/contact-sales" class="header_navbar_link">Contact Sales</a>
       <a routerLink="/create-event" class="header_navbar_link">Create Events</a>
       <a routerLink="/find-tickets" class="header_navbar_link">Find my tickets</a>
-      <a routerLink="/help" class="header_navbar_link">Help</a>
+      <a class="header_navbar_link" (click)="openPopup()">Help</a>
     </div>
     <button class="header_navbar_hamburger" (click)="toggleMobileMenu()" aria-label="Toggle menu">
       <span class="hamburger-icon">&#9776;</span>
@@ -48,3 +48,10 @@
     }
   </div>
 </nav>
+
+<app-popup [title]="'Clm lỗi lõi cl'" [width]="'500px'" [height]="'300px'" [isVisible]="isHelpOpen()">
+  <div class="help-content">
+    <h3>Help</h3>
+    <p>This is a help message</p>
+  </div>
+</app-popup>

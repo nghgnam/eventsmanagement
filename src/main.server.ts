@@ -1,18 +1,14 @@
+import 'zone.js/node';
 import { enableProdMode } from '@angular/core';
-import { environment } from './environments/environment'; 
-import { bootstrapApplication } from '@angular/platform-browser';
+import { bootstrapApplication, BootstrapContext } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
-import { provideServerRendering } from '@angular/platform-server';
+import { config } from './app/app.config.server';
+import { environment } from './environments/environment';
+
 if (environment.production) {
   enableProdMode();
 }
 
-export function bootstrap() {
-  return bootstrapApplication(AppComponent, {
-    providers: [
-      provideServerRendering()
-    ]
-  });
-}
+const bootstrap = (context: BootstrapContext) => bootstrapApplication(AppComponent, config, context);
 
 export default bootstrap;

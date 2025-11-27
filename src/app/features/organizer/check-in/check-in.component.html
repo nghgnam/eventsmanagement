@@ -1,0 +1,87 @@
+<div class="check-in-container">
+  <div class="container">
+    @if (event) {
+      <!-- Event Info -->
+      <div class="event-header">
+        <h1>{{ event.name }}</h1>
+        <p class="event-date">{{ event.startDate | date:'full' }}</p>
+      </div>
+
+      <!-- Check-in Methods -->
+      <div class="check-in-methods">
+        <!-- QR Code Scanner -->
+        <div class="scanner-section">
+          <h2>QR Code Scanner</h2>
+          @if (!isScanning) {
+            <button class="btn-primary btn-scan" (click)="startScanner()">
+              <i class="fa-solid fa-qrcode"></i> Start Scanner
+            </button>
+          } @else {
+            <div class="scanner-view">
+              <!-- TODO: QR Scanner component -->
+              <div class="scanner-placeholder">
+                <p>QR Scanner will be displayed here</p>
+                <p class="scanner-hint">Point camera at ticket QR code</p>
+              </div>
+            </div>
+            <button class="btn-secondary" (click)="stopScanner()">
+              Stop Scanner
+            </button>
+          }
+          @if (scannerError) {
+            <div class="error-message">{{ scannerError }}</div>
+          }
+        </div>
+
+        <!-- Manual Check-in -->
+        <div class="manual-section">
+          <h2>Manual Check-in</h2>
+          <div class="manual-input-group">
+            <input 
+              type="text" 
+              [(ngModel)]="ticketCode" 
+              placeholder="Enter ticket code"
+              (keyup.enter)="manualCheckIn()">
+            <button 
+              class="btn-primary" 
+              (click)="manualCheckIn()"
+              [disabled]="!ticketCode || isProcessing">
+              {{ isProcessing ? 'Processing...' : 'Check In' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Check-ins -->
+      <div class="recent-checkins">
+        <h2>Recent Check-ins</h2>
+        @if (recentCheckIns.length > 0) {
+          <div class="checkins-list">
+            @for (checkIn of recentCheckIns; track checkIn.id) {
+              <div class="checkin-item">
+                <div class="checkin-info">
+                  <strong>{{ checkIn.attendeeName }}</strong>
+                  <p>{{ checkIn.ticketType }}</p>
+                </div>
+                <div class="checkin-time">
+                  {{ checkIn.checkInTime | date:'short' }}
+                </div>
+                <div class="checkin-status">
+                  <span class="status-success">✓ Checked In</span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">
+            <p>No check-ins yet</p>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="loading">Loading event...</div>
+    }
+  </div>
+</div>
+
+

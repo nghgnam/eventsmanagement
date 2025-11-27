@@ -20,6 +20,7 @@ export class TrashEventsComponent implements OnInit {
   errorMessage: string = '';
   @Output() restored = new EventEmitter<void>();
 
+
   ngOnInit() {
     this.loadCancelledEvents();
   }
@@ -27,11 +28,11 @@ export class TrashEventsComponent implements OnInit {
   loadCancelledEvents() {
     this.isLoading = true;
     this.eventsService.getEventsByStatus('cancelled').subscribe({
-      next: (events) => {
+      next: (events: EventList[]) => {
         this.cancelledEvents = events;
         this.isLoading = false;
       },
-      error: (error) => {
+      error: (error: unknown) => {
         console.error('Error loading cancelled events:', error);
         this.errorMessage = 'Failed to load cancelled events';
         this.isLoading = false;
@@ -47,7 +48,7 @@ export class TrashEventsComponent implements OnInit {
         this.loadCancelledEvents(); // Reload the list after restoring
         this.restored.emit();
       },
-      error: (error) => {
+      error: (error: unknown) => {
         console.error('Error restoring event:', error);
         this.errorMessage = 'Failed to restore event';
       }

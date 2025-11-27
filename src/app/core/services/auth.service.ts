@@ -1,4 +1,6 @@
-import { Injectable, OnDestroy } from '@angular/core';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Injectable, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import {
   Auth,
   EmailAuthProvider,
@@ -16,6 +18,7 @@ import {
   deleteUser,
   getAuth,
   linkWithCredential,
+  onAuthStateChanged,
   onIdTokenChanged,
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -30,38 +33,262 @@ import {
   verifyPasswordResetCode
 } from 'firebase/auth';
 import { Timestamp, doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
+import { getApps, initializeApp } from 'firebase/app';
 import { BehaviorSubject, Observable, from, map, of, switchMap, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { User, UserRole, UserType } from '../models/userstype';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService implements OnDestroy {
+  private platformId = inject(PLATFORM_ID);
   private auth: Auth;
-  private db = getFirestore();
+  private dbInstance: ReturnType<typeof getFirestore> | null = null;
   private tokenResult$ = new BehaviorSubject<IdTokenResult | null>(null);
   private tokenUnsubscribe: Unsubscribe | null = null;
+  
+  // Retry mechanism
+  private retryCount = 0;
+  private readonly MAX_RETRIES = 10;
+  private readonly INITIAL_RETRY_DELAY = 100; // ms
+  private isInitializing = false;
 
   constructor() {
-    this.auth = getAuth();
-    // Listen to token changes
-    this.tokenUnsubscribe = onIdTokenChanged(this.auth, async (user) => {
-      if (user) {
+    // Don't initialize Auth in constructor - use lazy initialization
+    // This prevents errors when Firebase app hasn't been initialized yet
+    this.auth = {} as Auth;
+    
+    // Initialize Auth lazily on browser after app is ready
+    if (isPlatformBrowser(this.platformId)) {
+      // Use setTimeout to ensure Firebase app is initialized first
+      setTimeout(() => {
+        this.initializeAuth();
+      }, 500); // Increased delay to ensure Firebase providers are ready
+    }
+  }
+
+  private initializeAuth(): void {
+    // Only initialize on browser
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    
+    // Skip if already initialized
+    const isValidAuth = this.auth && 
+                       typeof (this.auth as any).app !== 'undefined' && 
+                       (this.auth as any).app !== null;
+    if (isValidAuth) {
+      return;
+    }
+
+    // Prevent concurrent initialization attempts
+    if (this.isInitializing) {
+      return;
+    }
+
+    // Check max retries
+    if (this.retryCount >= this.MAX_RETRIES) {
+      console.error(`[AuthService] Max retries (${this.MAX_RETRIES}) reached. Firebase Auth initialization failed.`);
+      return;
+    }
+
+    this.isInitializing = true;
+
+    try {
+      // First, ensure Firebase App is initialized
+      let apps = getApps();
+      if (apps.length === 0) {
+        // Firebase App not initialized, try to initialize it
         try {
-          const tokenResult = await user.getIdTokenResult();
-          this.tokenResult$.next(tokenResult);
-        } catch (error) {
-          console.error('Error getting token result:', error);
+          initializeApp(environment.firebase);
+          console.log('[AuthService] Firebase App initialized');
+          apps = getApps();
+        } catch (appError: any) {
+          if (appError?.code === 'app/duplicate-app') {
+            // App already exists, get it
+            apps = getApps();
+          } else {
+            throw appError;
+          }
         }
-      } else {
-        this.tokenResult$.next(null);
       }
+
+      // Now try to get Auth instance
+      this.auth = getAuth();
+      
+      // Verify auth instance is valid
+      if (!this.auth || typeof (this.auth as any).app === 'undefined') {
+        throw new Error('Invalid Auth instance returned');
+      }
+      
+      // Listen to token changes only on browser
+      this.tokenUnsubscribe = onIdTokenChanged(this.auth, async (user) => {
+        if (user) {
+          try {
+            const tokenResult = await user.getIdTokenResult();
+            this.tokenResult$.next(tokenResult);
+          } catch (error) {
+            console.error('Error getting token result:', error);
+          }
+        } else {
+          this.tokenResult$.next(null);
+        }
+      });
+      
+      // Success - reset retry count
+      this.retryCount = 0;
+      this.isInitializing = false;
+      console.log('[AuthService] Firebase Auth initialized successfully');
+    } catch (error: any) {
+      this.isInitializing = false;
+      
+      // If Firebase app not initialized yet, retry with exponential backoff
+      if (error?.code === 'app/no-app' || 
+          error?.message?.includes('No Firebase App') ||
+          error?.message?.includes('Invalid Auth instance')) {
+        this.retryCount++;
+        const delay = this.INITIAL_RETRY_DELAY * Math.pow(2, this.retryCount - 1); // Exponential backoff
+        
+        if (this.retryCount < this.MAX_RETRIES) {
+          console.warn(`[AuthService] Firebase App not ready yet, retrying... (${this.retryCount}/${this.MAX_RETRIES}) - next retry in ${delay}ms`);
+          setTimeout(() => {
+            this.initializeAuth();
+          }, delay);
+        } else {
+          console.error(`[AuthService] Failed to initialize Firebase Auth after ${this.MAX_RETRIES} retries.`, error);
+        }
+        return;
+      }
+      console.error('[AuthService] Failed to initialize Firebase Auth:', error);
+      // Create dummy auth object if initialization fails
+      this.auth = {} as Auth;
+    }
+  }
+
+  /**
+   * Wait for Auth to be initialized (with timeout)
+   */
+  private waitForAuthInitialized(maxWait: number = 10000): Promise<Auth> {
+    return new Promise((resolve, reject) => {
+      if (!isPlatformBrowser(this.platformId)) {
+        reject(new Error('Firebase Auth can only be accessed in browser environment'));
+        return;
+      }
+
+      // Check if already initialized
+      const isValidAuth = this.auth && 
+                         typeof (this.auth as any).app !== 'undefined' && 
+                         (this.auth as any).app !== null;
+      
+      if (isValidAuth) {
+        resolve(this.auth);
+        return;
+      }
+
+      // Reset retry count if we're starting fresh
+      if (this.retryCount >= this.MAX_RETRIES) {
+        console.warn('[AuthService] Resetting retry count for waitForAuthInitialized');
+        this.retryCount = 0;
+      }
+
+      // Try to initialize if not already initializing
+      if (!this.isInitializing) {
+        this.initializeAuth();
+      }
+
+      // Wait for initialization with polling
+      const startTime = Date.now();
+      const checkInterval = 100; // Check every 100ms
+      
+      const checkAuth = setInterval(() => {
+        const isValid = this.auth && 
+                       typeof (this.auth as any).app !== 'undefined' && 
+                       (this.auth as any).app !== null;
+        
+        if (isValid) {
+          clearInterval(checkAuth);
+          console.log('[AuthService] Auth initialized successfully after waiting');
+          resolve(this.auth);
+        } else if (Date.now() - startTime >= maxWait) {
+          clearInterval(checkAuth);
+          console.error(`[AuthService] Auth initialization timeout after ${maxWait}ms`);
+          reject(new Error(`Firebase Auth initialization timeout after ${maxWait}ms. Please refresh the page and try again.`));
+        }
+      }, checkInterval);
     });
   }
 
+  private ensureAuthInitialized(): Auth {
+    // Ensure Auth is initialized before use
+    if (!isPlatformBrowser(this.platformId)) {
+      throw new Error('Firebase Auth can only be accessed in browser environment');
+    }
+    
+    // Check if auth is valid by verifying it has the expected structure
+    // A valid Firebase Auth instance should have an 'app' property
+    const isValidAuth = this.auth && 
+                       typeof (this.auth as any).app !== 'undefined' && 
+                       (this.auth as any).app !== null;
+    
+    if (!isValidAuth) {
+      // Try to initialize if not already initializing
+      if (!this.isInitializing) {
+        this.initializeAuth();
+      }
+      
+      // For synchronous calls, we can't wait, so throw error
+      // But log a helpful message
+      console.warn('[AuthService] Firebase Auth not ready yet. Consider using waitForAuthInitialized() for async operations.');
+      throw new Error('Firebase Auth not ready yet. Please wait a moment and try again.');
+    }
+    
+    return this.auth;
+  }
+
+  /**
+   * Public accessor for components needing the browser Auth instance.
+   * Returns null on server or when Auth is not ready yet.
+   */
+  getBrowserAuth(): Auth | null {
+    if (!isPlatformBrowser(this.platformId)) {
+      return null;
+    }
+    try {
+      return this.ensureAuthInitialized();
+    } catch (error) {
+      console.warn('[AuthService] Unable to provide Auth instance yet:', error);
+      return null;
+    }
+  }
+
+  private get authInstance(): Auth {
+    // Lazy getter that ensures Auth is initialized
+    if (!isPlatformBrowser(this.platformId)) {
+      throw new Error('Firebase Auth can only be accessed in browser environment');
+    }
+    
+    if (!this.auth || (this.auth as any).currentUser === undefined) {
+      this.initializeAuth();
+    }
+    
+    return this.auth;
+  }
+
+  private get db(): ReturnType<typeof getFirestore> {
+    if (!isPlatformBrowser(this.platformId)) {
+      throw new Error('Firestore can only be accessed in browser environment');
+    }
+    if (!this.dbInstance) {
+      this.dbInstance = getFirestore();
+    }
+    return this.dbInstance;
+  }
+
   register(email: string, password: string, userType: UserType ="member" , role: UserRole = "user"): Observable<User> {
-    return from(createUserWithEmailAndPassword(this.auth, email, password)).pipe(
+    const auth = this.ensureAuthInitialized();
+    return from(createUserWithEmailAndPassword(auth, email, password)).pipe(
       switchMap((userCredential: UserCredential) => {
         const firebaseUser = userCredential.user;
   
@@ -120,10 +347,11 @@ export class AuthService implements OnDestroy {
           }
         };
   
-        return from(setDoc(doc(this.db, "users", firebaseUser.uid), defaultUser)).pipe(
+            return from(setDoc(doc(this.db, "users", firebaseUser.uid), defaultUser)).pipe(
           switchMap(() => {
             // Use enhanced email verification with custom redirect
-            const continueUrl = `${window.location.origin}/auth/email-verified`;
+            const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4200';
+            const continueUrl = `${origin}/auth/email-verified`;
             return from(sendEmailVerification(firebaseUser, {
               url: continueUrl,
               handleCodeInApp: true,
@@ -158,7 +386,8 @@ export class AuthService implements OnDestroy {
   } 
 
   login(email: string, password: string): Observable<string> {
-    return from(signInWithEmailAndPassword(this.auth, email, password)).pipe(
+    const auth = this.ensureAuthInitialized();
+    return from(signInWithEmailAndPassword(auth, email, password)).pipe(
       switchMap((userCredential: UserCredential) => {
         return from(userCredential.user.getIdToken());
       }),
@@ -193,7 +422,8 @@ export class AuthService implements OnDestroy {
   }
 
   logout(): Observable<void> {
-    return from(signOut(this.auth)).pipe(
+    const auth = this.ensureAuthInitialized();
+    return from(signOut(auth)).pipe(
       catchError(error => {
         console.error('Logout error:', error);
         return throwError(() => ({ code: error.code, message: 'An error occurred during logout.' }));
@@ -202,7 +432,8 @@ export class AuthService implements OnDestroy {
   }
 
   resetPassword(email: string): Observable<void> {
-    return from(sendPasswordResetEmail(this.auth, email)).pipe(
+    const auth = this.ensureAuthInitialized();
+    return from(sendPasswordResetEmail(auth, email)).pipe(
       catchError(error => {
         console.error('Password reset error:', error);
         let errorMessage = 'An error occurred while sending the password reset email.';
@@ -225,7 +456,8 @@ export class AuthService implements OnDestroy {
   }
 
   resendVerificationEmail(): Observable<void> {
-    const user = this.auth.currentUser;
+    const auth = this.ensureAuthInitialized();
+    const user = auth.currentUser;
     if (!user) {
       return throwError(() => ({ code: 'auth/no-user', message: 'No user is currently signed in.' }));
     }
@@ -243,7 +475,24 @@ export class AuthService implements OnDestroy {
     provider.addScope('profile');
     provider.addScope('email');
     
-    return from(signInWithPopup(this.auth, provider)).pipe(
+    // Wait for Auth to be initialized before proceeding
+    return from(this.waitForAuthInitialized(10000)).pipe(
+      catchError(error => {
+        console.error('[AuthService] Failed to initialize Auth for Google sign in:', error);
+        return throwError(() => ({ 
+          code: 'auth/initialization-failed', 
+          message: 'Failed to initialize authentication. Please refresh the page and try again.' 
+        }));
+      }),
+      switchMap(auth => {
+        if (!auth || typeof (auth as any).app === 'undefined') {
+          return throwError(() => ({ 
+            code: 'auth/invalid-instance', 
+            message: 'Invalid authentication instance' 
+          }));
+        }
+        return from(signInWithPopup(auth, provider));
+      }),
       switchMap((userCredential: UserCredential) => {
         const firebaseUser = userCredential.user;
         
@@ -317,6 +566,15 @@ export class AuthService implements OnDestroy {
           case 'auth/account-exists-with-different-credential':
             errorMessage = 'An account already exists with this email. Please sign in with your password.';
             break;
+          case 'auth/operation-not-allowed':
+            errorMessage = 'Google Sign-In is not enabled. Please contact the administrator or enable it in Firebase Console under Authentication > Sign-in method.';
+            break;
+          case 'auth/unauthorized-domain':
+            errorMessage = 'This domain is not authorized for Google Sign-In. Please contact the administrator.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+            break;
         }
         
         return throwError(() => ({ code: error.code, message: errorMessage }));
@@ -330,7 +588,8 @@ export class AuthService implements OnDestroy {
    * Get ID Token with optional force refresh
    */
   getIdToken(forceRefresh: boolean = false): Observable<string> {
-    const user = this.auth.currentUser;
+    const auth = this.ensureAuthInitialized();
+    const user = auth.currentUser;
     if (!user) {
       return throwError(() => ({ code: 'auth/no-user', message: 'No user is currently signed in.' }));
     }
@@ -342,7 +601,8 @@ export class AuthService implements OnDestroy {
    * Get ID Token Result (includes claims, expiration, etc.)
    */
   getIdTokenResult(forceRefresh: boolean = false): Observable<IdTokenResult> {
-    const user = this.auth.currentUser;
+    const auth = this.ensureAuthInitialized();
+    const user = auth.currentUser;
     if (!user) {
       return throwError(() => ({ code: 'auth/no-user', message: 'No user is currently signed in.' }));
     }
@@ -407,7 +667,8 @@ export class AuthService implements OnDestroy {
    * Apply action code (verify email, reset password, etc.)
    */
   applyActionCode(code: string): Observable<void> {
-    return from(applyActionCode(this.auth, code)).pipe(
+    const auth = this.ensureAuthInitialized();
+    return from(applyActionCode(auth, code)).pipe(
       catchError(error => {
         console.error('Apply action code error:', error);
         let errorMessage = 'Failed to verify code.';
@@ -430,7 +691,8 @@ export class AuthService implements OnDestroy {
    * Check action code before applying
    */
   checkActionCode(code: string): Observable<unknown> {
-    return from(checkActionCode(this.auth, code)).pipe(
+    const auth = this.ensureAuthInitialized();
+    return from(checkActionCode(auth, code)).pipe(
       catchError(error => {
         console.error('Check action code error:', error);
         return throwError(() => ({ code: error.code, message: 'Invalid code.' }));
@@ -452,7 +714,8 @@ export class AuthService implements OnDestroy {
       handleCodeInApp: true,
     } : undefined;
 
-    return from(sendPasswordResetEmail(this.auth, email, actionCodeSettings)).pipe(
+    const auth = this.ensureAuthInitialized();
+    return from(sendPasswordResetEmail(auth, email, actionCodeSettings)).pipe(
       catchError(error => {
         console.error('Password reset error:', error);
         let errorMessage = 'An error occurred while sending the password reset email.';
@@ -478,7 +741,8 @@ export class AuthService implements OnDestroy {
    * Verify password reset code
    */
   verifyPasswordResetCode(code: string): Observable<string> {
-    return from(verifyPasswordResetCode(this.auth, code)).pipe(
+    const auth = this.ensureAuthInitialized();
+    return from(verifyPasswordResetCode(auth, code)).pipe(
       catchError(error => {
         console.error('Verify password reset code error:', error);
         let errorMessage = 'Invalid or expired reset code.';
@@ -501,7 +765,8 @@ export class AuthService implements OnDestroy {
    * Confirm password reset with code
    */
   confirmPasswordReset(code: string, newPassword: string): Observable<void> {
-    return from(confirmPasswordReset(this.auth, code, newPassword)).pipe(
+    const auth = this.ensureAuthInitialized();
+    return from(confirmPasswordReset(auth, code, newPassword)).pipe(
       catchError(error => {
         console.error('Confirm password reset error:', error);
         let errorMessage = 'Failed to reset password.';
@@ -526,7 +791,8 @@ export class AuthService implements OnDestroy {
    * Update user profile (displayName, photoURL)
    */
   updateUserProfile(displayName?: string, photoURL?: string): Observable<void> {
-    const user = this.auth.currentUser;
+    const auth = this.ensureAuthInitialized();
+    const user = auth.currentUser;
     if (!user) {
       return throwError(() => ({ code: 'auth/no-user', message: 'No user is currently signed in.' }));
     }
@@ -547,7 +813,8 @@ export class AuthService implements OnDestroy {
    * Update user email
    */
   updateUserEmail(newEmail: string): Observable<void> {
-    const user = this.auth.currentUser;
+    const auth = this.ensureAuthInitialized();
+    const user = auth.currentUser;
     if (!user) {
       return throwError(() => ({ code: 'auth/no-user', message: 'No user is currently signed in.' }));
     }
@@ -578,7 +845,8 @@ export class AuthService implements OnDestroy {
    * Verify email before updating
    */
   verifyBeforeUpdateEmail(newEmail: string, continueUrl?: string): Observable<void> {
-    const user = this.auth.currentUser;
+    const auth = this.ensureAuthInitialized();
+    const user = auth.currentUser;
     if (!user) {
       return throwError(() => ({ code: 'auth/no-user', message: 'No user is currently signed in.' }));
     }
@@ -602,7 +870,8 @@ export class AuthService implements OnDestroy {
    * Delete user account
    */
   deleteAccount(): Observable<void> {
-    const user = this.auth.currentUser;
+    const auth = this.ensureAuthInitialized();
+    const user = auth.currentUser;
     if (!user) {
       return throwError(() => ({ code: 'auth/no-user', message: 'No user is currently signed in.' }));
     }
@@ -627,7 +896,8 @@ export class AuthService implements OnDestroy {
    * Link account with credential
    */
   linkAccount(email: string, password: string): Observable<UserCredential> {
-    const user = this.auth.currentUser;
+    const auth = this.ensureAuthInitialized();
+    const user = auth.currentUser;
     if (!user) {
       return throwError(() => ({ code: 'auth/no-user', message: 'No user is currently signed in.' }));
     }
@@ -657,7 +927,8 @@ export class AuthService implements OnDestroy {
    * Link Google account
    */
   linkGoogleAccount(): Observable<UserCredential> {
-    const user = this.auth.currentUser;
+    const auth = this.ensureAuthInitialized();
+    const user = auth.currentUser;
     if (!user) {
       return throwError(() => ({ code: 'auth/no-user', message: 'No user is currently signed in.' }));
     }
@@ -667,7 +938,7 @@ export class AuthService implements OnDestroy {
     provider.addScope('email');
     
     // Use signInWithPopup to get credential, then link
-    return from(signInWithPopup(this.auth, provider)).pipe(
+    return from(signInWithPopup(auth, provider)).pipe(
       switchMap((userCredential) => {
         // Get credential from userCredential
         const credential = GoogleAuthProvider.credentialFromResult(userCredential);
@@ -701,7 +972,8 @@ export class AuthService implements OnDestroy {
    * Unlink provider
    */
   unlinkProvider(providerId: string): Observable<FirebaseUser> {
-    const user = this.auth.currentUser;
+    const auth = this.ensureAuthInitialized();
+    const user = auth.currentUser;
     if (!user) {
       return throwError(() => ({ code: 'auth/no-user', message: 'No user is currently signed in.' }));
     }
@@ -736,7 +1008,8 @@ export class AuthService implements OnDestroy {
         persistenceType = browserLocalPersistence;
     }
 
-    return from(setPersistence(this.auth, persistenceType)).pipe(
+    const auth = this.ensureAuthInitialized();
+    return from(setPersistence(auth, persistenceType)).pipe(
       catchError(error => {
         console.error('Set persistence error:', error);
         return throwError(() => ({ code: error.code, message: 'Failed to set persistence.' }));
@@ -760,14 +1033,140 @@ export class AuthService implements OnDestroy {
    * Get current Firebase user
    */
   getCurrentFirebaseUser(): FirebaseUser | null {
-    return this.auth.currentUser;
+    const auth = this.ensureAuthInitialized();
+    return auth.currentUser;
+  }
+
+  /**
+   * Listen to auth state changes - returns Observable for easier use in components
+   */
+  onAuthStateChanged(): Observable<FirebaseUser | null> {
+    return new Observable(observer => {
+      if (!isPlatformBrowser(this.platformId)) {
+        observer.next(null);
+        observer.complete();
+        return () => {};
+      }
+
+      let unsubscribe: (() => void) | null = null;
+      let retryTimeout: ReturnType<typeof setTimeout> | null = null;
+      let maxTimeout: ReturnType<typeof setTimeout> | null = null;
+      let retryCount = 0;
+      const MAX_RETRIES = 10;
+      const INITIAL_RETRY_DELAY = 100;
+      const MAX_WAIT_TIME = 5000; // 5 seconds max wait for Firebase initialization
+
+      // Set a maximum timeout to prevent infinite waiting
+      maxTimeout = setTimeout(() => {
+        if (!unsubscribe) {
+          console.warn('[AuthService] onAuthStateChanged: Max wait time reached. Completing with null user.');
+          observer.next(null);
+          observer.complete();
+        }
+      }, MAX_WAIT_TIME);
+
+      const setupListener = (): void => {
+        try {
+          // Wait a bit for Firebase to be ready if needed
+          const isValidAuth = this.auth && 
+                             typeof (this.auth as any).app !== 'undefined' && 
+                             (this.auth as any).app !== null;
+          
+          if (!isValidAuth) {
+            // If not initialized yet, try to initialize
+            if (!this.isInitializing && this.retryCount < this.MAX_RETRIES) {
+              this.initializeAuth();
+            }
+            
+            // If still not ready, throw error to trigger retry
+            if (!this.auth || typeof (this.auth as any).app === 'undefined' || (this.auth as any).app === null) {
+              throw new Error('Firebase Auth not ready yet');
+            }
+          }
+
+          const auth = this.auth;
+          
+          // Validate auth object has the expected structure
+          if (!auth || typeof (auth as any).app === 'undefined' || (auth as any).app === null) {
+            throw new Error('Invalid Firebase Auth instance');
+          }
+
+          // Clear max timeout since we successfully set up the listener
+          if (maxTimeout) {
+            clearTimeout(maxTimeout);
+            maxTimeout = null;
+          }
+
+          // Use the imported onAuthStateChanged function (Firebase v9+ modular API)
+          unsubscribe = onAuthStateChanged(
+            auth,
+            user => {
+              observer.next(user);
+            },
+            error => {
+              observer.error(error);
+            }
+          );
+          
+          // Reset retry count on success
+          retryCount = 0;
+        } catch (error: any) {
+          if (error?.code === 'app/no-app' || error?.message?.includes('No Firebase App') || 
+              error?.message?.includes('Firebase Auth not ready yet') ||
+              error?.message?.includes('Invalid Firebase Auth instance')) {
+            // Retry after delay
+            if (retryCount < MAX_RETRIES) {
+              retryCount++;
+              const delay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount - 1);
+              console.warn(`[AuthService] onAuthStateChanged: Firebase Auth not ready, retrying... (${retryCount}/${MAX_RETRIES}) - next retry in ${delay}ms`);
+              retryTimeout = setTimeout(() => {
+                setupListener();
+              }, delay);
+            } else {
+              console.error(`[AuthService] onAuthStateChanged: Max retries reached. Firebase Auth not ready.`);
+              if (maxTimeout) {
+                clearTimeout(maxTimeout);
+                maxTimeout = null;
+              }
+              observer.next(null);
+              observer.complete();
+            }
+          } else {
+            console.error('[AuthService] onAuthStateChanged: Error setting up listener:', error);
+            if (maxTimeout) {
+              clearTimeout(maxTimeout);
+              maxTimeout = null;
+            }
+            observer.error(error);
+          }
+        }
+      };
+
+      // Initial delay to allow Firebase to initialize
+      setTimeout(() => {
+        setupListener();
+      }, 100);
+
+      return () => {
+        if (unsubscribe) {
+          unsubscribe();
+        }
+        if (retryTimeout) {
+          clearTimeout(retryTimeout);
+        }
+        if (maxTimeout) {
+          clearTimeout(maxTimeout);
+        }
+      };
+    });
   }
 
   /**
    * Reload current user
    */
   reloadUser(): Observable<void> {
-    const user = this.auth.currentUser;
+    const auth = this.ensureAuthInitialized();
+    const user = auth.currentUser;
     if (!user) {
       return throwError(() => ({ code: 'auth/no-user', message: 'No user is currently signed in.' }));
     }

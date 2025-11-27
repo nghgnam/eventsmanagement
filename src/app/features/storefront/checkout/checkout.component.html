@@ -1,0 +1,92 @@
+<div class="checkout-container">
+  <div class="container">
+    <h1>Checkout</h1>
+
+    @if (orderSummary) {
+      <div class="checkout-content">
+        <!-- Order Summary -->
+        <div class="order-summary">
+          <h2>Order Summary</h2>
+          <div class="summary-items">
+            @for (item of orderSummary.items; track item.id) {
+              <div class="summary-item">
+                <div>
+                  <strong>{{ item.ticketType }}</strong>
+                  <p>{{ item.quantity }} x ${{ item.price }}</p>
+                </div>
+                <span>${{ item.quantity * item.price }}</span>
+              </div>
+            }
+          </div>
+
+          <!-- Voucher Section -->
+          <div class="voucher-section">
+            <h3>Have a voucher?</h3>
+            <form [formGroup]="voucherForm" (ngSubmit)="applyVoucher()">
+              <div class="voucher-input-group">
+                <input 
+                  type="text" 
+                  formControlName="code" 
+                  placeholder="Enter voucher code">
+                <button type="submit" class="btn-secondary">Apply</button>
+              </div>
+            </form>
+            @if (voucherDiscount > 0) {
+              <p class="voucher-applied">Voucher applied: -${{ voucherDiscount }}</p>
+            }
+          </div>
+
+          <!-- Price Breakdown -->
+          <div class="price-breakdown">
+            <div class="price-row">
+              <span>Subtotal:</span>
+              <span>${{ subtotal }}</span>
+            </div>
+            @if (voucherDiscount > 0) {
+              <div class="price-row discount">
+                <span>Discount:</span>
+                <span>-${{ voucherDiscount }}</span>
+              </div>
+            }
+            <div class="price-row total">
+              <strong>Total:</strong>
+              <strong>${{ total }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Method Selection -->
+        <div class="payment-section">
+          <h2>Select Payment Method</h2>
+          <form [formGroup]="paymentForm" (ngSubmit)="processPayment()">
+            <div class="payment-methods">
+              @for (method of paymentMethods; track method.id) {
+                <label class="payment-method-card">
+                  <input 
+                    type="radio" 
+                    formControlName="paymentMethod" 
+                    [value]="method.id">
+                  <div class="method-info">
+                    <span class="method-icon">{{ method.icon }}</span>
+                    <span class="method-name">{{ method.name }}</span>
+                  </div>
+                </label>
+              }
+            </div>
+
+            <button 
+              type="submit" 
+              class="btn-primary btn-pay"
+              [disabled]="paymentForm.invalid">
+              Pay ${{ total }}
+            </button>
+          </form>
+        </div>
+      </div>
+    } @else {
+      <div class="loading">Loading order...</div>
+    }
+  </div>
+</div>
+
+

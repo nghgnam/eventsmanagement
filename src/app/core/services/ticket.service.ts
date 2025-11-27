@@ -1,5 +1,6 @@
-import { DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { DestroyRef, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { isPlatformBrowser } from '@angular/common';
 import { addDoc, collection, getDocs, onSnapshot, query, Timestamp, updateDoc, where } from 'firebase/firestore';
 import { forkJoin, from, Observable, of } from 'rxjs';
 import { catchError, map, mergeMap, tap } from 'rxjs/operators';
@@ -11,7 +12,8 @@ import { TicketType } from '../models/ticketstype';
 })
 
 export class TicketService {
-    private readonly ticketCollection = collection(db, 'tickets');
+    private platformId = inject(PLATFORM_ID);
+    private ticketCollection: ReturnType<typeof collection> | null = null;
     private readonly destroyRef = inject(DestroyRef);
     private readonly ticketsSignal = signal<TicketType[]>([]);
     readonly tickets$ = toObservable(this.ticketsSignal.asReadonly());
@@ -19,6 +21,16 @@ export class TicketService {
 
     constructor() {
         this.destroyRef.onDestroy(() => this.stopAllTicketListeners());
+    }
+
+    private getTicketCollection() {
+        if (!isPlatformBrowser(this.platformId)) {
+            throw new Error('Firestore collection can only be accessed in browser environment');
+        }
+        if (!this.ticketCollection) {
+            this.ticketCollection = collection(db, 'tickets');
+        }
+        return this.ticketCollection;
     }
 
     listenToUserTickets(userId: string | undefined): void {
@@ -29,7 +41,10 @@ export class TicketService {
         if (this.ticketListeners.has(key)) {
             return;
         }
-        const ticketRef = query(this.ticketCollection, where('userId', '==', userId));
+        if (!isPlatformBrowser(this.platformId)) {
+            return;
+        }
+        const ticketRef = query(this.getTicketCollection(), where('userId', '==', userId));
         const unsubscribe = onSnapshot(ticketRef, snapshot => {
             const tickets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TicketType));
             this.ticketsSignal.set(tickets);
@@ -56,7 +71,10 @@ export class TicketService {
     }
 
     checkAlraedyExistTicket(userId: string, eventId:string): Observable<boolean> {
-        const ticketRef = query(this.ticketCollection, where('userId', '==', userId), where('eventId', '==', eventId));
+        if (!isPlatformBrowser(this.platformId)) {
+            return of(false);
+        }
+        const ticketRef = query(this.getTicketCollection(), where('userId', '==', userId), where('eventId', '==', eventId));
 
         return from(getDocs(ticketRef)).pipe(
             map(snapshot =>{
@@ -89,15 +107,14 @@ export class TicketService {
             metadata: {}
         };
         return from(
-            addDoc(this.ticketCollection, payload)
+            addDoc(this.getTicketCollection(), payload)
         ).pipe(
-            map(docRef =>{
-                return { id: docRef.id, ...payload } as TicketType;
-            }),catchError((error) =>{
+            map(docRef => ({ id: docRef.id, ...payload } as TicketType)),
+            catchError((error) => {
                 console.error('Error creating ticket:', error);
-                return [];
+                return of(null as unknown as TicketType);
             })
-        )
+        );
     }
 
     getTicketsUnPaidTicketsValid(userId: string | undefined, eventIds: string[]): Observable<TicketType[]>{
@@ -107,7 +124,10 @@ export class TicketService {
       const now = Timestamp.now();
 
       const queries = eventIds.map(eventId => {
-        const ticketRef = query(this.ticketCollection,
+        if (!isPlatformBrowser(this.platformId)) {
+            return of([]) as unknown as Observable<TicketType[]>;
+        }
+        const ticketRef = query(this.getTicketCollection(),
           where('userId', '==' , userId),
           where('eventId' , '==' ,eventId),
           where('status' , '==' , 'active'),
@@ -143,7 +163,10 @@ export class TicketService {
       const now = Timestamp.now();
 
       const queries = eventIds.map(eventId => {
-        const ticketRef = query(this.ticketCollection,
+        if (!isPlatformBrowser(this.platformId)) {
+            return of([]) as unknown as Observable<TicketType[]>;
+        }
+        const ticketRef = query(this.getTicketCollection(),
           where('userId', '==' , userId),
           where('eventId' , '==' ,eventId),
           where('status' , '==' , 'expired'),
@@ -170,7 +193,10 @@ export class TicketService {
 
 
     getAllTicketsByUserId(userId: string): Observable<TicketType[]>{
-        const ticketRef = query(this.ticketCollection, where('userId', '==', userId));
+        if (!isPlatformBrowser(this.platformId)) {
+            return of([]) as unknown as Observable<TicketType[]>;
+        }
+        const ticketRef = query(this.getTicketCollection(), where('userId', '==', userId));
         return from(getDocs(ticketRef)).pipe(
             map(snapshot =>{
                 if(snapshot.empty){    
@@ -192,7 +218,7 @@ export class TicketService {
     changeStatusTicket(userId: string | undefined, eventIds: string[]): Observable<void> {
         const queries = eventIds.map(eventId => {
           const ticketRef = query(
-            this.ticketCollection,
+            this.getTicketCollection(),
             where('userId', '==', userId),
             where('eventId', '==', eventId),
             where('status', 'in', ['active', 'unused', 'used'])
@@ -239,7 +265,7 @@ export class TicketService {
       getEventPart(userId: string | undefined, eventIds: string[]): Observable<TicketType[]> {
         const queries = eventIds.map(eventId => {
           const ticketRef = query(
-            this.ticketCollection,
+            this.getTicketCollection(),
             where('userId', '==', userId),
             where('eventId', '==', eventId),
             where('status', '==', 'expired')
@@ -260,7 +286,7 @@ export class TicketService {
       getCancalledTickets(userId: string | undefined, eventIds: string[]): Observable<TicketType[]> {
         const queries = eventIds.map(eventId => {
           const ticketRef = query(
-            this.ticketCollection,
+            this.getTicketCollection(),
             where('userId', '==', userId),
             where('eventId', '==', eventId),
             where('status', '==', 'canceled')
@@ -282,7 +308,10 @@ export class TicketService {
       getUpcomingEvent(userId: string | undefined, eventIds: string[]): Observable<TicketType[]>{
         const now = Timestamp.now();
         const queries = eventIds.map(eventId =>{
-          const ticketRef = query(this.ticketCollection, 
+          if (!isPlatformBrowser(this.platformId)) {
+            return of([]) as unknown as Observable<TicketType[]>;
+        }
+        const ticketRef = query(this.getTicketCollection(), 
             where('userId', '==', userId), 
             where('eventId', '==' , eventId), 
             where('pricing.paid', '==', true),
@@ -304,7 +333,7 @@ export class TicketService {
       getUseStatusTickets(userId: string | undefined, eventIds: string[], status: 'used' | 'unused'): Observable<TicketType[]> {
         const queries = eventIds.map(eventId => {
           const ticketRef = query(
-            this.ticketCollection,
+            this.getTicketCollection(),
             where('userId', '==', userId),
             where('eventId', '==', eventId),
             where('status', '==', status),

@@ -1,0 +1,269 @@
+<div class="event-wizard-container">
+  <div class="container">
+    <!-- Wizard Header -->
+    <div class="wizard-header">
+      <h1>Create New Event</h1>
+      <div class="wizard-progress">
+        @for (step of [1,2,3,4]; track step) {
+          <div class="progress-step" [class.active]="step === currentStep" [class.completed]="step < currentStep">
+            <span class="step-number">{{ step }}</span>
+            <span class="step-label">
+              @if (step === 1) { Basic Info }
+              @else if (step === 2) { Media }
+              @else if (step === 3) { Ticketing }
+              @else if (step === 4) { Settings }
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Wizard Content -->
+    <div class="wizard-content">
+      <!-- Step 1: Basic Info -->
+      @if (currentStep === 1) {
+        <form [formGroup]="basicInfoForm" class="wizard-step">
+          <h2>Basic Information</h2>
+          
+          <div class="form-group">
+            <label for="name">Event Name *</label>
+            <input type="text" formControlName="name" placeholder="Enter event name">
+            @if (basicInfoForm.get('name')?.invalid && basicInfoForm.get('name')?.touched) {
+              <span class="error">Event name is required (min 3 characters)</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description *</label>
+            <textarea formControlName="description" placeholder="Enter event description"></textarea>
+            @if (basicInfoForm.get('description')?.invalid && basicInfoForm.get('description')?.touched) {
+              <span class="error">Description is required (min 10 characters)</span>
+            }
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="startDate">Start Date *</label>
+              <input type="datetime-local" formControlName="startDate">
+            </div>
+            <div class="form-group">
+              <label for="endDate">End Date *</label>
+              <input type="datetime-local" formControlName="endDate">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="eventType">Event Type *</label>
+            <select formControlName="eventType">
+              <option value="offline">Offline</option>
+              <option value="online">Online</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+          </div>
+
+          <!-- Location (with Map) -->
+          <div formGroupName="location" class="location-section">
+            <h3>Location</h3>
+            <div class="form-group">
+              <label for="address">Address</label>
+              <input type="text" formControlName="address" placeholder="Enter address">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" formControlName="city">
+              </div>
+              <div class="form-group">
+                <label for="country">Country</label>
+                <input type="text" formControlName="country">
+              </div>
+            </div>
+            <!-- TODO: Map integration for location picker -->
+            <div class="map-container">
+              <p>Map will be displayed here</p>
+            </div>
+          </div>
+        </form>
+      }
+
+      <!-- Step 2: Media -->
+      @if (currentStep === 2) {
+        <form [formGroup]="mediaForm" class="wizard-step">
+          <h2>Media</h2>
+          
+          <!-- Banner Upload -->
+          <div class="form-group">
+            <label for="banner">Event Banner *</label>
+            <label class="upload-area">
+              @if (bannerPreview) {
+                <img [src]="bannerPreview" alt="Banner preview" class="preview-image">
+              } @else {
+                <div class="upload-placeholder">
+                  <i class="fa-solid fa-image"></i>
+                  <p>Click to upload banner</p>
+                </div>
+              }
+              <input type="file" accept="image/*" (change)="onBannerUpload($event)" hidden>
+            </label>
+            <p class="upload-hint">Recommended size: 1920x1080px. Image will be auto-cropped.</p>
+          </div>
+
+          <!-- Gallery Upload -->
+          <div class="form-group">
+            <label for="galleryImages">Gallery Images</label>
+            <div class="gallery-upload">
+              @for (preview of galleryPreviews; track $index) {
+                <div class="gallery-item">
+                  <img [src]="preview" alt="Gallery image">
+                  <button type="button" class="btn-remove" (click)="removeGalleryImage($index)">
+                    <i class="fa-solid fa-times"></i>
+                  </button>
+                </div>
+              }
+              <label class="gallery-upload-btn">
+                <input type="file" accept="image/*" multiple (change)="onGalleryUpload($event)" hidden>
+                <i class="fa-solid fa-plus"></i>
+                <p>Add Images</p>
+              </label>
+            </div>
+          </div>
+        </form>
+      }
+
+      <!-- Step 3: Ticketing -->
+      @if (currentStep === 3) {
+        <form [formGroup]="ticketingForm" class="wizard-step">
+          <h2>Ticketing</h2>
+          
+          <div class="ticket-types-section">
+            <div class="section-header">
+              <h3>Ticket Types</h3>
+              <button type="button" class="btn-secondary" (click)="addTicketType()">
+                <i class="fa-solid fa-plus"></i> Add Ticket Type
+              </button>
+            </div>
+
+            <div formArrayName="ticketTypes">
+              @for (ticketType of ticketTypes.controls; track $index) {
+                <div [formGroupName]="$index" class="ticket-type-card">
+                  <div class="form-group">
+                    <label for="ticketName">Ticket Name *</label>
+                    <input type="text" formControlName="name" placeholder="e.g., VIP, Standard, Early Bird">
+                  </div>
+                  <div class="form-group">
+                    <label for="description"  >Description</label>
+                    <textarea formControlName="description" placeholder="Ticket description"></textarea>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="price">Price *</label>
+                      <input type="number" formControlName="price" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                      <label for="quantity">Quantity *</label>
+                      <input type="number" formControlName="quantity" min="1">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="saleStartDate">Sale Start Date *</label>
+                      <input type="datetime-local" formControlName="saleStartDate">
+                    </div>
+                    <div class="form-group">
+                      <label for="saleEndDate">Sale End Date *</label>
+                      <input type="datetime-local" formControlName="saleEndDate">
+                    </div>
+                  </div>
+                  <button type="button" class="btn-remove" (click)="removeTicketType($index)">
+                    Remove
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        </form>
+      }
+
+      <!-- Step 4: Settings -->
+      @if (currentStep === 4) {
+        <form [formGroup]="settingsForm" class="wizard-step">
+          <h2>Settings</h2>
+          
+          <!-- Custom Registration Form -->
+          <div class="form-group">
+            <h3>Custom Registration Questions</h3>
+            <p>Add custom questions for attendees to answer during registration</p>
+            <div formArrayName="customQuestions">
+              @for (question of customQuestions.controls; track $index) {
+                <div [formGroupName]="$index" class="question-card">
+                  <div class="form-group">
+                    <label for="question">Question *</label>
+                    <input type="text" formControlName="question" placeholder="Enter question">
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="type">Type</label>
+                      <select formControlName="type">
+                        <option value="text">Text</option>
+                        <option value="textarea">Textarea</option>
+                        <option value="select">Select</option>
+                        <option value="checkbox">Checkbox</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="required">
+                        <input type="checkbox" formControlName="required"> Required
+                      </label>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-remove" (click)="removeCustomQuestion($index)">
+                    Remove
+                  </button>
+                </div>
+              }
+            </div>
+            <button type="button" class="btn-secondary" (click)="addCustomQuestion()">
+              <i class="fa-solid fa-plus"></i> Add Question
+            </button>
+          </div>
+
+          <!-- SEO Settings -->
+          <div formGroupName="seoSettings" class="seo-section">
+            <h3>SEO Settings</h3>
+            <div class="form-group">
+              <label for="metaTitle">Meta Title</label>
+              <input type="text" formControlName="metaTitle" placeholder="SEO title">
+            </div>
+            <div class="form-group">
+              <label for="metaDescription">Meta Description</label>
+              <textarea formControlName="metaDescription" placeholder="SEO description"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="metaKeywords" >Meta Keywords</label>
+              <input type="text" formControlName="metaKeywords" placeholder="Comma-separated keywords">
+            </div>
+          </div>
+        </form>
+      }
+    </div>
+
+    <!-- Wizard Navigation -->
+    <div class="wizard-navigation">
+      @if (currentStep > 1) {
+        <button type="button" class="btn-secondary" (click)="previousStep()">
+          Previous
+        </button>
+      }
+      @if (currentStep < totalSteps) {
+        <button type="button" class="btn-primary" (click)="nextStep()">
+          Next
+        </button>
+      } @else {
+        <button type="button" class="btn-primary" (click)="submitWizard()">
+          Create Event
+        </button>
+      }
+    </div>
+  </div>
+</div>
+

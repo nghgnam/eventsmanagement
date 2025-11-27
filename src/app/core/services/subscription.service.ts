@@ -1,5 +1,6 @@
-import { DestroyRef, Injectable, inject, signal } from "@angular/core";
+import { DestroyRef, Injectable, inject, PLATFORM_ID, signal } from "@angular/core";
 import { toObservable } from "@angular/core/rxjs-interop";
+import { isPlatformBrowser } from "@angular/common";
 import { DocumentData, Query, QuerySnapshot, Timestamp, addDoc, collection, doc, getDoc, getDocs, increment, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
 import { Observable, from, of } from "rxjs";
 import { catchError, distinctUntilChanged, map, switchMap, tap } from "rxjs/operators";
@@ -10,11 +11,42 @@ import { Subscriptions } from '../models/subscriptionstype';
   providedIn: 'root'
 })
 export class SubscriptionService {
-  private subscriptionsCollection = collection(db, "subscriptions");
-  private followCollection = collection(db, "follows");
-  private eventsCollection = collection(db, "events");
+  private platformId = inject(PLATFORM_ID);
+  private subscriptionsCollection: ReturnType<typeof collection> | null = null;
+  private followCollection: ReturnType<typeof collection> | null = null;
+  private eventsCollection: ReturnType<typeof collection> | null = null;
   private readonly destroyRef = inject(DestroyRef);
   private readonly listenerMap = new Map<string, () => void>();
+
+  private getSubscriptionsCollection() {
+    if (!isPlatformBrowser(this.platformId)) {
+      throw new Error('Firestore collection can only be accessed in browser environment');
+    }
+    if (!this.subscriptionsCollection) {
+      this.subscriptionsCollection = collection(db, "subscriptions");
+    }
+    return this.subscriptionsCollection;
+  }
+
+  private getFollowCollection() {
+    if (!isPlatformBrowser(this.platformId)) {
+      throw new Error('Firestore collection can only be accessed in browser environment');
+    }
+    if (!this.followCollection) {
+      this.followCollection = collection(db, "follows");
+    }
+    return this.followCollection;
+  }
+
+  private getEventsCollection() {
+    if (!isPlatformBrowser(this.platformId)) {
+      throw new Error('Firestore collection can only be accessed in browser environment');
+    }
+    if (!this.eventsCollection) {
+      this.eventsCollection = collection(db, "events");
+    }
+    return this.eventsCollection;
+  }
   
   private readonly eventSubscriptionsSignal = signal<Subscriptions[]>([]);
   readonly eventSubscriptions$ = toObservable(this.eventSubscriptionsSignal.asReadonly());
@@ -43,8 +75,12 @@ export class SubscriptionService {
       return;
     }
   
+    if (!isPlatformBrowser(this.platformId)) {
+      this.eventSubscriptionsSignal.set([]);
+      return;
+    }
     const q = query(
-      this.subscriptionsCollection,
+      this.getSubscriptionsCollection(),
       where('eventId', '==', eventId),
       where('status', '==', 'active')
     );
@@ -71,7 +107,11 @@ export class SubscriptionService {
       return;
     }
   
-    const q = query(this.subscriptionsCollection, where('userId', '==', userId));
+    if (!isPlatformBrowser(this.platformId)) {
+      this.userSubscriptionsSignal.set([]);
+      return;
+    }
+    const q = query(this.getSubscriptionsCollection(), where('userId', '==', userId));
   
     this.registerListener(
       `user:${userId}`,
@@ -91,7 +131,7 @@ export class SubscriptionService {
 
   getEventAndUserHasSubs(userId: string, eventId: string): void {
     const q = query(
-      this.subscriptionsCollection,
+      this.getSubscriptionsCollection(),
       where('userId', '==', userId),
       where('eventId', '==', eventId),
       where('status', '==', 'active')
@@ -112,7 +152,11 @@ export class SubscriptionService {
   }
 
   getUserAndOrganizer(userId: string, organizerId: string): void {
-    const q = query(this.followCollection, where('userId', '==', userId), where('organizerId', '==', organizerId));
+    if (!isPlatformBrowser(this.platformId)) {
+      this.followSignal.set([]);
+      return;
+    }
+    const q = query(this.getFollowCollection(), where('userId', '==', userId), where('organizerId', '==', organizerId));
     const key = `follow:${userId}:${organizerId}`;
     this.registerListener(
       key,
@@ -158,8 +202,11 @@ export class SubscriptionService {
         updatedAt: Timestamp.now()
       }
     };
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(void 0);
+    }
     return from(
-      addDoc(this.subscriptionsCollection, payload)
+      addDoc(this.getSubscriptionsCollection(), payload)
     ).pipe(
       map(() => void 0), 
       tap(() => {
@@ -175,7 +222,7 @@ export class SubscriptionService {
   
   toggleSubscriptionStatus(userId: string, eventId: string): Observable<void> {
     const q = query(
-      this.subscriptionsCollection,
+      this.getSubscriptionsCollection(),
       where('userId', '==', userId),
       where('eventId', '==', eventId)
     );
@@ -187,8 +234,11 @@ export class SubscriptionService {
           const currentStatus = snapshot.docs[0].data()["status"];
           const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
   
+          if (!isPlatformBrowser(this.platformId)) {
+            return of(void 0);
+          }
           return from(
-            updateDoc(doc(this.subscriptionsCollection, docId), { status: newStatus })
+            updateDoc(doc(this.getSubscriptionsCollection(), docId), { status: newStatus })
           ).pipe(
             tap(() => {
               console.log(`Subscription status updated to ${newStatus}`);
@@ -212,7 +262,7 @@ export class SubscriptionService {
     }
   
     const q = query(
-      this.subscriptionsCollection,
+      this.getSubscriptionsCollection(),
       where('userId', '==', userId),
       where('eventId', '==', eventId),
       where('status', '==', 'active')
@@ -247,13 +297,16 @@ export class SubscriptionService {
   }
 
   addFollow(userId: string, organizerId: string, eventId?: string): Observable<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(void 0);
+    }
     if (!userId || !organizerId) {
       console.error('User ID or Organizer ID is undefined');
       return of(void 0);
     }
   
     const q = query(
-      this.followCollection,
+      this.getFollowCollection(),
       where('userId', '==', userId),
       where('organizerId', '==', organizerId)
     );
@@ -263,7 +316,7 @@ export class SubscriptionService {
         if (snapshot.empty) {
           // Nếu không có document, thêm mới
           return from(
-            addDoc(this.followCollection, {
+            addDoc(this.getFollowCollection(), {
               userId,
               organizerId,
               relationship: { status: 'active' },
@@ -296,8 +349,11 @@ export class SubscriptionService {
 
   
   checkFollowStatus(userId: string, organizerId: string): Observable<boolean> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(false);
+    }
     const q = query(
-      this.followCollection,
+      this.getFollowCollection(),
       where('userId', '==', userId),
       where('organizerId', '==', organizerId),
       where('relationship.status', '==', 'active')
@@ -313,13 +369,16 @@ export class SubscriptionService {
   }
   
   toggleFollowStatus(userId: string, organizerId: string): Observable<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(void 0);
+    }
     if (!userId || !organizerId) {
       console.error('User ID or Organizer ID is undefined');
       return of(void 0);
     }
   
     const q = query(
-      this.followCollection,
+      this.getFollowCollection(),
       where('userId', '==', userId),
       where('organizerId', '==', organizerId)
     );
@@ -348,12 +407,15 @@ export class SubscriptionService {
     );
   }
   updateFollowCount(eventId: string | undefined, change: number): Observable<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(void 0);
+    }
     if (!eventId) {
       console.error('Event ID is undefined');
       return of(void 0);
     }
   
-    const docRef = doc(this.eventsCollection, eventId);
+    const docRef = doc(this.getEventsCollection(), eventId);
   
     return from(
       getDoc(docRef).then(snapshot => {
@@ -377,12 +439,15 @@ export class SubscriptionService {
   }
 
   updateAttendeeCount(eventId: string, change: number): Observable<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(void 0);
+    }
     if (!eventId) {
       console.error('Event ID is undefined');
       return of(void 0);
     }
   
-    const docRef = doc(this.eventsCollection, eventId);
+    const docRef = doc(this.getEventsCollection(), eventId);
   
     return from(
       updateDoc(docRef, {
@@ -398,13 +463,16 @@ export class SubscriptionService {
   }
 
   getAllFollower(userId: string, organizerId: string): Observable<number> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(0);
+    }
     if (!userId || !organizerId) {
       console.error('Invalid parameters: userId or organizerId is undefined');
       return of(0); 
     }
   
     const q = query(
-      this.followCollection,
+      this.getFollowCollection(),
       where('organizerId', '==', organizerId),
       where('relationship.status', '==', 'active')
     );
@@ -424,13 +492,16 @@ export class SubscriptionService {
 
 
   getSubscriberCount(eventId: string): Observable<number> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(0);
+    }
     if (!eventId) {
       console.error('Event ID is undefined');
       return of(-1); // Trả về -1 nếu eventId không hợp lệ
     }
   
     const q = query(
-      this.subscriptionsCollection,
+      this.getSubscriptionsCollection(),
       where('eventId', '==', eventId),
       where('status', '==', 'active') // Chỉ lấy những người đăng ký có trạng thái active
     );
@@ -448,12 +519,14 @@ export class SubscriptionService {
     );
   }
   checkEventFull(eventId: string): Observable<boolean> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(false);
+    }
     if (!eventId) {
       console.error('Event ID is undefined');
       return of(false);
     }
-  
-    const docRef = doc(this.eventsCollection, eventId);
+    const docRef = doc(this.getEventsCollection(), eventId);
   
     return from(getDoc(docRef)).pipe(
       map(snapshot => {

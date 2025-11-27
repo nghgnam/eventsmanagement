@@ -38,33 +38,31 @@
               class="result-item"
               (click)="onResultClick(event)"
             >
-              @if (getEventImage(event); as imageUrl) {
+              @if (event.image_url) {
                 <div class="event-image">
-                  <img [src]="imageUrl" [alt]="getEventName(event)">
+                  <img [src]="event.image_url" [alt]="event.name">
                 </div>
               }
         <div class="event-info">
-          <h4>{{getEventName(event)}}</h4>
+          <h4>{{event.name}}</h4>
           <p class="event-date">
             <span class="material-icons">calendar_today</span>
-            @if (getEventStartDate(event); as startDate) {
-              {{startDate | date:'mediumDate'}}
-            } @else {
-              Date not specified
-            }
+            {{event.date_time_options && event.date_time_options.length > 0 ? (event.date_time_options[0].start_time | date:'mediumDate') : 'Date not specified'}}
           </p>
           <p class="event-location">
             <span class="material-icons">location_on</span>
-            {{getEventLocationLabel(event)}}
+            {{event.location.type === 'offline' ? event.location.address : 'Online Event'}}
           </p>
           <p class="event-type">
             <span class="material-icons">category</span>
-            {{getEventTypeLabel(event)}}
+            {{event.event_type}}
           </p>
-          <p class="event-organizer">
-            <span class="material-icons">person</span>
-            {{getOrganizerName(event)}}
-          </p>
+          @if (event.organizer) {
+            <p class="event-organizer">
+              <span class="material-icons">person</span>
+              {{event.organizer.name}}
+            </p>
+          }
         </div>
             </div>
           }

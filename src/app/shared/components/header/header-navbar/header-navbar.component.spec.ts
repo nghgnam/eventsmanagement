@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { getTestBedProviders } from '../../../../test-setup';
+import { getTestBedProviders } from '../../../../../test-setup';
 
 import { HeaderNavbarComponent } from './header-navbar.component';
 
@@ -8,11 +8,9 @@ describe('HeaderNavbarComponent', () => {
   let fixture: ComponentFixture<HeaderNavbarComponent>;
 
   beforeEach(async () => {
-    
     await TestBed.configureTestingModule({
-      providers: getTestBedProviders(),
-      providers: getTestBedProviders(),
-      imports: [HeaderNavbarComponent]
+      imports: [HeaderNavbarComponent],
+      providers: getTestBedProviders()
     })
     .compileComponents();
 

@@ -1,0 +1,222 @@
+@if (event) {
+  <div class="details_container">
+    <!-- Hero Section with Background Image -->
+    <div class="events_background">
+        <div class="events_background2" [style.background-image]="'url(' + (getSafeUrl(event.image_url) || getDefaultImageUrl()) + ')'"></div>
+        <img [src]="getSafeUrl(event.image_url)" [alt]="event.name" class="background_details" appImageErrorHandler>
+    </div>
+
+    <!-- Main Content -->
+    <div class="events_details">
+        <!-- Event Information -->
+        <div class="event_infomation">
+            <!-- Event Date and Title -->
+            <div class="event_header">
+                <div class="event_date">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>{{ showStartTime | date: 'EEEE, MMMM d' }}</span>
+                </div>
+                <h1 class="event_title">{{ event.name }}</h1>
+                <div class="event_type_badge" 
+                     [class.online]="event.event_type === 'online'"
+                     [class.offline]="event.event_type === 'offline'"
+                     [class.hybrid]="event.event_type === 'hybrid'">
+                    <i class="fa-solid" 
+                       [class.fa-video]="event.event_type === 'online'"
+                       [class.fa-location-dot]="event.event_type === 'offline'"
+                       [class.fa-desktop]="event.event_type === 'hybrid'"></i>
+                    {{ event.event_type }}
+                </div>
+            </div>
+
+            <!-- Organizer Info -->
+            @if (event.organizer) {
+              <div class="about_organizer">
+                  <div class="organizer_avatar">
+                      @if (getSafeUrl(event.organizer.profileImage); as SafeUrl) {
+                        <img
+                            [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'"
+                            [alt]="event.organizer.name">
+                      }
+                  </div>
+                  <div class="organizer_info">
+                      <span style="font-weight: 600;">By</span>
+                      <p>{{ event.organizer.name }}</p>
+                      <span>-</span>
+                      <p>{{ event.organizer.followers }}</p>
+                      <span style="font-weight: 600;">followers</span>
+                  </div>
+                  <button (click)="actionFollow()" [disabled]="isFollowLoading || isOrganizer" [class.active]="hasFollow"
+                      class="organizer_follow">
+                      @if (!isFollowLoading) {
+                        {{ hasFollow ? 'Hủy theo dõi' : 'Theo dõi' }}
+                      } @else {
+                        Đang xử lý...
+                      }
+                  </button>
+              </div>
+            }
+
+            <!-- Event Description -->
+            <div class="event_description">
+                <p>{{ event.description }}</p>
+            </div>
+
+            <!-- Date and Time Selection -->
+            <div class="section_title">
+                <h2>Select Date & Time</h2>
+                <p class="section_subtitle">Choose your preferred event schedule</p>
+            </div>
+            <div class="event_date_time_options">
+                <div class="selected_date_and_time">
+                    <div class="selected_date_icon">
+                        <i class="fa-solid fa-calendar-days"></i>
+                    </div>
+                    <div class="selected_date_text">
+                        <h3>Selected Schedule</h3>
+                        <p>{{ showStartTime | date : "EEEE, MMMM d, y" }}</p>
+                        <p class="time_range">{{ showStartTime | date : "h:mm a" }} - {{showEndTime | date : "h:mm a"}}
+                        </p>
+                    </div>
+                </div>
+                <div class="selected_date_and_time_container">
+                    <h3 class="available_schedules">Available Schedules</h3>
+                    <div class="date_time_options_grid">
+                        @for (datetime of event.date_time_options; track datetime.start_time; let i = $index) {
+                          <div class="selected_options_date_and_time" 
+                               (click)="getDatetimeClick(i)" 
+                               [class.active]="activeBorder === i">
+                            <div class="date_time_card">
+                                <div class="date_time_header">
+                                    <span class="date_day">{{ datetime.start_time | date : "EEEE"}}</span>
+                                    <span class="date_month">{{ datetime.start_time | date : "MMMM"}}</span>
+                                </div>
+                                <div class="date_time_body">
+                                    <span class="date_number" [class.selected]="isClickActive === i">{{ datetime.start_time | date : "d"}}</span>
+                                    <span class="date_year">{{ datetime.start_time | date : "y"}}</span>
+                                </div>
+                                <div class="date_time_footer">
+                                    <i class="fa-regular fa-clock"></i>
+                                    <span class="time">{{ datetime.start_time | date : "h:mm a" }}</span>
+                                </div>
+                            </div>
+                          </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location -->
+            <div class="section_title">
+                <h2>Location</h2>
+            </div>
+            <div class="event_location">
+                <i class="fa-solid" [class.fa-video]="event.location.type === 'online'" [class.fa-location-dot]="event.location.type === 'offline'"></i>
+                <span>{{ event.location.type === 'online' ? 'Online Event' : event.location.address }}</span>
+            </div>
+
+            <!-- About Event -->
+            <div class="section_title">
+                <h2>About this event</h2>
+            </div>
+            <div class="event_about">
+                <p>{{event.content}}</p>
+            </div>
+
+            <!-- Tags -->
+            @if (event.tags && event.tags.length > 0) {
+              <div class="section_title">
+                <h2>Tags</h2>
+              </div>
+              <div class="event_tag">
+                @for (tag of event.tags; track tag) {
+                  <p>{{tag}}</p>
+                }
+              </div>
+            }
+
+            <!-- Organizer Details -->
+            @if (event.organizer) {
+              <div class="section_title">
+                  <h2>Organized by</h2>
+              </div>
+              <div class="host_organized_about">
+                  <div class="host_header">
+                      @if (getSafeUrl(event.organizer.profileImage); as SafeUrl) {
+                        <img
+                            [src]="SafeUrl || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'"
+                            [alt]="event.organizer.name" class="host_avatar">
+                      }
+                      <div class="host_info">
+                          <p class="host_name">{{event.organizer.name}}</p>
+                          <p class="host_follower">{{event.organizer.followers}} followers</p>
+                      </div>
+                  </div>
+                  <p class="host_about">This is About Organized</p>
+              </div>
+            }
+
+            <!-- More Events from Organizer -->
+            @if (events$ | async; as events) {
+              <div class="section_title">
+                <h2>More events from this organizer</h2>
+              </div>
+              <div class="events_other">
+                @for (e of events; track e.id) {
+                  <div class="event_other">
+                    @if (event.organizer && e.organizer && e.organizer.name === event.organizer.name) {
+                      <div class="event_other_block" (click)="goToDetail(e.id)">
+                        <div class="event_other_image">
+                            @if (getSafeUrl(e.image_url); as SafeUrl) {
+                              <img [src]="SafeUrl" [alt]="e.name">
+                            }
+                            <div class="event_other_date">
+                                <span class="day">{{e.date_time_options[0].start_time | date : "d"}}</span>
+                                <span class="month">{{e.date_time_options[0].start_time | date : "MMM"}}</span>
+                            </div>
+                        </div>
+                        <div class="event_other_info">
+                            <p class="event_other_title">{{e.name}}</p>
+                            <p class="event_other_time">{{e.date_time_options[0].start_time | date : "EEEE MMMM d ha"}}
+                            </p>
+                            <p class="event_other_price">{{e.price ? (e.price | currency) : 'Free'}}</p>
+                            <p class="event_other_organizer">{{e.organizer.name}}</p>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+        </div>
+
+        <!-- Ticket Purchase Section -->
+        <div class="get_ticket">
+            <div class="ticket_info">
+                <div class="ticket_quantity">
+                    <span>General Admission</span>
+                    <div class="quantity_controls">
+                        <button class="decrease" (click)="deCreaseTicket()">-</button>
+                        <p class="total_ticket">{{totalTicket}}</p>
+                        <button class="increase" (click)="inCreaseTicket()">+</button>
+                    </div>
+                </div>
+                <div class="ticket_price">
+                    @if (totalPrice) {
+                      <div class="price">{{totalPrice | currency}}</div>
+                    } @else {
+                      <div class="price">Free</div>
+                    }
+                    <div class="ticket_status">
+                        <i class="fa-solid fa-circle-exclamation" (click)="isChecked()"></i>
+                        <p class="ticket_status_info" [class.hidden]="isHidden" [class.show]="!isHidden">
+                            Sale ends on {{showEndTime | date: "MMMM d yyyy"}}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <button class="reserve_a_spot">Reserve a spot</button>
+        </div>
+    </div>
+  </div>
+}

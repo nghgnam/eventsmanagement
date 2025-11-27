@@ -1,20 +1,21 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, OnDestroy, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, PLATFORM_ID, DestroyRef, model } from '@angular/core';
 import { SafeUrl } from '@angular/platform-browser';
 import { Router, RouterModule } from '@angular/router';
-import { Unsubscribe, getAuth, signOut } from 'firebase/auth';
 import { Observable, Subscription } from 'rxjs';
-import { User } from '../../../../core/models/userstype';
 import { AuthService } from '../../../../core/services/auth.service';
 import { SafeUrlService } from '../../../../core/services/santizer.service';
 import { SharedService } from '../../../../core/services/shared.service';
 import { UsersService } from '../../../../core/services/users.service';
+import { User } from '../../../../core/models/userstype';
 import { HeaderSearchComponent } from '../header-search/header-search.component';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { PopupComponent } from '../../../components/popup/popup.component';
 
 @Component({
   selector: 'app-header-navbar',
   standalone: true,
-  imports: [RouterModule, CommonModule, HeaderSearchComponent],
+  imports: [RouterModule, CommonModule, HeaderSearchComponent, PopupComponent],
   templateUrl: './header-navbar.component.html',
   styleUrls: ['./header-navbar.component.css']
 })
@@ -24,7 +25,8 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private usersService = inject(UsersService);
   private sanitizer = inject(SafeUrlService);
-  private platformId = inject<object>(PLATFORM_ID);
+  private platformId = inject(PLATFORM_ID);
+  private destroyRef = inject(DestroyRef);
 
   user: User | undefined;
   user$: Observable<User[]> | undefined;
@@ -33,22 +35,26 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
   userCurrentImage: string | undefined;
   userCurrentEmail: string | undefined;
   isDropdownOpen: boolean = false;
-  auth = getAuth();
-  currentUserType: string | undefined;
+  currentUserType: string | null | undefined;
   
   checkingForLogin: boolean = false;
   users: User[] = [];
   mobileMenuOpen = false;
   isMobile = false;
   private subscriptions: Subscription[] = [];
-  private authStateSubscription: Unsubscribe | undefined;
 
+  constructor() {
+    this.user$ = this.usersService.users$;
+  }
 
   ngOnInit(): void {
-    this.user$ = this.usersService.users$;
-
-    // Listen for auth state changes
-    this.authStateSubscription = this.auth.onAuthStateChanged(user => {
+    // Only listen for auth state changes on browser, not during SSR
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    
+    // Use AuthService.onAuthStateChanged() instead of direct Firebase call
+    this.authService.onAuthStateChanged().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(user => {
       this.checkingForLogin = !!user;
       
       // Clear user data if logged out
@@ -62,10 +68,10 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
         const currentUserId = user.uid;
         this.userCurrentId = user.uid;
         const userSub = this.usersService.getCurrentUserById(currentUserId).subscribe(userData => {
-          this.userCurrentname = userData?.profile?.fullName || undefined;
-          this.userCurrentImage = userData?.profile?.avatar || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png';
-          this.userCurrentEmail = userData?.account?.email || undefined;
-          this.currentUserType = userData?.account?.type || undefined;
+          this.userCurrentname = userData?.fullName;
+          this.userCurrentImage = userData?.profileImage || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png';
+          this.userCurrentEmail = userData?.email;
+          this.currentUserType = userData?.type;
         });
         this.subscriptions.push(userSub);
       }
@@ -76,8 +82,9 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
     });
     this.subscriptions.push(usersSub);
     
-    this.onResize();
+    // Only run browser-specific code on client-side
     if (isPlatformBrowser(this.platformId)) {
+      this.onResize();
       window.addEventListener('resize', this.onResize.bind(this));
     }
   }
@@ -86,14 +93,9 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
     // Cleanup all subscriptions
     this.subscriptions.forEach(sub => sub.unsubscribe());
     
-    // Remove event listener
+    // Remove event listener (only on browser)
     if (isPlatformBrowser(this.platformId)) {
       window.removeEventListener('resize', this.onResize.bind(this));
-    }
-    
-    // Remove auth state listener
-    if (this.authStateSubscription) {
-      this.authStateSubscription();
     }
   }
 
@@ -116,38 +118,39 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
   }
 
   goToAccountSetting(): void {
-    console.log("goToAccountSetting");
     this.router.navigate(['/account']);
     this.showDropdown(false);
   }
 
   goToManageEvent(): void {
-    console.log("goToManageEvent");
     this.router.navigate(['/manage-events']);
     this.showDropdown(false);
   }
 
   goToTicketsManage(): void {
-    console.log("goToTicketsManage");
     this.router.navigate(['/tickets-manage']);
     this.showDropdown(false);
   }
 
   goToFollowing(): void {
-    console.log("goToFollowing");
     this.router.navigate(['/following']);
     this.showDropdown(false);
   }
 
   onSignOut(): void {
-    console.log("onSignOut");
-    signOut(this.auth).then(() => {
-      // Clear user data immediately
-      this.clearUserData();
-      this.checkingForLogin = false;
-      this.router.navigate(['/login']);
-    }).catch((error) => {
-      console.error('Error signing out:', error);
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    this.authService.logout().subscribe({
+      next: () => {
+        // Clear user data immediately
+        this.clearUserData();
+        this.checkingForLogin = false;
+        this.router.navigate(['/login']);
+      },
+      error: (error) => {
+        console.error('Error signing out:', error);
+      }
     });
   }
 
@@ -161,11 +164,17 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
   }
 
   onResize() {
-    if (isPlatformBrowser(this.platformId)) {
+    // Only access window on browser platform
+    if (isPlatformBrowser(this.platformId) && typeof window !== 'undefined') {
       this.isMobile = window.innerWidth <= 768;
-    }
-    if (!this.isMobile) {
-      this.mobileMenuOpen = false;
+      if (!this.isMobile) {
+        this.mobileMenuOpen = false;
+      }
     }
   }
+  isHelpOpen = model<boolean>(false);
+  openPopup(){
+    this.isHelpOpen.set(true);
+  }
+
 }

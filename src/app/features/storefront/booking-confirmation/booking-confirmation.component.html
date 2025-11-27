@@ -1,0 +1,76 @@
+<!-- Booking Confirmation - Exclude from SEO (noindex) -->
+<div class="booking-confirmation-container">
+  <div class="container">
+    @if (booking) {
+      <div class="confirmation-content">
+        <!-- Success Icon -->
+        <div class="success-icon">
+          <i class="fa-solid fa-check-circle"></i>
+        </div>
+
+        <!-- Confirmation Message -->
+        <h1>Booking Confirmed!</h1>
+        <p class="confirmation-message">
+          Thank you for your purchase. Your tickets have been sent to your email.
+        </p>
+
+        <!-- Booking Details -->
+        <div class="booking-details">
+          <div class="detail-card">
+            <h3>Booking Information</h3>
+            <div class="detail-item">
+              <span class="label">Booking ID:</span>
+              <span class="value">{{ booking.id }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Event:</span>
+              <span class="value">{{ booking.eventName }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Date:</span>
+              <span class="value">{{ booking.eventDate | date:'full' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Tickets:</span>
+              <span class="value">{{ booking.ticketCount }} ticket(s)</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Total Paid:</span>
+              <span class="value">${{ booking.totalAmount }}</span>
+            </div>
+          </div>
+
+          <!-- QR Code -->
+          <div class="qr-code-section">
+            <h3>Your Ticket QR Code</h3>
+            <div class="qr-code">
+              @if (qrCodeUrl) {
+                <img [src]="qrCodeUrl" alt="Ticket QR Code">
+              } @else {
+                <div class="qr-placeholder">Generating QR Code...</div>
+              }
+            </div>
+            <p class="qr-note">Present this QR code at the event entrance</p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button class="btn-primary" (click)="downloadTicket()">
+            <i class="fa-solid fa-download"></i> Download Ticket
+          </button>
+          <button class="btn-secondary" (click)="resendEmail()">
+            <i class="fa-solid fa-envelope"></i> Resend Email
+          </button>
+          <button class="btn-secondary" (click)="viewMyTickets()">
+            <i class="fa-solid fa-ticket"></i> View My Tickets
+          </button>
+        </div>
+      </div>
+    } @else {
+      <div class="loading">Loading confirmation...</div>
+    }
+  </div>
+</div>
+
+

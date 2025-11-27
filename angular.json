@@ -24,16 +24,10 @@
             "inlineStyleLanguage": "css",
             "assets": [
               "src/favicon.ico",
-              "src/assets",
-              {
-                "glob": "**/*",
-                "input": "node_modules/leaflet/dist/images",
-                "output": "assets/leaflet/"
-              }
+              "src/assets"
             ],
             "styles": [
-              "src/styles.css",
-              "node_modules/leaflet/dist/leaflet.css"
+              "src/styles.css"
             ],
             "stylePreprocessorOptions": {
               "includePaths": [
@@ -79,9 +73,7 @@
               }
             },
             "development": {
-              "buildOptimizer": false,
               "optimization": false,
-              "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
@@ -114,6 +106,18 @@
           },
           "defaultConfiguration": "production"
         },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "donate_blood_project:build:production"
+            },
+            "development": {
+              "buildTarget": "donate_blood_project:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
@@ -131,16 +135,10 @@
             "inlineStyleLanguage": "css",
             "assets": [
               "src/favicon.ico",
-              "src/assets",
-              {
-                "glob": "**/*",
-                "input": "node_modules/leaflet/dist/images",
-                "output": "assets/leaflet/"
-              }
+              "src/assets"
             ],
             "styles": [
-              "src/styles.css",
-              "node_modules/leaflet/dist/leaflet.css"
+              "src/styles.css"
             ],
             "stylePreprocessorOptions": {
               "includePaths": [

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DestroyRef, Injectable, inject, signal } from "@angular/core";
+import { DestroyRef, Injectable, inject, PLATFORM_ID, signal } from "@angular/core";
 import { toObservable } from "@angular/core/rxjs-interop";
+import { isPlatformBrowser } from "@angular/common";
 import { Firestore, collection, doc, getDoc, getDocs, onSnapshot, updateDoc } from "@angular/fire/firestore";
 import { Timestamp, addDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { Observable, from, map, switchMap } from "rxjs";
@@ -14,6 +15,7 @@ import { User } from '../models/userstype';
 
 export class UsersService{
     private firestore = inject(Firestore);
+    private platformId = inject(PLATFORM_ID);
 
     private readonly destroyRef = inject(DestroyRef);
     private readonly usersSignal = signal<User[]>([]);
@@ -21,20 +23,54 @@ export class UsersService{
     private usersUnsubscribe?: () => void;
 
     constructor() {
-        this.fetchUsers();
+        // Only listen to Firestore on browser, not during SSR
+        if (isPlatformBrowser(this.platformId)) {
+            try {
+                this.fetchUsers();
+            } catch (error) {
+                console.error('[UsersService] Failed to initialize Firestore:', error);
+                // Don't throw - allow service to work without realtime updates
+            }
+        }
         this.destroyRef.onDestroy(() => this.usersUnsubscribe?.());
     }
 
     private fetchUsers() {
-        const usersCollection = collection(this.firestore, 'users');
-        this.usersUnsubscribe?.();
-        this.usersUnsubscribe = onSnapshot(usersCollection, (snapshot) => {
-            const users = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as User[];
-            this.usersSignal.set(users);
-        });
+        // Double check platform before connecting to Firestore
+        if (!isPlatformBrowser(this.platformId)) {
+            return;
+        }
+        
+        try {
+            const usersCollection = collection(this.firestore, 'users');
+            this.usersUnsubscribe?.();
+            
+            // Add timeout for Firestore connection
+            const connectionTimeout = setTimeout(() => {
+                console.warn('[UsersService] Firestore connection timeout - unsubscribing');
+                this.usersUnsubscribe?.();
+            }, 10000); // 10s timeout
+            
+            this.usersUnsubscribe = onSnapshot(
+                usersCollection, 
+                (snapshot) => {
+                    clearTimeout(connectionTimeout);
+                    const users = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })) as User[];
+                    this.usersSignal.set(users);
+                },
+                (error) => {
+                    clearTimeout(connectionTimeout);
+                    console.error('[UsersService] Firestore snapshot error:', error);
+                    // Don't throw - allow app to continue
+                }
+            );
+        } catch (error) {
+            console.error('[UsersService] Failed to setup Firestore listener:', error);
+            // Don't throw - allow service to work without realtime updates
+        }
     }
 
     getCurrentUserById(userId: string): Observable<User | undefined> {

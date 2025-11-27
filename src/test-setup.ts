@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { TestBed } from '@angular/core/testing';
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
-import { provideFirestore, getFirestore } from '@angular/fire/firestore';
-import { provideAuth, getAuth } from '@angular/fire/auth';
-import { provideRouter, ActivatedRoute } from '@angular/router';
+import { TestBed } from '@angular/core/testing';
+import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
+import { getAuth, provideAuth } from '@angular/fire/auth';
+import { getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { ActivatedRoute, ParamMap, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { environment } from './environments/environment';
 
 // Helper function để lấy các providers mặc định cho tests
@@ -30,10 +32,26 @@ export function getTestBedProviders(additionalProviders: any[] = []): any[] {
     {
       provide: ActivatedRoute,
       useValue: {
-        snapshot: { params: {}, queryParams: {}, data: {} },
-        params: {},
-        queryParams: {},
-        data: {}
+        snapshot: { 
+          params: {}, 
+          queryParams: {}, 
+          data: {},
+          paramMap: {
+            get: (key: string) => null,
+            has: (key: string) => false,
+            getAll: (key: string) => [],
+            keys: []
+          }
+        },
+        params: of({}),
+        queryParams: of({}),
+        paramMap: of({
+          get: (key: string) => null,
+          has: (key: string) => false,
+          getAll: (key: string) => [],
+          keys: []
+        } as ParamMap),
+        data: of({})
       }
     },
     ...additionalProviders

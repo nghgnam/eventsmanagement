@@ -1,10 +1,10 @@
 import { HttpClient } from "@angular/common/http";
-import { DestroyRef, inject, Injectable, signal } from "@angular/core";
+import { DestroyRef, inject, Injectable, PLATFORM_ID, signal } from "@angular/core";
 import { toObservable } from "@angular/core/rxjs-interop";
-import { addDoc, collection, doc, getDoc, getDocs, increment, onSnapshot, query, Timestamp, updateDoc, where } from 'firebase/firestore';
+import { isPlatformBrowser } from "@angular/common";
+import { addDoc, collection, doc, getDoc, getDocs, increment, onSnapshot, query, Timestamp, updateDoc, where, Firestore } from '@angular/fire/firestore';
 import { forkJoin, from, Observable, of, throwError } from "rxjs";
 import { catchError, map, tap } from "rxjs/operators";
-import { db } from "../config/firebase.config";
 import { EventList, EventStatus } from '../models/eventstype';
 
 @Injectable({
@@ -12,62 +12,202 @@ import { EventList, EventStatus } from '../models/eventstype';
 })
 export class EventsService {
   private http = inject(HttpClient);
+  private platformId = inject(PLATFORM_ID);
+  private firestore = inject(Firestore); // Inject Firestore from AngularFire
 
-  private eventsConlection = collection(db, "events");
+  private eventsConlection: ReturnType<typeof collection> | null = null;
   private readonly destroyRef = inject(DestroyRef);
   private readonly eventsSignal = signal<EventList[]>([]);
   readonly events$ = toObservable(this.eventsSignal.asReadonly());
   private eventsUnsubscribe?: () => void;
+  
+  // Retry mechanism
+  private retryCount = 0;
+  private readonly MAX_RETRIES = 10;
+  private readonly INITIAL_RETRY_DELAY = 100; // ms
+  private isInitializing = false;
 
   constructor() {
-    this.listenToEventsCollection();
+    // Don't initialize collection in constructor - use lazy initialization
+    // This prevents errors when Firebase app hasn't been initialized yet
     this.destroyRef.onDestroy(() => this.eventsUnsubscribe?.());
+    
+    // Initialize collection lazily on browser after app is ready
+    if (isPlatformBrowser(this.platformId)) {
+      // Use setTimeout to ensure Firebase app is initialized first
+      setTimeout(() => {
+        this.initializeCollection();
+      }, 500); // Increased delay to ensure Firebase providers are ready
+    }
+  }
+
+  private initializeCollection(): void {
+    if (!isPlatformBrowser(this.platformId) || this.isInitializing) {
+      return;
+    }
+    
+    if (this.eventsConlection) {
+      this.retryCount = 0; // Reset retry count on successful initialization
+      this.isInitializing = false;
+      return;
+    }
+
+    this.isInitializing = true;
+    
+    if (this.retryCount >= this.MAX_RETRIES) {
+      console.error('[EventsService] Max retries reached for Firestore collection initialization. Giving up.');
+      this.isInitializing = false;
+      return;
+    }
+
+    try {
+      this.eventsConlection = collection(this.firestore, "events"); // Use injected firestore
+      this.listenToEventsCollection();
+      this.retryCount = 0;
+      this.isInitializing = false;
+      console.log('[EventsService] Firestore collection initialized successfully');
+    } catch (error:   unknown) {
+      this.isInitializing = false;
+      if (error instanceof Error && (error.message.includes('Firestore can only be accessed') || 
+          error.message.includes('Expected first argument') ||
+          error.message.includes('No Firebase App'))) {
+        this.retryCount++;
+        const delay = this.INITIAL_RETRY_DELAY * Math.pow(2, this.retryCount - 1);
+        console.warn(`[EventsService] Firebase not ready yet, retrying... (${this.retryCount}/${this.MAX_RETRIES}) - next retry in ${delay}ms`);
+        setTimeout(() => this.initializeCollection(), delay);
+      } else {
+        console.error('[EventsService] Failed to initialize Firestore collection:', error);
+      }
+    }
+  }
+
+  private getEventsCollection() {
+    if (!isPlatformBrowser(this.platformId)) {
+      throw new Error('Firestore collection can only be accessed in browser environment');
+    }
+    if (!this.eventsConlection) {
+      // Attempt to initialize if not already done
+      this.initializeCollection();
+      if (!this.eventsConlection) { // If still not initialized after attempt
+        throw new Error('Firestore not ready yet, please retry');
+      }
+    }
+    return this.eventsConlection;
   }
 
   private listenToEventsCollection(forceRefresh = false): void {
+    // Double check platform before connecting to Firestore
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
     if (this.eventsUnsubscribe && !forceRefresh) {
       return;
     }
-    this.eventsUnsubscribe?.();
-    this.eventsUnsubscribe = onSnapshot(this.eventsConlection, snapshot => {
-      const events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as EventList[];
-      this.eventsSignal.set(events);
-    }, error => console.error('Realtime events error:', error));
+    
+    try {
+      this.eventsUnsubscribe?.();
+      const eventsCollection = this.getEventsCollection();
+      
+      // Add timeout for Firestore connection
+      const connectionTimeout = setTimeout(() => {
+        console.warn('[EventsService] Firestore connection timeout - unsubscribing');
+        this.eventsUnsubscribe?.();
+      }, 10000); // 10s timeout
+      
+      this.eventsUnsubscribe = onSnapshot(
+        eventsCollection, 
+        snapshot => {
+          clearTimeout(connectionTimeout);
+          const events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as EventList[];
+          this.eventsSignal.set(events);
+        }, 
+        error => {
+          clearTimeout(connectionTimeout);
+          console.error('[EventsService] Realtime events error:', error);
+          // Don't throw - allow app to continue
+        }
+      );
+    } catch (error) {
+      console.error('[EventsService] Failed to setup Firestore listener:', error);
+      // Don't throw - allow service to work without realtime updates
+    }
   }
 
   fetchEvents(forceRefresh = false): void {
-    this.listenToEventsCollection(forceRefresh);
+    // Only fetch on browser, not during SSR
+    if (isPlatformBrowser(this.platformId)) {
+      this.listenToEventsCollection(forceRefresh);
+    }
   }
 
   getAllEvents(): Observable<EventList[]> {
-    const eventsCollectionRef = collection(db, 'events');
-    return from(
-      getDocs(eventsCollectionRef).then(snapshot => {
-        const events = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as EventList[];
-        this.eventsSignal.set(events);
-        return events;
-      })
-    );
+    if (!isPlatformBrowser(this.platformId)) {
+      return of([]);
+    }
+    
+    try {
+      const eventsCollectionRef = this.getEventsCollection(); // Use getter
+      return from(
+        getDocs(eventsCollectionRef).then(snapshot => {
+          const events = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as EventList[];
+          this.eventsSignal.set(events);
+          return events;
+        })
+      ).pipe(
+        catchError((error: unknown) => {
+          if (error instanceof Error && (error.message.includes('Firestore can only be accessed') || 
+              error.message.includes('Expected first argument') ||
+              error.message.includes('Firestore not ready yet'))) {
+            console.warn('[EventsService] Firestore not ready, returning empty array');
+            return of([]);
+          }
+          console.error('[EventsService] Failed to fetch events:', error);
+          return of([]);
+        })
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error && (error.message.includes('Firestore can only be accessed') || 
+          error.message.includes('Expected first argument') ||
+          error.message.includes('Firestore not ready yet'))) {
+        console.warn('[EventsService] Firestore not ready, returning empty array');
+        return of([]);
+      }
+      console.error('[EventsService] Failed to fetch events:', error);
+      return of([]);
+    }
   }
 
   getEventById(eventId: string): Observable<EventList | undefined> {
-    const eventDocRef = doc(db, 'events', eventId);
-    return from(
-      getDoc(eventDocRef).then(snapshot => {
-        if (snapshot.exists()) {
-          return { id: snapshot.id, ...snapshot.data() } as EventList;
-        }
-        return undefined;
-      })
-    );
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(undefined);
+    }
+    try {
+      const eventDocRef = doc(this.firestore, 'events', eventId); // Use injected firestore
+      return from(
+        getDoc(eventDocRef).then(snapshot => {
+          if (snapshot.exists()) {
+            return { id: snapshot.id, ...snapshot.data() } as EventList;
+          }
+          return undefined;
+        })
+      ).pipe(
+        catchError((error: unknown) => {
+          console.error('[EventsService] Error getting event by ID:', error);
+          return of(undefined);
+        })
+      );
+    } catch (error: unknown) {
+      console.error('[EventsService] Failed to get event by ID:', error);
+      return of(undefined);
+    }
   }
 
   getEventByListId(listEventId: string[]): Observable<EventList[]> {
-    if (listEventId.length === 0 || !listEventId) {
-      console.log('No event IDs provided');
+    if (listEventId.length === 0 || !listEventId || !isPlatformBrowser(this.platformId)) {
+      console.log('No event IDs provided or not in browser environment');
       return of([]);
     }
 
@@ -82,94 +222,167 @@ export class EventsService {
   }
 
   getEventsByOrganizer(userId: string): Observable<EventList[]> {
-    const eventsDocRef = collection(db, 'events');
-    const qr = query(eventsDocRef, where('organizer.id', '==', userId));
-    return from(
-      getDocs(qr).then(snapshot => {
-        const events: EventList[] = [];
-        snapshot.forEach(doc => {
-          events.push({
-            id: doc.id,
-            ...doc.data() as EventList
+    if (!isPlatformBrowser(this.platformId)) {
+      return of([]);
+    }
+    try {
+      const eventsCollectionRef = collection(this.firestore, 'events'); // Use injected firestore
+      const qr = query(eventsCollectionRef, where('organizer.id', '==', userId));
+      return from(
+        getDocs(qr).then(snapshot => {
+          const events: EventList[] = [];
+          snapshot.forEach(doc => {
+            events.push({
+              id: doc.id,
+              ...doc.data() as EventList
+            });
           });
-        });
-        return events;
-      }).catch(error => {
-        console.error('error fetch', error);
-        return [];
-      })
-    );
+          return events;
+        }).catch(error => {
+          console.error('error fetch', error);
+          return [];
+        })
+      ).pipe(
+        catchError(error => {
+          console.error('[EventsService] Error getting events by organizer:', error);
+          return of([]);
+        })
+      );
+    } catch (error: unknown) {
+      console.error('[EventsService] Failed to get events by organizer:', error);
+      return of([]);
+    }
   }
 
   addEvent(event: EventList): Observable<void> {
-    const eventsCollectionRef = collection(db, 'events');
-    const payload = this.buildEventCreatePayload(event);
-    
-    return from(
-      addDoc(eventsCollectionRef, payload).then(() => {
-        console.log('Event added successfully');
-        this.getAllEvents().subscribe(); // Refresh events list
-      }).catch(error => {
-        console.error('Error adding event:', error);
-        throw error;
-      })
-    );
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(undefined);
+    }
+    try {
+      const eventsCollectionRef = collection(this.firestore, 'events'); // Use injected firestore
+      const payload = this.buildEventCreatePayload(event);
+      
+      return from(
+        addDoc(eventsCollectionRef, payload).then(() => {
+          console.log('Event added successfully');
+          this.getAllEvents().subscribe(); // Refresh events list
+        }).catch(error => {
+          console.error('Error adding event:', error);
+          throw error;
+        })
+      ).pipe(
+        catchError(error => {
+          console.error('[EventsService] Error adding event:', error);
+          return throwError(() => new Error('Failed to add event'));
+        })
+      );
+    } catch (error: unknown) {
+      console.error('[EventsService] Failed to add event:', error);
+      return throwError(() => new Error('Failed to add event'));
+    }
   }
 
   updateEvent(eventId: string, eventData: Partial<EventList>): Observable<void> {
-    const eventRef = doc(db, 'events', eventId);
-    const payload = this.buildEventUpdatePayload(eventData);
-    payload['timeline.updatedAt'] = Timestamp.now();
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(undefined);
+    }
+    try {
+      const eventRef = doc(this.firestore, 'events', eventId); // Use injected firestore
+      const payload = this.buildEventUpdatePayload(eventData);
+      payload['timeline.updatedAt'] = Timestamp.now();
 
-    return from(
-      /* eslint-disable @typescript-eslint/no-explicit-any */
-      updateDoc(eventRef, payload as { [x: string]: any }).then(() => {
-        this.getAllEvents().subscribe(); // Refresh events list
-      })
-    );
+      return from(
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        updateDoc(eventRef, payload as Record<string, unknown>).then(() => {
+          this.getAllEvents().subscribe(); // Refresh events list
+        })
+      ).pipe(
+        catchError((error: unknown) => {
+          console.error('[EventsService] Error updating event:', error);
+          return throwError(() => new Error('Failed to update event'));
+        })
+      );
+    } catch (error: unknown) {
+      console.error('[EventsService] Failed to update event:', error);
+      return throwError(() => new Error('Failed to update event'));
+    }
   }
 
   cancelEvent(eventId: string): Observable<void> {
-    const eventRef = doc(db, 'events', eventId);
-    return from(updateDoc(eventRef, {
-      'status.state': 'cancelled',
-      'status.deletedAt': Timestamp.now(),
-      'timeline.updatedAt': Timestamp.now()
-    })).pipe(
-      tap(() => {
-        console.log('Event cancelled successfully:', eventId);
-      }),
-      catchError(error => {
-        console.error('Error cancelling event:', error);
-        return throwError(() => new Error('Failed to cancel event'));
-      })
-    );
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(undefined);
+    }
+    try {
+      const eventRef = doc(this.firestore, 'events', eventId); // Use injected firestore
+      return from(updateDoc(eventRef, {
+        'status.state': 'cancelled',
+        'status.deletedAt': Timestamp.now(),
+        'timeline.updatedAt': Timestamp.now()
+      })).pipe(
+        tap(() => {
+          console.log('Event cancelled successfully:', eventId);
+        }),
+        catchError((error: unknown) => {
+          console.error('Error cancelling event:', error);
+          return throwError(() => new Error('Failed to cancel event'));
+        })
+      );
+    } catch (error: unknown) {
+      console.error('[EventsService] Failed to cancel event:', error);
+      return throwError(() => new Error('Failed to cancel event'));
+    }
   }
 
   restoreEvent(eventId: string): Observable<void> {
-    const eventRef = doc(db, 'events', eventId);
-    return from(
-      updateDoc(eventRef, {
-        'status.state': 'published',
-        'status.deletedAt': null,
-        'timeline.updatedAt': Timestamp.now()
-      }).then(() => {
-        this.getAllEvents().subscribe(); // Refresh events list
-      })
-    );
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(undefined);
+    }
+    try {
+      const eventRef = doc(this.firestore, 'events', eventId); // Use injected firestore
+      return from(
+        updateDoc(eventRef, {
+          'status.state': 'published',
+          'status.deletedAt': null,
+          'timeline.updatedAt': Timestamp.now()
+        }).then(() => {
+          this.getAllEvents().subscribe(); // Refresh events list
+        })
+      ).pipe(
+        catchError((error: unknown) => {
+          console.error('[EventsService] Error restoring event:', error);
+          return throwError(() => new Error('Failed to restore event'));
+        })
+      );
+    } catch (error: unknown) {
+      console.error('[EventsService] Failed to restore event:', error);
+      return throwError(() => new Error('Failed to restore event'));
+    }
   }
 
   getEventsByStatus(status: string): Observable<EventList[]> {
-    const eventsRef = collection(db, 'events');
-    const q = query(eventsRef, where('status.state', '==', status));
-    return from(
-      getDocs(q).then(snapshot => {
-        return snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as EventList[];
-      })
-    );
+    if (!isPlatformBrowser(this.platformId)) {
+      return of([]);
+    }
+    try {
+      const eventsRef = collection(this.firestore, 'events'); // Use injected firestore
+      const q = query(eventsRef, where('status.state', '==', status));
+      return from(
+        getDocs(q).then(snapshot => {
+          return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as EventList[];
+        })
+      ).pipe(
+        catchError((error: unknown) => {
+          console.error('[EventsService] Error getting events by status:', error);
+          return of([]);
+        })
+      );
+    } catch (error: unknown) {
+      console.error('[EventsService] Failed to get events by status:', error);
+      return of([]);
+    }
   }
 
   searchEvents(query: string) {
@@ -190,13 +403,17 @@ export class EventsService {
   }
 
   updateeventLikes(eventId: string, isLiked: boolean): Observable<void> {
-    const eventDocRef = doc(this.eventsConlection, eventId);
+    if (!isPlatformBrowser(this.platformId)) {
+      return throwError(() => new Error('Cannot update likes during SSR'));
+    }
+    const eventsCollection = this.getEventsCollection();
+    const eventDocRef = doc(eventsCollection, eventId);
     const change = isLiked ? 1 : -1;
 
     return from(updateDoc(eventDocRef, { 'engagement.likesCount': increment(change) }))
       .pipe(
         tap(() => console.log('Event likes updated successfully')),
-        catchError(error => {
+        catchError((error: unknown) => {
           console.error('Error updating event likes:', error);
           return throwError(() => error);
         })

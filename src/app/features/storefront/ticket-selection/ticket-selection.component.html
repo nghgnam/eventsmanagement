@@ -1,0 +1,114 @@
+<div class="ticket-selection-container">
+  <div class="container">
+    @if (event) {
+      <!-- Event Info -->
+      <div class="event-header">
+        <h1>{{ event.name }}</h1>
+        <p class="event-date">{{ event.startDate | date:'full' }}</p>
+        <p class="event-location">{{ event.location?.address }}</p>
+      </div>
+
+      <!-- Countdown Timer -->
+      @if (isTicketHeld) {
+        <div class="countdown-banner">
+          <p>Your tickets are reserved for:</p>
+          <div class="countdown-timer">
+            {{ countdownMinutes }}:{{ countdownSeconds | number:'2.0-0' }}
+          </div>
+          <p class="warning">Complete your purchase before time runs out!</p>
+        </div>
+      }
+
+      <!-- Ticket Types -->
+      <div class="ticket-types">
+        <h2>Select Tickets</h2>
+        @for (ticketType of ticketTypes; track ticketType.id) {
+          <div class="ticket-type-card">
+            <div class="ticket-info">
+              <h3>{{ ticketType.name }}</h3>
+              <p>{{ ticketType.description }}</p>
+              <p class="ticket-price">${{ ticketType.price }}</p>
+              <p class="ticket-available">
+                {{ ticketType.available }} / {{ ticketType.total }} available
+              </p>
+            </div>
+            <div class="ticket-selector">
+              <button 
+                class="btn-minus" 
+                (click)="removeTicket(ticketType.id)"
+                [disabled]="!selectedTickets.has(ticketType.id)">
+                -
+              </button>
+              <span class="quantity">
+                {{ selectedTickets.get(ticketType.id) || 0 }}
+              </span>
+              <button 
+                class="btn-plus" 
+                (click)="selectTicket(ticketType.id, 1)"
+                [disabled]="ticketType.available === 0">
+                +
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Selected Tickets Summary -->
+      @if (selectedTickets.size > 0) {
+        <div class="ticket-summary">
+          <h3>Order Summary</h3>
+          <div class="summary-items">
+            @for (entry of selectedTickets.entries(); track entry[0]) {
+              <div class="summary-item">
+                <span>{{ getTicketTypeName(entry[0]) }} x {{ entry[1] }}</span>
+                <span>${{ getTicketPrice(entry[0]) * entry[1] }}</span>
+              </div>
+            }
+          </div>
+          <div class="summary-total">
+            <strong>Total: ${{ totalPrice }}</strong>
+          </div>
+        </div>
+
+        <!-- Attendee Information Form -->
+        <form [formGroup]="attendeeForm" class="attendee-form">
+          <h3>Attendee Information</h3>
+          <div class="form-group">
+            <label for="fullName">Full Name *</label>
+            <input type="text" formControlName="fullName" placeholder="Enter your full name">
+            @if (attendeeForm.get('fullName')?.invalid && attendeeForm.get('fullName')?.touched) {
+              <span class="error">Full name is required</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input type="email" formControlName="email" placeholder="Enter your email">
+            @if (attendeeForm.get('email')?.invalid && attendeeForm.get('email')?.touched) {
+              <span class="error">Valid email is required</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone *</label>
+            <input type="tel" formControlName="phone" placeholder="Enter your phone">
+            @if (attendeeForm.get('phone')?.invalid && attendeeForm.get('phone')?.touched) {
+              <span class="error">Phone is required</span>
+            }
+          </div>
+
+          <button 
+            type="button" 
+            class="btn-primary btn-checkout"
+            (click)="proceedToCheckout()"
+            [disabled]="attendeeForm.invalid">
+            Proceed to Checkout
+          </button>
+        </form>
+      }
+    } @else {
+      <div class="loading">Loading event details...</div>
+    }
+  </div>
+</div>
+
