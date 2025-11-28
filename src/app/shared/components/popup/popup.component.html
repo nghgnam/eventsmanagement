@@ -1,0 +1,13 @@
+<div class="overlay" (click)="closePopupHandler()" [class.show]="isVisible()" [class.hide]="!isVisible()">
+    <div #popupContainer class="container" [style.width]="width()" [style.height]="height()" (click)="$event.stopPropagation()">
+        <div class="header">
+            <h4 style="margin: 0;">{{ title() }}</h4>
+            <button (click)="closePopupHandler()" class="close-button">
+                <i class="fa-solid fa-xmark close-button-icon"></i>
+            </button>
+        </div>
+        <div class="content">
+            <ng-content></ng-content>
+        </div>
+    </div>
+</div>

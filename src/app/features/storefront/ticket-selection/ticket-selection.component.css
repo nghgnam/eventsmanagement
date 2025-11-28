@@ -1,0 +1,75 @@
+/* Ticket Selection Styles */
+.ticket-selection-container {
+  padding: 2rem 0;
+}
+
+.event-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.countdown-banner {
+  background: #ff9800;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  border-radius: 8px;
+}
+
+.countdown-timer {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0.5rem 0;
+}
+
+.ticket-types {
+  margin: 2rem 0;
+}
+
+.ticket-type-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.ticket-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-minus,
+.btn-plus {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.quantity {
+  font-size: 1.2rem;
+  min-width: 30px;
+  text-align: center;
+}
+
+.ticket-summary {
+  background: #f5f5f5;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 2rem 0;
+}
+
+.attendee-form {
+  margin-top: 2rem;
+}
+
+/* TODO: Add more styles */
+
+

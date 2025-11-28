@@ -1,0 +1,468 @@
+@if (currentUser()) {
+  <div class="user_infomation_container">
+    <div class="container">
+        <aside class="sidebar">
+            <h2 class="logo">nhnam</h2>
+            <div class="user-info">
+                @if (sanitizeImageUrl(currentUser()?.profileImage || ''); as safeUrl) {
+                  <img [src]="safeUrl" alt="User Avatar" class="avatar">
+                }
+                <div>
+                    <p class="username">{{currentUser()?.fullName || ''}}</p>
+                    <p class="role">{{currentUser()?.type || ''}}</p>
+                </div>
+            </div>
+            @if (currentRole === 'member') {
+              <nav class="menu">
+                <ul>
+                  <li [class.active]="changeTab === 'tab1'" (click)="changeTabSelected('tab1')">Contact Details</li>
+                  <li [class.active]="changeTab === 'tab2'" (click)="changeTabSelected('tab2')">Password and Security</li>
+                  <li [class.active]="changeTab === 'tab3'" (click)="changeTabSelected('tab3')">Organizer</li>
+                </ul>
+              </nav>
+            }
+            @if (currentRole === 'organizer') {
+              <nav class="menu">
+                <ul>
+                  <li [class.active]="changeTab === 'tab1'" (click)="changeTabSelected('tab1')">Contact Details</li>
+                  <li [class.active]="changeTab === 'tab2'" (click)="changeTabSelected('tab2')">Password and Security</li>         
+                  <li [class.active]="changeTab === 'tab3'" (click)="changeTabSelected('tab3')">Organizer</li>
+                </ul>
+              </nav>
+            }
+        </aside>
+
+        <main class="main-content">
+            <header class="header">
+                <h2>Account Settings</h2>
+            </header>
+
+            @if (changeTab === 'tab1') {
+              <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="card">
+                <!-- Alert Messages -->
+                @if (errorMessage) {
+                  <div class="alert alert-error">
+                    {{ errorMessage }}
+                  </div>
+                }
+                @if (successMessage) {
+                  <div class="alert alert-success">
+                    {{ successMessage }}
+                  </div>
+                }
+
+                <!-- Loading Spinner -->
+                @if (isLoading()) {
+                  <div class="loading-spinner">
+                    <div class="spinner"></div>
+                  </div>
+                }
+
+                <div class="section-header">
+                <h3>Contact Details</h3>
+                    <p class="section-description">Update your personal information and profile picture</p>
+                </div>
+
+                <div class="details_container">
+                    <div class="profile-section">
+                        <div class="upload-container">
+                            <label for="fileInput" class="upload-box">
+                                <div class="upload-content">
+                                    @if (sanitizeImageUrl(imageUrl); as safeUrl) {
+                                      <img id="previewImage" [src]="safeUrl" alt="Preview">
+                                    }
+                                    @if (!imageUrl) {
+                                      <div class="upload-placeholder">
+                                        <i class="upload-icon">📷</i>
+                                        <p>Choose Image</p>
+                                      </div>
+                                    }
+                                </div>
+                            </label>
+                            <input type="file" id="fileInput" accept="image/*" (change)="onSelectedFile($event)">
+                            <p class="upload-hint">Click to upload a new profile picture</p>
+                        </div>
+                    </div>
+
+                    <div class="info_container">
+                        <div class="form-row">
+                        <div class="form-group">
+                                <label for="firstName">First Name</label>
+                                <div class="input-wrapper">
+                                    <i class="fa-solid fa-user input-icon"></i>
+                                    <input type="text" id="firstName" formControlName="firstName" 
+                                        [class.is-invalid]="firstName?.invalid && firstName?.touched"
+                                        placeholder="Enter your first name">
+                                </div>
+                                @if (firstName?.invalid && firstName?.touched) {
+                                  <div class="error-message">
+                                    @if (firstName?.errors?.['required']) {
+                                      <span>First name is required</span>
+                                    }
+                                    @if (firstName?.errors?.['minlength']) {
+                                      <span>First name must be at least 2 characters</span>
+                                    }
+                                  </div>
+                                }
+                        </div>
+
+                        <div class="form-group">
+                                <label for="lastName">Last Name</label>
+                                <div class="input-wrapper">
+                                    <i class="fa-solid fa-user input-icon"></i>
+                                    <input type="text" id="lastName" formControlName="lastName"
+                                        [class.is-invalid]="lastName?.invalid && lastName?.touched"
+                                        placeholder="Enter your last name">
+                                </div>
+                                @if (lastName?.invalid && lastName?.touched) {
+                                  <div class="error-message">
+                                    @if (lastName?.errors?.['required']) {
+                                      <span>Last name is required</span>
+                                    }
+                                    @if (lastName?.errors?.['minlength']) {
+                                      <span>Last name must be at least 2 characters</span>
+                                    }
+                                  </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phoneNumber">Phone Number</label>
+                            <div class="phone-input">
+                                <div class="input-wrapper country-code">
+                                    <i class="fa-solid fa-earth-asia input-icon"></i>
+                                    <select formControlName="countryCode">
+                                        <option value="">Select code</option>
+                                        @for (calling of getCountryCallingCodes; track calling.code) {
+                                          <option [value]="calling.code">
+                                            {{calling.code}} - {{calling.dialCode}}
+                                          </option>
+                                        }
+                                </select>
+                                </div>
+                                <div class="input-wrapper">
+                                    <i class="fa-solid fa-phone input-icon"></i>
+                                    <input type="text" id="phoneNumber" formControlName="phoneNumber"
+                                        [class.is-invalid]="phoneNumber?.invalid && phoneNumber?.touched"
+                                        placeholder="Enter your phone number">
+                                </div>
+                            </div>
+                            @if (phoneNumber?.invalid && phoneNumber?.touched) {
+                              <div class="error-message">
+                                @if (phoneNumber?.errors?.['required']) {
+                                  <span>Phone number is required</span>
+                                }
+                                @if (phoneNumber?.errors?.['pattern']) {
+                                  <span>Please enter a valid phone number</span>
+                                }
+                              </div>
+                            }
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dateOfBirth">Birth</label>
+                                <div class="input-wrapper">
+                                    <i class="fa-solid fa-cake-candles input-icon"></i>
+                                    <input type="date" id="dateOfBirth" formControlName="dateOfBirth" 
+                                        [class.is-invalid]="dateOfBirth?.invalid && dateOfBirth?.touched"
+                                        placeholder="Enter your birth day">
+                                </div>
+                                @if (dateOfBirth?.invalid && dateOfBirth?.touched) {
+                                  <div class="error-message">
+                                    @if (dateOfBirth?.errors?.['required']) {
+                                      <span>Birth day is required</span>
+                                    }
+                                  </div>
+                                }
+                        </div>
+
+                            <div class="form-group">
+                                <label for="email">Mail</label>
+                                <div class="input-wrapper">
+                                    <i class="fa-solid fa-envelope input-icon"></i>
+                                    <input type="email" id="email" formControlName="email"
+                                        [class.is-invalid]="email?.invalid && email?.touched"
+                                        placeholder="Enter your mail">
+                                </div>
+                                @if (email?.invalid && email?.touched) {
+                                  <div class="error-message">
+                                    @if (email?.errors?.['required']) {
+                                      <span>Email is required</span>
+                                    }
+                                    @if (email?.errors?.['email']) {
+                                      <span>Email incorecly </span>
+                                    }
+                                  </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-header">
+                <h3>Home Address</h3>
+                    <p class="section-description">Update your current address information</p>
+                </div>
+
+                <div class="info_container">
+                    <div class="form-group">
+                        <label for="details_address">Address</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-house input-icon"></i>
+                            <input type="text" id="details_address" formControlName="details_address"
+                                [class.is-invalid]="details_address?.invalid && details_address?.touched"
+                                placeholder="Enter your details address">
+                        </div>
+                        @if (details_address?.invalid && details_address?.touched) {
+                          <div class="error-message">
+                            @if (details_address?.errors?.['required']) {
+                              <span>Address is required</span>
+                            }
+                          </div>
+                        }
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-city input-icon"></i>
+                                <select id="city" formControlName="city"
+                                    [class.is-invalid]="city?.invalid && city?.touched">
+                                    <option value="">Select a city</option>
+                                    @for (cityOption of citiesValue; track cityOption.code) {
+                                      <option [ngValue]="cityOption">
+                                        {{ cityOption.name }}
+                                      </option>
+                                    }
+                                </select>
+                            </div>
+                            @if (city?.invalid && city?.touched) {
+                              <div class="error-message">
+                                @if (city?.errors?.['required']) {
+                                  <span>City is required</span>
+                                }
+                              </div>
+                            }
+                        </div>
+                        <div class="form-group">
+                            <label for="country">Country</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-earth-asia input-icon"></i>
+                                <select id="country" formControlName="country"
+                                    [class.is-invalid]="country?.invalid && country?.touched">
+                                    <option value="">Select a country</option>
+                                    @for (countryOption of countries; track countryOption.name) {
+                                      <option [value]="countryOption.name">
+                                        {{ countryOption.name }}
+                                      </option>
+                                    }
+                                </select>
+                            </div>
+                            @if (country?.invalid && country?.touched) {
+                              <div class="error-message">
+                                @if (country?.errors?.['required']) {
+                                  <span>Country is required</span>
+                                }
+                              </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" [disabled]="userForm.invalid || isSaving()">
+                        <span class="button-content">
+                            <i class="button-icon">{{ isSaving() ? '⏳' : '💾' }}</i>
+                            {{ isSaving() ? 'Saving...' : 'Save Changes' }}
+                        </span>
+                    </button>
+                </div>
+              </form>
+            }
+            @if (changeTab === 'tab2') {
+              <form [formGroup]="changePasswordForm" class="card">
+                @if (errorMessage) {
+                  <div class="alert alert-error">
+                    {{ errorMessage }}
+                  </div>
+                }
+                @if (successMessage) {
+                  <div class="alert alert-success">
+                    {{ successMessage }}
+                  </div>
+                }
+
+                @if (isLoading()) {
+                  <div class="loading-spinner">
+                    <div class="spinner"></div>
+                  </div>
+                }
+
+                <div class="section-header">
+                    <h3>Password and Security</h3>
+                    <p class="section-description">Update your Security</p>
+                </div>
+                <div class="password-security-setting">
+                    <div style="flex: 1; margin-right: 200px">
+                        <div class="form-group">
+                            <label for="changePassword">Current Password</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-lock input-icon"></i>
+                                <input type="password" id="changePassword" formControlName="password"
+                                    [class.is-invalid]="password?.invalid && password?.touched"
+                                    placeholder="Enter your current password">
+                            </div>
+                            @if (password?.invalid && password?.touched) {
+                              <div class="error-message">
+                                @if (password?.errors?.['required']) {
+                                  <span>Password is required</span>
+                                }
+                              </div>
+                            }
+                        </div>
+                        <div class="form-group">
+                            <label for="NewPassword">New Password</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-lock input-icon"></i>
+                                <input type="password" id="NewPassword" formControlName="NewPassword"
+                                    [class.is-invalid]="NewPassword?.invalid && NewPassword?.touched"
+                                    placeholder="Enter your new password">
+                            </div>
+                            @if (NewPassword?.invalid && NewPassword?.touched) {
+                              <div class="error-message">
+                                @if (NewPassword?.errors?.['required']) {
+                                  <span>New password is required</span>
+                                }
+                                @if (NewPassword?.errors?.['minlength']) {
+                                  <span>New password must be at least 6 characters</span>
+                                }
+                              </div>
+                            }
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary" [disabled]="changePasswordForm.invalid || isSaving()" (click)="updatePasswordHandler()">
+                                <span class="button-content">
+                                    <i class="button-icon">{{ isSaving() ? '⏳' : '💾' }}</i>
+                                    {{ isSaving() ? 'Saving...' : 'Change password' }}
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="security-container" style="flex: 1"></div>
+                </div>
+              </form>
+            }
+            
+            @if (changeTab === 'tab3') {
+              <form [formGroup]="OrganizerForm" class="card">
+                @if (errorMessage) {
+                  <div class="alert alert-error">
+                    {{ errorMessage }}
+                  </div>
+                }
+                @if (successMessage) {
+                  <div class="alert alert-success">
+                    {{ successMessage }}
+                  </div>
+                }
+
+                @if (isLoading()) {
+                  <div class="loading-spinner">
+                    <div class="spinner"></div>
+                  </div>
+                }
+
+                <div class="section-header">
+                    <h3>Organizer</h3>
+                    <p class="section-description">Become Organizer</p>
+                </div>
+                <div class="form-actions" style="flex-direction: column; align-items: flex-start;">
+                    <button type="button" class="btn-primary" (click)="onChangeType()">Become a Organizer</button>
+                    @if (activeOF) {
+                      <div class="active-organizer-form">
+                        <div class="form-group organizer-form-group">
+                            <label for="companyName">Company Name</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-building input-icon"></i>
+                                <input type="text" id="companyName" formControlName="companyName"
+                                    [class.is-invalid]="companyName?.invalid && companyName?.touched"
+                                    placeholder="Enter your company">
+                            </div>
+                            @if (companyName?.invalid && companyName?.touched) {
+                              <div class="error-message">
+                                @if (companyName?.errors?.['required']) {
+                                  <span>Company name is required</span>
+                                }
+                              </div>
+                            }
+                        </div>
+                        <div class="form-group organizer-form-group">
+                            <label for="identifier">Identifier Code</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-address-card input-icon"></i>
+                                <input type="text" id="identifier" formControlName="identifier"
+                                    [class.is-invalid]="identifier?.invalid && identifier?.touched"
+                                    placeholder="Enter your Identifier code">
+                            </div>
+                            @if (identifier?.invalid && identifier?.touched) {
+                              <div class="error-message">
+                                @if (identifier?.errors?.['required']) {
+                                  <span>Identifier Code is required</span>
+                                }
+                                @if (identifier?.errors?.['pattern']) {
+                                  <span>Please enter a valid identifier code (12 digits)</span>
+                                }
+                              </div>
+                            }
+                        </div>
+                        <div class="form-group organizer-form-group">
+                            <label for="jobTitle">Job Title</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-user-tie input-icon"></i>
+                                <input type="text" id="jobTitle" formControlName="jobTitle"
+                                    [class.is-invalid]="jobTitle?.invalid && jobTitle?.touched"
+                                    placeholder="Enter your Job title">
+                            </div>
+                            @if (jobTitle?.invalid && jobTitle?.touched) {
+                              <div class="error-message">
+                                @if (jobTitle?.errors?.['required']) {
+                                  <span>Job title is required</span>
+                                }
+                              </div>
+                            }
+                        </div>
+                        <div class="form-group organizer-form-group">
+                            <label for="postalCode">Postal Code</label>
+                            <div class="input-wrapper">
+                                <i class="fa-brands fa-usps input-icon"></i>
+                                <input type="text" id="postalCode" formControlName="postalCode"
+                                    [class.is-invalid]="postalCode?.invalid && postalCode?.touched"
+                                    placeholder="Enter your Postal code">
+                            </div>
+                            @if (postalCode?.invalid && postalCode?.touched) {
+                              <div class="error-message">
+                                @if (postalCode?.errors?.['required']) {
+                                  <span>Postal code is required</span>
+                                }
+                              </div>
+                            }
+                        </div>
+                      </div>
+                      <div class="form-actions">
+                        <button type="submit" class="btn-primary" (click)="activeOrganizer()" [disabled]="OrganizerForm.invalid || isSaving()">
+                            <span class="button-content">
+                                Active organizer
+                            </span>
+                        </button>
+                      </div>
+                    }
+                </div>
+              </form>
+            }
+        </main>
+    </div>
+  </div>
+}
+<!-- <div class="layout"></div> -->

@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+*.js.map
+*.css.map
+
+# Angular
+.angular/
+*.ngfactory.ts
+*.ngsummary.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+*.env
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Misc
+.DS_Store
+Thumbs.db
+

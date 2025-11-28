@@ -1,28 +1,159 @@
-import 'zone.js/nodezone';
-import { Express, Request, Response, NextFunction } from 'express';
-import { join } from 'path';
 import { APP_BASE_HREF } from '@angular/common';
-import { existsSync } from 'fs';
-import { AppServerModule } from './src/app/app.server.module';
+import { renderApplication } from '@angular/platform-server';
+import express from 'express';
+import { fileURLToPath } from 'node:url';
+import { dirname, join, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import bootstrap from './src/main.server';
 
-// The Express app is exported so that it can be used by serverless Functions.
-export function app(): Express {
-  const server = require('express')();
-  const distFolder = join(process.cwd(), 'dist/donate_blood_project/browser');
-  const indexHtml = existsSync(join(distFolder, 'index.original.html')) ? 'index.original.html' : 'index.html';
+// SSR Timeout configuration
+const SSR_TIMEOUT_MS = parseInt(process.env['SSR_TIMEOUT'] || '30000', 10); // Default 30s
+const SSR_ENABLE_LOGGING = process.env['SSR_LOGGING'] !== 'false';
 
-  // Serve static files from /browser
-  server.get('*.*', (req: Request, res: Response, next: NextFunction) => {
-    if (req.url.includes('.')) {
-      res.sendFile(join(distFolder, req.url));
-    } else {
-      next();
+// Helper function to create timeout promise
+function createTimeoutPromise(timeoutMs: number): Promise<never> {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error(`SSR rendering timeout after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+}
+
+// SSR Logger for server-side
+function logSSR(level: 'info' | 'warn' | 'error', message: string, data?: any): void {
+  if (!SSR_ENABLE_LOGGING) return;
+  
+  const timestamp = new Date().toISOString();
+  const prefix = `[SSR] [${timestamp}] [${level.toUpperCase()}]`;
+  
+  switch (level) {
+    case 'info':
+      console.log(`${prefix} ${message}`, data || '');
+      break;
+    case 'warn':
+      console.warn(`${prefix} ${message}`, data || '');
+      break;
+    case 'error':
+      console.error(`${prefix} ${message}`, data || '', data?.stack || '');
+      break;
+  }
+}
+
+// Hàm app() trả về Express server
+export function app(): express.Express {
+  const server = express();
+  
+  // Xác định đường dẫn thư mục dist (dùng import.meta.url chuẩn ESM)
+  const serverDistFolder = dirname(fileURLToPath(import.meta.url));
+  const browserDistFolder = resolve(serverDistFolder, '../browser');
+  const indexHtml = join(browserDistFolder, 'index.html');
+
+  // Đọc file index.html
+  const template = readFileSync(indexHtml, 'utf-8');
+
+  server.set('view engine', 'html');
+  server.set('views', browserDistFolder);
+
+  // Serve static files (css, js, images...) từ thư mục browser
+  server.use(express.static(browserDistFolder, {
+    maxAge: process.env['NODE_ENV'] === 'production' ? '1y' : '0',
+    index: 'index.html',
+    etag: true,
+    lastModified: true
+  }));
+
+  // Error handler middleware - must be before routes
+  server.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    logSSR('error', 'Unhandled SSR Error', {
+      url: req.url,
+      error: {
+        name: err.name,
+        message: err.message,
+        stack: err.stack
+      }
+    });
+    // Fallback to client-side rendering on error
+    try {
+      res.sendFile(indexHtml);
+    } catch (fallbackError) {
+      logSSR('error', 'Failed to send fallback HTML', { error: fallbackError });
+      res.status(500).send('Internal Server Error');
     }
   });
 
-  // All regular routes use the Angular SSR engine
-  server.get('*', (req: Request, res: Response) => {
-    res.render(indexHtml, { req, providers: [{ provide: APP_BASE_HREF, useValue: req.baseUrl }] });
+  // Xử lý tất cả các request khác bằng Angular Universal
+  server.get('**', async (req, res, next) => {
+    const startTime = Date.now();
+    const { originalUrl, baseUrl, headers } = req;
+    
+    logSSR('info', `SSR Request started`, { url: originalUrl, method: req.method });
+    
+    try {
+      // Handle proxy headers for correct URL construction
+      const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
+      const host = req.get('x-forwarded-host') || req.get('host') || headers.host || 'localhost:4000';
+      const url = `${protocol}://${host}${originalUrl}`;
+
+      logSSR('info', `Rendering application`, { url, protocol, host });
+
+      // Race between rendering and timeout
+      const renderPromise = renderApplication(bootstrap, {
+        document: template,
+        url: url,
+        platformProviders: [
+          { provide: APP_BASE_HREF, useValue: baseUrl }
+        ],
+      });
+
+      const timeoutPromise = createTimeoutPromise(SSR_TIMEOUT_MS);
+
+      // Wait for either rendering to complete or timeout
+      const html = await Promise.race([renderPromise, timeoutPromise]);
+
+      const duration = Date.now() - startTime;
+      logSSR('info', `SSR Request completed`, { 
+        url: originalUrl, 
+        duration: `${duration}ms`,
+        htmlLength: html.length 
+      });
+
+      res.send(html);
+    } catch (err: unknown) {
+      const duration = Date.now() - startTime;
+      const error = err instanceof Error ? err : new Error(String(err));
+      
+      logSSR('error', `SSR rendering failed`, {
+        url: originalUrl,
+        duration: `${duration}ms`,
+        error: {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        },
+        timeout: error.message.includes('timeout')
+      });
+
+      // If timeout, log critical error
+      if (error.message.includes('timeout')) {
+        logSSR('error', `SSR TIMEOUT - Rendering took longer than ${SSR_TIMEOUT_MS}ms`, {
+          url: originalUrl,
+          duration: `${duration}ms`,
+          timeout: SSR_TIMEOUT_MS
+        });
+      }
+
+      // Fallback to client-side rendering
+      try {
+        res.sendFile(indexHtml);
+        logSSR('info', `Fallback to client-side rendering`, { url: originalUrl });
+      } catch (fallbackError) {
+        logSSR('error', `Failed to send fallback HTML`, { 
+          url: originalUrl,
+          error: fallbackError 
+        });
+        res.status(500).send('Internal Server Error');
+      }
+    }
   });
 
   return server;
@@ -38,15 +169,4 @@ function run(): void {
   });
 }
 
-// Webpack will replace 'require' with '__webpack_require__'
-// '__non_webpack_require__' is a proxy to Node 'require'
-// The below code is to ensure that the server is run only when not requiring the bundle.
-declare const __non_webpack_require__: NodeRequire;
-const mainModule = __non_webpack_require__.main;
-const moduleFilename = mainModule && mainModule.filename || '';
-if (moduleFilename === __filename || moduleFilename.includes('iisnode')) {
-  run();
-}
-
-export * from './src/app/app.server.module';
-
+run();

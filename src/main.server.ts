@@ -1,15 +1,14 @@
+import 'zone.js/node';
 import { enableProdMode } from '@angular/core';
-import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { bootstrapApplication, BootstrapContext } from '@angular/platform-browser';
+import { AppComponent } from './app/app.component';
+import { config } from './app/app.config.server';
+import { environment } from './environments/environment';
 
-import { AppServerModule } from './app/app.server.module';
-// import { environment } from './environments/environment';
-import { environment } from './environments/environment'; // Adjusted to import production environment
 if (environment.production) {
   enableProdMode();
 }
 
-export function bootstrap() {
-  return platformBrowserDynamic().bootstrapModule(AppServerModule);
-}
+const bootstrap = (context: BootstrapContext) => bootstrapApplication(AppComponent, config, context);
 
 export default bootstrap;

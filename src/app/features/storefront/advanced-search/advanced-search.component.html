@@ -1,0 +1,131 @@
+<div class="advanced-search-container">
+  <div class="container">
+    <!-- Search Header -->
+    <div class="search-header">
+      <h1>Search Events</h1>
+      <p>Find the perfect event for you</p>
+    </div>
+
+    <!-- Search Form -->
+    <form [formGroup]="searchForm" (ngSubmit)="onSearch()" class="search-form">
+      <!-- Full-text Search -->
+      <div class="form-group">
+        <label for="searchQuery">Search</label>
+        <input
+          id="searchQuery"
+          type="text"
+          formControlName="query"
+          placeholder="Search events, organizers, categories...">
+      </div>
+
+      <!-- Filters Row -->
+      <div class="filters-row">
+        <!-- Category -->
+        <div class="form-group">
+          <label for="categorySelect">Category</label>
+          <select id="categorySelect" formControlName="category">
+            <option value="">All Categories</option>
+            <!-- TODO: Load categories dynamically -->
+          </select>
+        </div>
+
+        <!-- Event Type -->
+        <div class="form-group">
+          <label for="eventTypeSelect">Event Type</label>
+          <select id="eventTypeSelect" formControlName="eventType">
+            <option value="">All Types</option>
+            @for (type of eventTypes; track type) {
+              <option [value]="type">{{ type | titlecase }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Date Range -->
+        <div class="form-group">
+          <label for="dateFrom">Date From</label>
+          <input id="dateFrom" type="date" formControlName="dateFrom">
+        </div>
+
+        <div class="form-group">
+          <label for="dateTo">Date To</label>
+          <input id="dateTo" type="date" formControlName="dateTo">
+        </div>
+
+        <!-- Price Range -->
+        <div class="form-group">
+          <label for="priceRange">Price Range</label>
+          <select id="priceRange" formControlName="priceRange">
+            <option value="">Any Price</option>
+            @for (range of priceRanges; track range.label) {
+              <option [value]="range.label">{{ range.label }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Location -->
+        <div class="form-group">
+          <label for="location">Location</label>
+          <input
+            id="location"
+            type="text"
+            formControlName="location"
+            placeholder="City, Country">
+        </div>
+
+        <!-- Sort By -->
+        <div class="form-group">
+          <label for="sortBy">Sort By</label>
+          <select id="sortBy" formControlName="sortBy">
+            <option value="relevance">Relevance</option>
+            <option value="date">Date</option>
+            <option value="price">Price</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" [disabled]="isLoading">
+          {{ isLoading ? 'Searching...' : 'Search' }}
+        </button>
+        <button type="button" class="btn-secondary" (click)="clearFilters()">
+          Clear Filters
+        </button>
+      </div>
+    </form>
+
+    <!-- Search Results -->
+    @if (isLoading) {
+      <div class="loading">Searching...</div>
+    } @else if (searchResults.length > 0) {
+      <div class="search-results">
+        <div class="results-header">
+          <p>Found {{ totalResults }} events</p>
+        </div>
+        <div class="results-grid">
+          @for (event of searchResults; track event.id) {
+            <div class="event-card">
+              <img [src]="event.image_url || ''" [alt]="event.name">
+              <div class="event-info">
+                <h3>{{ event.name }}</h3>
+                @if (event.startDate) {
+                  <p class="event-date">{{ event.startDate | date }}</p>
+                }
+                <p class="event-price">{{ event.price ? '$' + event.price : 'Free' }}</p>
+                <a [routerLink]="['/events', event.id]" class="btn-link">View Details</a>
+              </div>
+            </div>
+          }
+        </div>
+        @if (searchResults.length < totalResults) {
+          <button class="btn-secondary" (click)="loadMore()">Load More</button>
+        }
+      </div>
+    } @else if (searchForm.get('query')?.value) {
+      <div class="no-results">
+        <p>No events found. Try adjusting your filters.</p>
+      </div>
+    }
+  </div>
+</div>
+
