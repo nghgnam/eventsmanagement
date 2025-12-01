@@ -1,0 +1,141 @@
+<div class="user-dashboard-container">
+  <div class="container">
+    <h1>My Dashboard</h1>
+
+    <!-- Tab Navigation -->
+    <div class="dashboard-tabs">
+      <button 
+        [class.active]="activeTab === 'tickets'"
+        (click)="setActiveTab('tickets')">
+        My Tickets
+      </button>
+      <button 
+        [class.active]="activeTab === 'saved'"
+        (click)="setActiveTab('saved')">
+        Saved Events
+      </button>
+      <button 
+        [class.active]="activeTab === 'orders'"
+        (click)="setActiveTab('orders')">
+        Order History
+      </button>
+    </div>
+
+    <!-- My Tickets Tab -->
+    @if (activeTab === 'tickets') {
+      <div class="tab-content">
+        <h2>My Tickets</h2>
+        @if (isLoadingTickets) {
+          <div class="loading">Loading tickets...</div>
+        } @else if (myTickets.length > 0) {
+          <div class="tickets-list">
+            @for (ticket of myTickets; track ticket.id) {
+              <div class="ticket-card">
+                <div class="ticket-info">
+                  <h3>{{ ticket.eventName }}</h3>
+                  <p class="ticket-date">{{ getDate(ticket.eventDate) | date:'full' }}</p>
+                  <p class="ticket-type">{{ ticket.ticketType }}</p>
+                  <p class="ticket-status" [class.used]="ticket.used">
+                    {{ ticket.used ? 'Used' : 'Active' }}
+                  </p>
+                </div>
+                <div class="ticket-qr">
+                  <img [src]="ticket.qrCodeUrl" alt="Ticket QR Code">
+                </div>
+                <div class="ticket-actions">
+                  <button class="btn-secondary" (click)="downloadTicket(ticket.id)">
+                    Download
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">
+            <p>You don't have any tickets yet.</p>
+            <a [routerLink]="['/']" class="btn-primary">Browse Events</a>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Saved Events Tab -->
+    @if (activeTab === 'saved') {
+      <div class="tab-content">
+        <h2>Saved Events</h2>
+        @if (isLoadingSaved) {
+          <div class="loading">Loading saved events...</div>
+        } @else if (savedEvents.length > 0) {
+          <div class="saved-events-grid">
+            @for (event of savedEvents; track event?.id) {
+              <div class="event-card">
+                <img [src]="event?.image_url" [alt]="event?.name">
+                <div class="event-info">
+                  <h3>{{ event?.name }}</h3>
+                  <p class="event-date">{{ getDate(event?.startDate) | date }}</p>
+                  <div class="event-actions">
+                    <a [routerLink]="['/events', event?.id]" class="btn-link">View Details</a>
+                    <button class="btn-icon" (click)="removeSavedEvent(event?.id)">
+                      <i class="fa-solid fa-heart"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">
+            <p>You haven't saved any events yet.</p>
+            <a [routerLink]="['/']" class="btn-primary">Browse Events</a>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Order History Tab -->
+    @if (activeTab === 'orders') {
+      <div class="tab-content">
+        <h2>Order History</h2>
+        @if (isLoadingOrders) {
+          <div class="loading">Loading orders...</div>
+        } @else if (orderHistory.length > 0) {
+          <div class="orders-list">
+            @for (order of orderHistory; track order?.id) {
+              <div class="order-card">
+                <div class="order-header">
+                  <div>
+                    <h3>Order #{{ order?.id }}</h3>
+                    <p class="order-date">{{ getDate(order?.created_at) | date:'full' }}</p>
+                  </div>
+                  <div class="order-status">
+                    <span [class]="'status-' + order?.status">{{ order?.order_status }}</span>
+                  </div>
+                </div>
+                <div class="order-details">
+                    <p><strong>Event:</strong> {{ order?.event?.name }}</p>
+                  <p><strong>Tickets:</strong> {{ order?.tickets?.length }}</p>
+                  <p><strong>Total:</strong> ${{ order?.total_price }}</p>
+                </div>
+                <div class="order-actions">
+                  <button class="btn-secondary" (click)="downloadInvoice(order?.id)">
+                    Download Invoice
+                  </button>
+                  <a [routerLink]="['/events', order?.event?.id]" class="btn-link">
+                    View Event
+                  </a>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">
+            <p>You don't have any orders yet.</p>
+            <a [routerLink]="['/']" class="btn-primary">Browse Events</a>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+

@@ -1,0 +1,100 @@
+<div class="container">
+  <form action="" [formGroup]="userForm" (ngSubmit)="onSubmit()">
+    <h1>Login</h1>
+
+    <div>
+
+      <a mat-raised-button (click)="googleSignIn()" class="google-button" [disabled]="isLoading()">
+        <i class="fa-brands fa-google"></i>
+        <p>@if (isLoading()) { Signing in... } @else { Continue with Google }</p>
+      </a>
+
+    </div>
+
+    @if (errorMessage()) {
+      <div class="error-message" style="color: red; margin-top: 10px; text-align: center;">
+        {{ errorMessage() }}
+      </div>
+    }
+
+
+    <div class="divider">
+      <span class="or-span">OR</span>
+    </div>
+
+    <div>
+      <mat-form-field appearance="outline">
+
+        <mat-label> Email </mat-label>
+
+        <input matInput formControlName="email" placeholder="Enter your email" type="text" />
+        <span matSuffix>
+          <i class="fa-solid fa-envelope" matSuffix></i>
+        </span>
+
+
+        @if (userForm.controls['email'].invalid && userForm.controls['email'].touched) {
+        <mat-error>
+          @if (userForm.controls['email'].errors?.['required']) {
+          <span>Email is required</span>
+          }
+          @if (userForm.controls['email'].errors?.['email']) {
+          <span>Invalid email address</span>
+          }
+        </mat-error>
+        }
+
+      </mat-form-field>
+    </div>
+
+    <div>
+      <mat-form-field appearance="outline">
+
+        <mat-label> Password </mat-label>
+
+        <input matInput formControlName="password" placeholder="Enter your password"
+          [type]="showPassword ? 'text' : 'password'" />
+
+        <span matSuffix>
+          <i class="fa-solid" [class.fa-eye-slash]="!showPassword" [class.fa-eye]="showPassword"
+            (click)="togglePasswordVisibility()"></i>
+        </span>
+
+        @if (userForm.controls['password'].invalid && userForm.controls['password'].touched) {
+        <mat-error>
+          @if (userForm.controls['password'].errors?.['required']) {
+          <span>Password is required</span>
+          }
+          @if (userForm.controls['password'].errors?.['minlength']) {
+          <span>Password must be at least 8 characters long</span>
+          }
+        </mat-error>
+        }
+
+      </mat-form-field>
+
+      <p><mat-checkbox ngSkipHydration>Remember me</mat-checkbox></p>
+
+    </div>
+
+    <div>
+
+      <button mat-raised-button color="primary" [disabled]="userForm.invalid || isLoading()">
+        @if (isLoading()) { Logging in... } @else { Login }
+      </button>
+
+    </div>
+
+    <div class="links">
+      <a [routerLink]="['/auth/forgot-password']" class="forgot-password">Forget your password?</a>
+    </div>
+
+    <div class="line"></div>
+
+    <div>
+
+      <button mat-raised-button color="primary" [routerLink]="['/register']">Create an account</button>
+
+    </div>
+  </form>
+</div>

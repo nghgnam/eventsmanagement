@@ -1,0 +1,459 @@
+<div class="card create-event-form">
+  <div class="stepper">
+    @for (step of wizardSteps; track step; let idx = $index) {
+      <div class="step-item" [class.completed]="currentStep > (idx + 1)" [class.active]="currentStep === (idx + 1)">
+        <div class="step-index">{{ idx + 1 }}</div>
+        <div>
+          <p class="step-title">{{ step }}</p>
+          <p class="step-status">
+            @if (currentStep === idx + 1) { Now }
+            @else if (currentStep > idx + 1) { Done }
+            @else { Next }
+          </p>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="form-header">
+    <div class="header-text">
+      <p class="eyebrow">Organizer workspace</p>
+      <h3>Create New Event</h3>
+    </div>
+    <div class="form-summary">
+      <div class="summary-item">
+        <span class="summary-label">Organizer</span>
+        <span class="summary-value">{{ currentUser?.fullName || 'Your account' }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Status</span>
+        <span class="summary-value status-pill">Draft</span>
+      </div>
+    </div>
+    <!-- Mock Data Buttons (for testing) -->
+    <!-- <div class="mock-data-actions" style="display: flex; gap: 8px; margin-top: 12px;">
+      <button type="button" class="btn-secondary" (click)="fillMockData()" style="font-size: 12px; padding: 6px 12px;">
+        📝 Fill Mock Data
+      </button>
+      <button type="button" class="btn-secondary" (click)="createMockEvent()" style="font-size: 12px; padding: 6px 12px;" [disabled]="isLoading">
+        ⚡ Create Mock Event
+      </button>
+    </div> -->
+  </div>
+
+  <form [formGroup]="eventForm" (ngSubmit)="onSubmit()">
+    @if (currentStep === 1) {
+      <section class="form-section">
+        <div class="section-heading">
+          <p class="section-label">Step 1</p>
+          <h4>General Info & Media</h4>
+        </div>
+        <div class="form-grid two-column compact-grid">
+          <div class="form-group full-width">
+            <label for="name">Event Name *</label>
+            <div class="input-with-icon">
+              <span class="material-icons input-icon">drive_file_rename_outline</span>
+              <input type="text" id="name" formControlName="name" placeholder="Enter event name">
+            </div>
+            @if (eventForm.get('name')?.touched && eventForm.get('name')?.errors?.['required']) {
+              <div class="error-message">Event name is required</div>
+            }
+            @if (eventForm.get('name')?.touched && eventForm.get('name')?.errors?.['minlength']) {
+              <div class="error-message">Event name must be at least 3 characters</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="eventType">Event Type *</label>
+            <div class="input-with-icon">
+              <span class="material-icons input-icon">category</span>
+              <select id="eventType" formControlName="eventType">
+                <option value="offline">Offline</option>
+                <option value="online">Online</option>
+                <option value="hybrid">Hybrid</option>
+              </select>
+            </div>
+            @if (eventForm.get('eventType')?.touched && eventForm.get('eventType')?.errors?.['required']) {
+              <div class="error-message">Event type is required</div>
+            }
+          </div>
+
+          <div class="form-group full-width">
+            <label for="shortDescription">Short Description *</label>
+            <div class="input-with-icon">
+              <span class="material-icons input-icon">notes</span>
+              <textarea id="shortDescription" formControlName="shortDescription" placeholder="140 characters max"></textarea>
+            </div>
+            @if (eventForm.get('shortDescription')?.touched && eventForm.get('shortDescription')?.errors?.['required']) {
+              <div class="error-message">Short description is required</div>
+            }
+          </div>
+
+          <div class="form-group full-width">
+            <label for="content">Rich Description *</label>
+            <div class="input-with-icon">
+              <span class="material-icons input-icon">article</span>
+              <textarea id="content" formControlName="content" rows="6" placeholder="Share the story, agenda, or highlights"></textarea>
+            </div>
+            @if (eventForm.get('content')?.touched && eventForm.get('content')?.errors?.['required']) {
+              <div class="error-message">Full description is required</div>
+            }
+          </div>
+        </div>
+
+        <div class="balanced-grid">
+          <div class="meta-stack">
+            <div class="category-selector">
+              <p class="section-label">Categories</p>
+              <div class="category-chip-group">
+                @for (category of availableCategories; track category) {
+                  <button type="button"
+                    class="category-chip"
+                    [class.selected]="isCategorySelected(category)"
+                    (click)="toggleCategory(category)">
+                    {{ category }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="tags">Tags (comma separated)</label>
+              <div class="input-with-icon">
+                <span class="material-icons input-icon">sell</span>
+                <input type="text" id="tags" formControlName="tags" placeholder="e.g., cars, Vietnam, community">
+              </div>
+            </div>
+          </div>
+
+          <div class="media-grid">
+            <div class="form-group full-width">
+              <label for="image">Cover Image *</label>
+              <div class="image-upload-container">
+                @if (imagePreviewUrl) {
+                  <div class="image-preview">
+                    <img [src]="imagePreviewUrl" alt="Event image preview">
+                    <button type="button" class="remove-image" (click)="removeImage()">X</button>
+                  </div>
+                }
+                @if (!imagePreviewUrl) {
+                  <div class="image-upload-area" (click)="triggerImageUpload()">
+                    <p>Drop or click to upload</p>
+                    <p class="image-hint">1200x630px · max 5MB</p>
+                  </div>
+                }
+                <input type="file" id="image" (change)="onImageSelected($event)" accept="image/*" class="hidden-input">
+              </div>
+              @if (imageError) {
+                <div class="error-message">{{ imageError }}</div>
+              }
+            </div>
+
+            <div class="form-group full-width">
+              <label for="gallery">Gallery Images</label>
+              <div class="image-upload-container gallery-upload">
+                <div class="image-upload-area">
+                  <p>Additional visuals</p>
+                  <input type="file" id="gallery" multiple accept="image/*" (change)="onGallerySelected($event)" class="hidden-input">
+                  <label class="btn-secondary gallery-button" for="gallery">
+                    {{ isUploadingGallery ? 'Uploading...' : 'Choose files' }}
+                  </label>
+                </div>
+                @if (galleryImages.length) {
+                  <div class="gallery-preview">
+                    @for (image of galleryImages; track image; let idx = $index) {
+                      <div class="gallery-thumb">
+                        <img [src]="image" alt="Gallery image">
+                        <button type="button" class="remove-image" (click)="removeGalleryImage(idx)">X</button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    }
+
+    @if (currentStep === 2) {
+      <section class="form-section">
+        <div class="section-heading">
+          <p class="section-label">Step 2</p>
+          <h4>Time & Location</h4>
+        </div>
+
+        <div class="slots-wrapper">
+          @for (slot of dateSlotGroups; track $index; let idx = $index) {
+            <div class="slot-card" [formGroup]="slot">
+              <div class="slot-header">
+                <h5>Slot {{ idx + 1 }}</h5>
+                @if (dateSlots.length > 1) {
+                  <button type="button" class="btn-link" (click)="removeDateSlot(idx)">Remove</button>
+                }
+              </div>
+              <div class="form-grid two-column">
+                <div class="form-group">
+                  <label for="startDate">Start *</label>
+                  <div class="input-with-icon">
+                    <input type="datetime-local" formControlName="startDate">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="endDate">End *</label>
+                  <div class="input-with-icon">
+                    <input type="datetime-local" formControlName="endDate">
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+          <button type="button" class="btn-secondary add-row" (click)="addDateSlot()">+ Add another slot</button>
+        </div>
+
+        <div class="form-grid two-column">
+          <div class="form-group full-width">
+            <label for="location">Headline Location *</label>
+            <div class="input-with-icon">
+              <span class="material-icons input-icon">place</span>
+              <input type="text" id="location" formControlName="location" placeholder="Venue, streaming link, or meeting point">
+            </div>
+            @if (locationControl?.touched && locationControl?.errors?.['required']) {
+              <div class="error-message">Location is required</div>
+            }
+          </div>
+        </div>
+
+        @if (isOffline || isHybird) {
+          <div class="form-grid two-column address-grid">
+            <div class="form-group full-width">
+              <label for="details_address">Detailed Address *</label>
+              <div class="input-with-icon input-with-action">
+                <span class="material-icons input-icon">home</span>
+                <input type="text" id="details_address" formControlName="details_address" placeholder="Street, building, suite">
+                <button 
+                  type="button" 
+                  class="location-btn" 
+                  (click)="getCurrentLocation()" 
+                  [disabled]="isLoading"
+                  title="Get current location">
+                  <span class="material-icons">my_location</span>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="country">Country *</label>
+              <div class="input-with-icon">
+                <span class="material-icons input-icon">public</span>
+                <select id="country" formControlName="country">
+                  <option value="">Select a country</option>
+                  @for (countryOption of countries; track countryOption.name) {
+                    <option [value]="countryOption.name">{{ countryOption.name }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="city">City *</label>
+              <div class="input-with-icon">
+                <span class="material-icons input-icon">location_city</span>
+                <select id="city" formControlName="city">
+                  <option [ngValue]="null">Select a city</option>
+                  @for (cityOption of citiesValue; track cityOption.code) {
+                    <option [ngValue]="cityOption">{{ cityOption.name }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="districts">District *</label>
+              <div class="input-with-icon">
+                <span class="material-icons input-icon">apartment</span>
+                <select id="districts" formControlName="districts">
+                  <option [ngValue]="null">Select a district</option>
+                  @for (districtOption of districtsWithCities; track districtOption.code) {
+                    <option [ngValue]="districtOption">{{ districtOption.name }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="wards">Ward *</label>
+              <div class="input-with-icon">
+                <span class="material-icons input-icon">map</span>
+                <select id="wards" formControlName="wards">
+                  <option [ngValue]="null">Select a ward</option>
+                  @for (wardOption of wardsWithDistricts; track wardOption.code) {
+                    <option [ngValue]="wardOption">{{ wardOption.name }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </div>
+        }
+      </section>
+    }
+
+    @if (currentStep === 3) {
+      <section class="form-section">
+        <div class="section-heading">
+          <p class="section-label">Step 3</p>
+          <h4>Tickets & Capacity</h4>
+        </div>
+
+        <div class="form-grid two-column">
+          <div class="form-group">
+            <label for="maxAttendees">Total Capacity *</label>
+            <div class="input-with-icon">
+              <span class="material-icons input-icon">groups</span>
+              <input type="number" id="maxAttendees" formControlName="maxAttendees" min="1">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="displayPrice">Display Price *</label>
+            <div class="input-with-icon">
+              <span class="material-icons input-icon">payments</span>
+              <input type="number" id="displayPrice" formControlName="displayPrice" min="0" step="0.01">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid two-column">
+          <div class="form-group">
+            <label for="currency">Currency *</label>
+            <div class="input-with-icon">
+              <span class="material-icons input-icon">currency_exchange</span>
+              <ng-select
+                id="currency"
+                formControlName="currency"
+                [items]="currencies"
+                bindLabel="displayText"
+                bindValue="code"
+                placeholder="Select currency"
+                [searchable]="true"
+                [clearable]="false"
+                class="currency-select">
+              </ng-select>
+            </div>
+            @if (eventForm.get('currency')?.touched && eventForm.get('currency')?.errors?.['required']) {
+              <div class="error-message">Currency is required</div>
+            }
+          </div>
+        </div>
+
+        <div class="slots-wrapper">
+          @for (ticket of ticketGroups; track $index; let idx = $index) {
+            <div class="slot-card" [formGroup]="ticket">
+              <div class="slot-header">
+                <h5>Ticket type {{ idx + 1 }}</h5>
+                @if (tickets.length > 1) {
+                  <button type="button" class="btn-link" (click)="removeTicketType(idx)">Remove</button>
+                }
+              </div>
+              <div class="form-grid two-column">
+                <div class="form-group">
+                  <label for="name">Name *</label>
+                  <div class="input-with-icon">
+                    <span class="material-icons input-icon">confirmation_number</span>
+                    <input type="text" formControlName="name" placeholder="VIP, General, ...">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="price">Price *</label>
+                  <div class="input-with-icon">
+                    <span class="material-icons input-icon">paid</span>
+                    <input type="number" formControlName="price" min="0" step="0.01">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="quantity">Quantity *</label>
+                  <div class="input-with-icon">
+                    <span class="material-icons input-icon">stacked_bar_chart</span>
+                    <input type="number" formControlName="quantity" min="0">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="saleStartDate">Sale opens</label>
+                  <div class="input-with-icon">
+                    <span class="material-icons input-icon">schedule</span>
+                    <input type="datetime-local" formControlName="saleStartDate">
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+          <button type="button" class="btn-secondary add-row" (click)="addTicketType()">+ Add ticket type</button>
+        </div>
+      </section>
+    }
+
+    @if (currentStep === 4) {
+      <section class="form-section">
+        <div class="section-heading">
+          <p class="section-label">Step 4</p>
+          <h4>Review & Confirm</h4>
+        </div>
+
+        <div class="review-grid">
+          <div class="summary-card">
+            <h5>General info</h5>
+            <p class="summary-title">{{ formValueSnapshot.name || '-' }}</p>
+            <p class="summary-text">{{ formValueSnapshot.shortDescription || 'No description provided' }}</p>
+            <div class="summary-list">
+              <span>Type: {{ formValueSnapshot.eventType }}</span>
+              <span>Categories: {{ (formValueSnapshot.category || []).join(', ') || '—' }}</span>
+              <span>Tags: {{ formValueSnapshot.tags || '—' }}</span>
+            </div>
+          </div>
+
+          <div class="summary-card">
+            <h5>Schedule</h5>
+            @for (slot of dateSlots.controls; track $index; let idx = $index) {
+              <div class="summary-row">
+                <span>Slot {{ idx + 1 }}</span>
+                <strong>{{ slot.value.startDate || '—' }} → {{ slot.value.endDate || '—' }}</strong>
+              </div>
+            }
+          </div>
+
+          <div class="summary-card">
+            <h5>Location</h5>
+            <p>{{ formValueSnapshot.location || '—' }}</p>
+            <p>{{ formValueSnapshot.details_address || '' }}</p>
+            <p>{{ formValueSnapshot.wards?.name || '' }} {{ formValueSnapshot.districts?.name || '' }} {{ formValueSnapshot.city?.name || '' }}</p>
+          </div>
+
+          <div class="summary-card">
+            <h5>Tickets</h5>
+            <p>Total capacity: {{ formValueSnapshot.maxAttendees || 0 }}</p>
+            <p>Display price: {{ formValueSnapshot.displayPrice || 0 | number:'1.0-0' }}</p>
+            <div class="summary-list">
+              @for (ticket of tickets.controls; track $index) {
+                <div class="summary-row">
+                  <span>{{ ticket.value.name || 'Untitled' }}</span>
+                  <strong>{{ ticket.value.price || 0 | currency:'USD' }} · {{ ticket.value.quantity || 0 }} seats</strong>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+    }
+
+    <div class="wizard-actions">
+      <button type="button" class="btn-secondary" (click)="handleCancel()">Cancel</button>
+      @if (currentStep > 1) {
+        <button type="button" class="btn-secondary" (click)="prevStep()">Back</button>
+      }
+      @if (currentStep < maxSteps) {
+        <button type="button" class="btn-primary" (click)="nextStep()">Next</button>
+      }
+      @if (currentStep === maxSteps) {
+        <button type="submit" class="btn-primary" [disabled]="isLoading">
+          {{ isLoading ? 'Creating...' : 'Create Event' }}
+        </button>
+      }
+    </div>
+  </form>
+</div>
+

@@ -1,14 +1,12 @@
 import { Routes } from '@angular/router';
-import { RegisterActionDemoComponent } from './register-action-demo/register-action-demo.component';
-import { LoginActionDemoComponent } from './login-action-demo/login-action-demo.component';
+import { BodyPageComponent } from './features/events/home/body-page/body-page.component';
+import { DetailEventComponent } from './features/events/event-detail/detail-event/detail-event.component';
 import { HomePageComponent } from './home-page/home-page.component';
-import { AppComponent } from './app.component';
-import { DetailEventComponent } from './body/detail-event/detail-event.component';
 import { LayoutRouterComponent } from './layout-router/layout-router.component';
-import { BodyPageComponent } from './body/body-page/body-page.component';
-import { UserInfomationComponent } from './user/user-infomation/user-infomation.component';
-import { ManageEventsComponent } from './management-event/manage-events/manage-events.component'
-import { TicketEventsManageComponent } from './tickets/ticket-events-manage/ticket-events-manage.component';
+import { LoginActionDemoComponent } from './features/auth/login/login/login-action-demo.component';
+import { RegisterActionDemoComponent } from './features/auth/register/register/register-action-demo.component';
+import { TicketEventsManageComponent } from './features/tickets/ticket-events-manage/ticket-events-manage.component';
+import { UserInformationComponent } from './features/users/profile/user-information/user-information.component';
 export const routes: Routes = [
   {
     path: '',
@@ -22,17 +20,25 @@ export const routes: Routes = [
       { path: 'body', component: BodyPageComponent },
       {
         path: 'manage-events',
-        loadComponent: () => import ('./management-event/manage-events/manage-events.component').then(m => m.ManageEventsComponent)
+        loadComponent: () => import('./features/events/event-management/manage-events/manage-events.component').then(m => m.ManageEventsComponent)
       },
-      { path: 'userprofile/:id', component: UserInfomationComponent },
+      { path: 'userprofile/:id', component: UserInformationComponent },
       { path: 'ticketsEvent', component: TicketEventsManageComponent},
+      { 
+        path: 'tickets-manage', 
+        component: TicketEventsManageComponent
+      },
+      {
+        path: 'account',
+        loadComponent: () => import('./features/users/settings/user-setting-account/user-setting-account.component').then(m => m.UserSettingAccountComponent)
+      },
       {
         path: 'search-results',
-        loadComponent: () => import('./search-results/search-results.component').then(m => m.SearchResultsComponent)
+        loadComponent: () => import('./features/events/search/search-results/search-results.component').then(m => m.SearchResultsComponent)
       },
       {
         path: 'following',
-        loadComponent: () => import('./body/following-organizers/following-organizers.component').then(m => m.FollowingOrganizersComponent)
+        loadComponent: () => import('./features/users/following/following-organizers/following-organizers.component').then(m => m.FollowingOrganizersComponent)
       }
     ]
   },

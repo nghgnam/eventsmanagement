@@ -1,0 +1,73 @@
+<!-- Homepage - SSR Critical for SEO -->
+<div class="homepage-container">
+  <!-- Hero Banner/Slider -->
+  <section class="hero-banner">
+    <div class="banner-slider">
+      <!-- TODO: Featured events slider -->
+      @for (event of featuredEvents; track $any(event).id) {
+        <div class="banner-slide">
+          <div class="banner-image">
+            <img [src]="getEventImageUrl(event)" [alt]="getEventName(event)">
+          </div>
+          <div class="banner-content">
+            <h1>{{ getEventName(event) }}</h1>
+            @if (getEventDescription(event)) {
+              <p>{{ getEventDescription(event) }}</p>
+            }
+            <a [routerLink]="['/events', event.id]" class="btn-primary">View Details</a>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Location-based Events -->
+  <section class="location-events">
+    <div class="container">
+      <h2>Events Near You</h2>
+      @if (isLoadingLocation) {
+        <div class="loading">Loading events...</div>
+      } @else {
+        <div class="events-grid">
+          @for (event of locationBasedEvents; track $any(event).id) {
+            <div class="event-card">
+              <img [src]="getEventImageUrl(event)" [alt]="getEventName(event)">
+              <div class="event-info">
+                <h3>{{ getEventName(event) }}</h3>
+                @if (getEventStartDate(event)) {
+                  <p class="event-date">{{ getEventStartDate(event) | date }}</p>
+                }
+                @if (getEventLocationAddress(event)) {
+                  <p class="event-location">{{ getEventLocationAddress(event) }}</p>
+                }
+                <a [routerLink]="['/events', event.id]" class="btn-link">View Details</a>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="categories">
+    <div class="container">
+      <h2>Browse by Category</h2>
+      <div class="categories-grid">
+        @for (category of categories; track $any(category).id) {
+          <div class="category-card">
+            @if (getCategoryIcon(category)) {
+              <div class="category-icon">{{ getCategoryIcon(category) }}</div>
+            }
+            <h3>{{ category.name }}</h3>
+            @if (getCategoryCount(category) !== undefined) {
+              <p>{{ getCategoryCount(category) }} events</p>
+            }
+            <a [routerLink]="['/search']" [queryParams]="{category: getCategorySlug(category) || ''}" class="btn-link">Explore</a>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+</div>
+
