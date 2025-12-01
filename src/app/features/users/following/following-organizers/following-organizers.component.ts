@@ -8,7 +8,6 @@ import { Follows } from '../../../../core/models/followtype';
 import { User } from '../../../../core/models/userstype';
 import { auth } from '../../../../core/config/firebase.config';
 import { SafeUrlService } from '../../../../core/services/santizer.service';
-import { SafeUrl } from '@angular/platform-browser';
 import { TimestampLike } from '../../../../core/models/eventstype';
 
 interface FollowWithOrganizer extends Follows {
@@ -387,8 +386,8 @@ export class FollowingOrganizersComponent implements OnInit, OnDestroy {
     this.subscriptions.push(new Subscription(() => unsubscribe()));
   }
 
-  getSafeImageUrl(url: string | undefined): SafeUrl | undefined {
-    return this.sanitizerService.sanitizeImageUrl(url);
+  getSafeImageUrl(url: string | undefined): string | undefined {
+    return this.sanitizerService.getSafeUrl(url, true);
   }
 
   formatFollowDate(value: TimestampLike | Date | string | null | undefined): Date | string | null {

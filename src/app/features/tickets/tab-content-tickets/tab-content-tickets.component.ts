@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
-import { SafeUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { SafeUrlService } from '../../../core/services/santizer.service';
 import { EventList } from '../../../core/models/eventstype';
@@ -81,8 +80,8 @@ export class TabContentTicketsComponent implements OnChanges {
 
   constructor(){}
   
-  getSafeUrl(url: string | undefined): SafeUrl | undefined {
-    return this.sanitizer.sanitizeImageUrl(url);
+  getSafeUrl(url: string | undefined): string | undefined {
+    return this.sanitizer.getSafeUrl(url, false);
   }
 
   viewDetails(eventId: string | undefined) {

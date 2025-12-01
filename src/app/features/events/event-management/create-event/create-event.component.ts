@@ -22,6 +22,8 @@ import { User } from '../../../../core/models/userstype';
 import { AddressInformationService } from '../../../../core/services/addressInformation.service';
 import { CloudinaryService } from '../../../../core/services/cloudinary.service';
 import { EventsService } from '../../../../core/services/events.service';
+import { CURRENCIES, Currency, getDefaultCurrency } from '../../../../core/models/currencies';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 interface CloudinaryResponse {
   secure_url: string;
@@ -30,7 +32,7 @@ interface CloudinaryResponse {
 @Component({
   selector: 'app-create-event',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, NgSelectModule],
   templateUrl: './create-event.component.html',
   styleUrls: ['../manage-events/manage-events.component.css', './create-event.component.css']
 })
@@ -66,6 +68,10 @@ export class CreateEventComponent implements OnInit, OnDestroy {
   wizardSteps: string[] = ['General Info & Media', 'Time & Location', 'Tickets & Capacity', 'Review & Submit'];
   currentStep = 1;
   readonly maxSteps = 4;
+  currencies: (Currency & { displayText: string })[] = CURRENCIES.map(c => ({
+    ...c,
+    displayText: `${c.flag || ''} ${c.code} - ${c.symbol} ${c.name}`
+  }));
 
   private locationSubscriptions: Subscription[] = [];
   private formSubscriptions: Subscription[] = [];
@@ -90,6 +96,7 @@ export class CreateEventComponent implements OnInit, OnDestroy {
       price: [0, [Validators.min(0)]],
       displayPrice: [0, [Validators.min(0)]],
       maxAttendees: [100, [Validators.min(1)]],
+      currency: [getDefaultCurrency().code, Validators.required],
       dateSlots: this.fb.array([this.createDateSlotGroup()]),
       tickets: this.fb.array([this.createTicketGroup()])
     });
@@ -199,12 +206,33 @@ export class CreateEventComponent implements OnInit, OnDestroy {
       .replace(/\s+,/g, ',')
       .replace(/,\s*,/g, ', ')
       .trim();
-    const locationCoords = await this.getLanLongFromAddress(addressDetails);
-
-    if (!locationCoords) {
-      this.isLoading = false;
-      this.createError.emit('Không tìm thấy vị trí từ địa chỉ.');
-      return;
+    
+    let locationCoords: { lat: number; lon: number } | null = null;
+    
+    try {
+      // Add timeout for geocoding (10 seconds)
+      const geocodingPromise = this.getLanLongFromAddress(addressDetails);
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          resolve(null);
+        }, 10000);
+      });
+      
+      locationCoords = await Promise.race([geocodingPromise, timeoutPromise]);
+      
+      if (!locationCoords) {
+        // Use default coordinates for Ho Chi Minh City if geocoding fails
+        locationCoords = {
+          lat: 10.7769,
+          lon: 106.7009
+        };
+      }
+    } catch (error) {
+      // Use default coordinates if geocoding fails
+      locationCoords = {
+        lat: 10.7769,
+        lon: 106.7009
+      };
     }
 
     const lat = locationCoords.lat;
@@ -292,7 +320,7 @@ export class CreateEventComponent implements OnInit, OnDestroy {
         searchTerms: []
       },
       metadata: {
-        currency: 'VND'
+        currency: formData.currency || 'VND'
       },
       timeline: {
         createdAt: nowIso,
@@ -315,18 +343,21 @@ export class CreateEventComponent implements OnInit, OnDestroy {
       updated_at: nowIso
     };
 
-    this.eventsService.addEvent(newEvent as EventList).subscribe({
+    const subscription = this.eventsService.addEvent(newEvent as EventList).subscribe({
       next: () => {
         this.isLoading = false;
         this.created.emit('Event created successfully');
         this.resetFormState();
       },
       error: (err: unknown) => {
-        console.error('Error creating event:', err);
         this.isLoading = false;
-        this.createError.emit('Failed to create event');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to create event';
+        this.createError.emit(errorMessage);
+      },
+      complete: () => {
       }
     });
+
   }
 
   onImageSelected(event: Event): void {
@@ -385,7 +416,6 @@ export class CreateEventComponent implements OnInit, OnDestroy {
         ...uploadResults.filter((url): url is string => Boolean(url))
       ];
     } catch (err) {
-      console.error('Error uploading gallery images:', err);
       this.createError.emit('Failed to upload some gallery images');
     } finally {
       this.isUploadingGallery = false;
@@ -561,7 +591,6 @@ export class CreateEventComponent implements OnInit, OnDestroy {
         name
       }));
     } catch (err) {
-      console.error('Error getting country list:', err);
       return [];
     }
   }
@@ -586,7 +615,6 @@ export class CreateEventComponent implements OnInit, OnDestroy {
         });
       });
     } catch (err) {
-      console.error('Error uploading image:', err);
       return null;
     }
   }
@@ -608,6 +636,185 @@ export class CreateEventComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  /**
+   * Get current location from device and fill address form
+   */
+  async getCurrentLocation(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      this.createError.emit('Geolocation is not available');
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      this.createError.emit('Geolocation is not supported by your browser');
+      return;
+    }
+
+    this.isLoading = true;
+
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Geolocation request timeout'));
+        }, 10000); // 10 seconds timeout
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            clearTimeout(timeoutId);
+            resolve(pos);
+          },
+          (error) => {
+            clearTimeout(timeoutId);
+            reject(error);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      });
+
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      // Reverse geocode to get address
+      const address = await this.reverseGeocode(lat, lon);
+      
+      if (address) {
+        this.fillAddressFromGeocode(address, lat, lon);
+      } else {
+        // If reverse geocoding fails, at least fill coordinates
+        this.fillCoordinatesOnly(lat, lon);
+      }
+
+      this.isLoading = false;
+    } catch (error) {
+      this.isLoading = false;
+      const errorMessage = error instanceof Error ? error.message : 'Failed to get current location';
+      this.createError.emit(`Location error: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Reverse geocode: Get address from coordinates
+   */
+  private async reverseGeocode(lat: number, lon: number): Promise<any | null> {
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 8000);
+
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'EventManagementApp/1.0'
+        }
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      
+      return data;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  /**
+   * Fill address form from reverse geocoding result
+   */
+  private fillAddressFromGeocode(geocodeData: any, lat: number, lon: number): void {
+    try {
+      const address = geocodeData.address || {};
+      
+      // Fill detailed address
+      const road = address.road || '';
+      const houseNumber = address.house_number || '';
+      const detailedAddress = houseNumber ? `${houseNumber} ${road}`.trim() : road;
+      if (detailedAddress) {
+        this.eventForm.patchValue({ details_address: detailedAddress });
+      }
+
+      // Fill country
+      const countryName = address.country || '';
+      if (countryName) {
+        const countryOption = this.countries.find(c => 
+          c.name.toLowerCase() === countryName.toLowerCase()
+        );
+        if (countryOption) {
+          this.eventForm.patchValue({ country: countryOption.name });
+          // Cities will be loaded automatically, wait a bit for them to load
+        }
+      }
+
+      // Fill city (after country is set and cities are loaded)
+      setTimeout(() => {
+        const cityName = address.city || address.town || address.municipality || '';
+        if (cityName && this.citiesValue.length > 0) {
+          const cityOption = this.citiesValue.find(c => 
+            c.name.toLowerCase() === cityName.toLowerCase()
+          );
+          if (cityOption) {
+            this.eventForm.patchValue({ city: cityOption });
+            // Districts will be loaded automatically via valueChanges subscription
+          }
+        }
+
+        // Fill district (after city is set and districts are loaded)
+        setTimeout(() => {
+          const districtName = address.suburb || address.city_district || address.county || '';
+          if (districtName && this.districtsWithCities.length > 0) {
+            const districtOption = this.districtsWithCities.find(d => 
+              d.name.toLowerCase() === districtName.toLowerCase()
+            );
+            if (districtOption) {
+              this.eventForm.patchValue({ districts: districtOption });
+              // Wards will be loaded automatically via valueChanges subscription
+            }
+          }
+
+          // Fill ward (after district is set and wards are loaded)
+          setTimeout(() => {
+            const wardName = address.neighbourhood || address.quarter || '';
+            if (wardName && this.wardsWithDistricts.length > 0) {
+              const wardOption = this.wardsWithDistricts.find(w => 
+                w.name.toLowerCase() === wardName.toLowerCase()
+              );
+              if (wardOption) {
+                this.eventForm.patchValue({ wards: wardOption });
+              }
+            }
+          }, 500);
+        }, 500);
+      }, 500);
+
+      // Cache coordinates
+      const addressString = geocodeData.display_name || `${lat},${lon}`;
+      this.geocodingCache.set(addressString, { lat, lon });
+
+    } catch (error) {
+      console.error('Error filling address from geocode:', error);
+    }
+  }
+
+  /**
+   * Fill only coordinates if reverse geocoding fails
+   */
+  private fillCoordinatesOnly(lat: number, lon: number): void {
+    // Cache coordinates for later use
+    const addressString = `${lat},${lon}`;
+    this.geocodingCache.set(addressString, { lat, lon });
+  }
+
   private async getLanLongFromAddress(address: string): Promise<{ lat: number; lon: number } | null> {
     if (this.geocodingCache.has(address)) {
       const cachedResult = this.geocodingCache.get(address);
@@ -617,14 +824,33 @@ export class CreateEventComponent implements OnInit, OnDestroy {
     const now = Date.now();
     const timeSinceLastRequest = now - this.lastGeocodingRequest;
     if (timeSinceLastRequest < this.GEOCODING_DELAY) {
-      await new Promise(resolve => setTimeout(resolve, this.GEOCODING_DELAY - timeSinceLastRequest));
+      const waitTime = this.GEOCODING_DELAY - timeSinceLastRequest;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
     }
 
     const encodedAddress = encodeURIComponent(address);
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}`;
 
     try {
-      const response = await fetch(url);
+      // Add timeout to fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 8000); // 8 seconds timeout
+
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'EventManagementApp/1.0'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        return null;
+      }
+      
       const data = await response.json();
       this.lastGeocodingRequest = Date.now();
 
@@ -638,7 +864,6 @@ export class CreateEventComponent implements OnInit, OnDestroy {
       }
       return null;
     } catch (err) {
-      console.error('Geocoding error:', err);
       return null;
     }
   }
@@ -692,6 +917,258 @@ export class CreateEventComponent implements OnInit, OnDestroy {
       price: [0, [Validators.required, Validators.min(0)]],
       quantity: [0, [Validators.required, Validators.min(0)]],
       saleStartDate: ['']
+    });
+  }
+
+  /**
+   * Fill form with mock data for testing
+   */
+  fillMockData(): void {
+    
+    // Calculate dates (1 week from now)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() + 7);
+    startDate.setHours(18, 0, 0, 0);
+    
+    const endDate = new Date(startDate);
+    endDate.setHours(21, 0, 0, 0);
+    
+    // Format for datetime-local input (YYYY-MM-DDTHH:mm)
+    const formatDateTimeLocal = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
+    // Set basic form values
+    this.eventForm.patchValue({
+      name: 'Tech Innovation Summit 2024',
+      shortDescription: 'Explore the latest trends in AI, blockchain, and IoT with industry leaders',
+      content: 'A comprehensive conference featuring keynote speakers, panel discussions, and networking sessions on emerging technologies. Join us for an exciting day of learning and networking with industry experts.',
+      category: ['Technology', 'Innovation'],
+      tags: 'Technology, Innovation, AI, Blockchain, IoT, Networking',
+      eventType: 'offline',
+      location: 'Ho Chi Minh City Convention Center',
+      details_address: '123 Nguyen Hue Boulevard',
+      country: { code: 'VN', name: 'Vietnam' },
+      city: { code: 'SG', name: 'Ho Chi Minh City' },
+      districts: { code: 'Q1', name: 'District 1' },
+      wards: { code: 'W1', name: 'Ward 1' },
+      price: 299000,
+      displayPrice: 299000,
+      maxAttendees: 500
+    });
+
+    // Set date slots
+    while (this.dateSlots.length > 0) {
+      this.dateSlots.removeAt(0);
+    }
+    const dateSlotGroup = this.fb.group({
+      startDate: [formatDateTimeLocal(startDate), Validators.required],
+      endDate: [formatDateTimeLocal(endDate), Validators.required]
+    });
+    this.dateSlots.push(dateSlotGroup);
+
+    // Set tickets
+    while (this.tickets.length > 0) {
+      this.tickets.removeAt(0);
+    }
+    
+    const ticket1 = this.fb.group({
+      name: ['Early Bird', Validators.required],
+      price: [199000, [Validators.required, Validators.min(0)]],
+      quantity: [100, [Validators.required, Validators.min(0)]],
+      saleStartDate: [formatDateTimeLocal(new Date())]
+    });
+    
+    const ticket2 = this.fb.group({
+      name: ['Regular', Validators.required],
+      price: [299000, [Validators.required, Validators.min(0)]],
+      quantity: [300, [Validators.required, Validators.min(0)]],
+      saleStartDate: [formatDateTimeLocal(new Date())]
+    });
+    
+    const ticket3 = this.fb.group({
+      name: ['VIP', Validators.required],
+      price: [499000, [Validators.required, Validators.min(0)]],
+      quantity: [50, [Validators.required, Validators.min(0)]],
+      saleStartDate: [formatDateTimeLocal(new Date())]
+    });
+    
+    this.tickets.push(ticket1);
+    this.tickets.push(ticket2);
+    this.tickets.push(ticket3);
+
+    // Set cover image URL (mock)
+    this.coverImageUrl = 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg';
+    this.coverImageFile = null;
+    this.imageError = '';
+
+    // Set gallery images (mock)
+    this.galleryImages = [
+      'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg',
+      'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg'
+    ];
+
+    // Update event type state
+    this.isOffline = true;
+    this.isHybird = false;
+
+    // Mark form as touched to show validation
+    this.eventForm.markAllAsTouched();
+
+  }
+
+  /**
+   * Create event directly with mock payload (bypass form)
+   * Useful for quick testing
+   */
+  async createMockEvent(): Promise<void> {
+    
+    this.isLoading = true;
+    const nowIso = new Date().toISOString();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() + 7);
+    startDate.setHours(18, 0, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setHours(21, 0, 0, 0);
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    const mockEvent: Partial<EventList> = {
+      core: {
+        id: '',
+        name: 'Tech Innovation Summit 2024',
+        shortDescription: 'Explore the latest trends in AI, blockchain, and IoT with industry leaders',
+        description: 'A comprehensive conference featuring keynote speakers, panel discussions, and networking sessions on emerging technologies.',
+        content: 'A comprehensive conference featuring keynote speakers, panel discussions, and networking sessions on emerging technologies. Join us for an exciting day of learning and networking with industry experts.',
+        category: ['Technology', 'Innovation'],
+        tags: ['Technology', 'Innovation', 'AI', 'Blockchain', 'IoT', 'Networking'],
+        eventType: 'offline',
+        price: 299000
+      },
+      status: {
+        visibility: 'public',
+        featured: false,
+        state: 'published',
+        deletedAt: null
+      },
+      media: {
+        coverImage: 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg',
+        primaryImage: 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg',
+        gallery: [
+          'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg',
+          'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg'
+        ],
+        image_url: 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg'
+      },
+      schedule: {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        dateTimeOptions: [{
+          start_time: startDate.toISOString(),
+          end_time: endDate.toISOString(),
+          time_zone: timezone
+        }],
+        timezone
+      },
+      location: {
+        type: 'offline',
+        address: '123 Nguyen Hue Boulevard, District 1, Ho Chi Minh City, Vietnam',
+        details_address: '123 Nguyen Hue Boulevard',
+        city: { name: 'Ho Chi Minh City', code: 'SG' },
+        district: { name: 'District 1', code: 'Q1' },
+        ward: { name: 'Ward 1', code: 'W1' },
+        country: { name: 'Vietnam', code: 'VN' },
+        coordinates: {
+          lat: 10.7769,
+          lng: 106.7009,
+          latitude: 10.7769,
+          longitude: 106.7009
+        }
+      },
+      organizer: {
+        id: String(this.currentUser?.id || '0'),
+        name: this.currentUser?.fullName || this.currentUser?.profile?.fullName || 'Event Organizer',
+        followers: this.currentUser?.social?.followers ?? 0,
+        profileImage: this.currentUser?.profileImage || this.currentUser?.profile?.avatar || 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png'
+      },
+      tickets: {
+        catalog: [
+          {
+            id: 'ticket-1',
+            name: 'Early Bird',
+            price: 199000,
+            quantity: 100,
+            quantityAvailable: 100,
+            type: 'early-bird',
+            status: 'active'
+          },
+          {
+            id: 'ticket-2',
+            name: 'Regular',
+            price: 299000,
+            quantity: 300,
+            quantityAvailable: 300,
+            type: 'regular',
+            status: 'active'
+          },
+          {
+            id: 'ticket-3',
+            name: 'VIP',
+            price: 499000,
+            quantity: 50,
+            quantityAvailable: 50,
+            type: 'vip',
+            status: 'active'
+          }
+        ],
+        capacity: 500,
+        maxAttendees: 500
+      },
+      engagement: {
+        attendeesCount: 0,
+        likesCount: 0,
+        viewCount: 0,
+        searchTerms: []
+      },
+      metadata: {
+        currency: getDefaultCurrency().code
+      },
+      timeline: {
+        createdAt: nowIso,
+        updatedAt: nowIso
+      },
+      name: 'Tech Innovation Summit 2024',
+      description: 'Explore the latest trends in AI, blockchain, and IoT with industry leaders',
+      content: 'A comprehensive conference featuring keynote speakers, panel discussions, and networking sessions on emerging technologies.',
+      date_time_options: [{
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
+        time_zone: timezone
+      }],
+      image_url: 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg',
+      price: 299000,
+      max_attendees: 500,
+      tags: ['Technology', 'Innovation', 'AI', 'Blockchain', 'IoT', 'Networking'],
+      event_type: 'offline',
+      created_at: nowIso,
+      updated_at: nowIso
+    };
+
+    this.eventsService.addEvent(mockEvent as EventList).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.created.emit('Mock event created successfully');
+        this.resetFormState();
+      },
+      error: (err: unknown) => {
+        this.isLoading = false;
+        const errorMessage = err instanceof Error ? err.message : 'Failed to create mock event';
+        this.createError.emit(errorMessage);
+      }
     });
   }
 }

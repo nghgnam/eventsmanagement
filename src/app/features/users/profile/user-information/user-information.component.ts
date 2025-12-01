@@ -1,7 +1,7 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { SafeUrlService } from '../../../../core/services/santizer.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
@@ -60,7 +60,7 @@ export class UserInformationComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private cloudinaryService = inject(CloudinaryService);
-  private sanitizer = inject(DomSanitizer);
+  private sanitizer = inject(SafeUrlService);
   private fb = inject(FormBuilder);
   private location = inject(AddressInformationService);
   private authService = inject(AuthService);
@@ -368,11 +368,11 @@ export class UserInformationComponent implements OnInit, OnDestroy {
     }
   }
 
-  sanitizeImageUrl(imageUrl: string | undefined): SafeUrl | undefined {
+  sanitizeImageUrl(imageUrl: string | undefined): string | undefined {
     if (!imageUrl || imageUrl.trim() === '') {
       return undefined;
     }
-    return this.sanitizer.bypassSecurityTrustUrl(imageUrl);
+    return this.sanitizer.getSafeUrl(imageUrl, true);
   }
   
   onSelectedFile(event: Event): void {

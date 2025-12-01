@@ -1,70 +1,85 @@
-import { DomSanitizer, SafeUrl } from "@angular/platform-browser";
-import { Injectable, inject } from "@angular/core";
+import { Injectable } from "@angular/core";
 
 @Injectable({
     providedIn: 'root'
 })
-export class SafeUrlService{
-    private sanitizer = inject(DomSanitizer);
-    
-    // Default fallback image from Cloudinary
-    readonly DEFAULT_IMAGE_URL = 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg';
-    readonly DEFAULT_AVATAR_URL = 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png';
-    
-    // Allowed image domains
-    private readonly ALLOWED_DOMAINS = [
-        'res.cloudinary.com',
-        'cloudinary.com',
-        'images.unsplash.com',
-        'unsplash.com',
-        'via.placeholder.com',
-        'localhost',
-        '127.0.0.1'
-    ];
+export class SafeUrlService {
+    // Nên đưa vào environment.ts, nhưng để đây cho gọn theo code cũ của bạn
+    private readonly DEFAULT_IMAGE = 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1743794493/samples/coffee.jpg';
+    private readonly DEFAULT_AVATAR = 'https://res.cloudinary.com/dpiqldk0y/image/upload/v1744575077/default-avatar_br3ffh.png';
+
+    // Public readonly properties for backward compatibility
+    readonly DEFAULT_IMAGE_URL = this.DEFAULT_IMAGE;
+    readonly DEFAULT_AVATAR_URL = this.DEFAULT_AVATAR;
 
     /**
-     * Validates if a URL is from an allowed domain
+     * Kiểm tra xem URL có hợp lệ để hiển thị không.
+     * Thay vì chặn domain, ta chỉ chặn các protocol nguy hiểm (như javascript:)
      */
-    private isValidImageUrl(url: string): boolean {
-        if (!url) return false;
-        
-        try {
-            const urlObj = new URL(url);
-            const hostname = urlObj.hostname.toLowerCase();
-            
-            // Check if hostname matches any allowed domain
-            return this.ALLOWED_DOMAINS.some(domain => 
-                hostname === domain || hostname.endsWith('.' + domain)
-            );
-        } catch (error) {
-            // If URL parsing fails, check if it's a relative path
-            return url.startsWith('/') || url.startsWith('./') || url.startsWith('../');
+    private isValidUrl(url: string): boolean {
+        if (!url || url.trim() === '') return false;
+
+        // 1. Chấp nhận đường dẫn nội bộ (Assets / Relative)
+        if (url.startsWith('/') || url.startsWith('./') || url.startsWith('../') || url.startsWith('assets/')) {
+            return true;
         }
+
+        // 2. Chấp nhận HTTP / HTTPS
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return true;
+        }
+
+        // 3. Chấp nhận Data URI (Base64 images) - Nếu bạn cho phép upload ảnh dạng base64
+        if (url.startsWith('data:image/')) {
+            return true;
+        }
+
+        // Chặn tất cả các trường hợp còn lại (javascript:, vbscript:, etc.)
+        return false;
     }
 
     /**
-     * Sanitizes image URL and validates it's from an allowed domain
-     * Returns undefined if URL is invalid, allowing components to use fallback
+     * Hàm chính để lấy URL an toàn.
+     * Trả về STRING (không phải SafeUrl) để Angular tự sanitize.
      */
-    sanitizeImageUrl(url: string | undefined | null, fallbackUrl?: string): SafeUrl | undefined {
+    getSafeUrl(url: string | undefined | null, isAvatar: boolean = false): string {
+        const fallback = isAvatar ? this.DEFAULT_AVATAR : this.DEFAULT_IMAGE;
+        if (!url) {
+            return fallback;
+        }
+
+        // Nếu URL hợp lệ về mặt định dạng -> Cho phép hiển thị
+        if (this.isValidUrl(url)) {
+            return url;
+        }
+
+        // Log warning nhẹ để debug nếu cần (không spam console)
+        if (typeof window !== 'undefined') { // Check để tránh log rác trên Server (SSR)
+             console.warn(`[SafeUrlService] Blocked unsafe URL format: ${url.substring(0, 50)}...`);
+        }
+        
+        return fallback;
+    }
+
+    /**
+     * Backward compatibility: sanitizeImageUrl trả về string thay vì SafeUrl
+     * @deprecated Sử dụng getSafeUrl thay thế
+     */
+    sanitizeImageUrl(url: string | undefined | null, fallbackUrl?: string): string | undefined {
         if (!url || url.trim() === '') {
-            return fallbackUrl ? this.sanitizer.bypassSecurityTrustUrl(fallbackUrl) : undefined;
+            return fallbackUrl || undefined;
         }
-        
-        // Validate URL is from allowed domain
-        if (!this.isValidImageUrl(url)) {
-            console.warn(`[SafeUrlService] Invalid image URL domain: ${url}. Using fallback.`);
-            return fallbackUrl ? this.sanitizer.bypassSecurityTrustUrl(fallbackUrl) : undefined;
+        if (this.isValidUrl(url)) {
+            return url;
         }
-        
-        return this.sanitizer.bypassSecurityTrustUrl(url);
+        return fallbackUrl || undefined;
     }
 
     /**
-     * Gets a safe image URL with fallback
+     * Backward compatibility: getSafeImageUrl trả về string thay vì SafeUrl
+     * @deprecated Sử dụng getSafeUrl thay thế
      */
-    getSafeImageUrl(url: string | undefined | null, isAvatar: boolean = false): SafeUrl {
-        const fallback = isAvatar ? this.DEFAULT_AVATAR_URL : this.DEFAULT_IMAGE_URL;
-        return this.sanitizeImageUrl(url, fallback) || this.sanitizer.bypassSecurityTrustUrl(fallback);
+    getSafeImageUrl(url: string | undefined | null, isAvatar: boolean = false): string {
+        return this.getSafeUrl(url, isAvatar);
     }
 }

@@ -30,6 +30,15 @@
         <span class="summary-value status-pill">Draft</span>
       </div>
     </div>
+    <!-- Mock Data Buttons (for testing) -->
+    <!-- <div class="mock-data-actions" style="display: flex; gap: 8px; margin-top: 12px;">
+      <button type="button" class="btn-secondary" (click)="fillMockData()" style="font-size: 12px; padding: 6px 12px;">
+        📝 Fill Mock Data
+      </button>
+      <button type="button" class="btn-secondary" (click)="createMockEvent()" style="font-size: 12px; padding: 6px 12px;" [disabled]="isLoading">
+        ⚡ Create Mock Event
+      </button>
+    </div> -->
   </div>
 
   <form [formGroup]="eventForm" (ngSubmit)="onSubmit()">
@@ -43,6 +52,7 @@
           <div class="form-group full-width">
             <label for="name">Event Name *</label>
             <div class="input-with-icon">
+              <span class="material-icons input-icon">drive_file_rename_outline</span>
               <input type="text" id="name" formControlName="name" placeholder="Enter event name">
             </div>
             @if (eventForm.get('name')?.touched && eventForm.get('name')?.errors?.['required']) {
@@ -56,6 +66,7 @@
           <div class="form-group">
             <label for="eventType">Event Type *</label>
             <div class="input-with-icon">
+              <span class="material-icons input-icon">category</span>
               <select id="eventType" formControlName="eventType">
                 <option value="offline">Offline</option>
                 <option value="online">Online</option>
@@ -70,6 +81,7 @@
           <div class="form-group full-width">
             <label for="shortDescription">Short Description *</label>
             <div class="input-with-icon">
+              <span class="material-icons input-icon">notes</span>
               <textarea id="shortDescription" formControlName="shortDescription" placeholder="140 characters max"></textarea>
             </div>
             @if (eventForm.get('shortDescription')?.touched && eventForm.get('shortDescription')?.errors?.['required']) {
@@ -80,6 +92,7 @@
           <div class="form-group full-width">
             <label for="content">Rich Description *</label>
             <div class="input-with-icon">
+              <span class="material-icons input-icon">article</span>
               <textarea id="content" formControlName="content" rows="6" placeholder="Share the story, agenda, or highlights"></textarea>
             </div>
             @if (eventForm.get('content')?.touched && eventForm.get('content')?.errors?.['required']) {
@@ -107,6 +120,7 @@
             <div class="form-group full-width">
               <label for="tags">Tags (comma separated)</label>
               <div class="input-with-icon">
+                <span class="material-icons input-icon">sell</span>
                 <input type="text" id="tags" formControlName="tags" placeholder="e.g., cars, Vietnam, community">
               </div>
             </div>
@@ -201,6 +215,7 @@
           <div class="form-group full-width">
             <label for="location">Headline Location *</label>
             <div class="input-with-icon">
+              <span class="material-icons input-icon">place</span>
               <input type="text" id="location" formControlName="location" placeholder="Venue, streaming link, or meeting point">
             </div>
             @if (locationControl?.touched && locationControl?.errors?.['required']) {
@@ -213,9 +228,17 @@
           <div class="form-grid two-column address-grid">
             <div class="form-group full-width">
               <label for="details_address">Detailed Address *</label>
-              <div class="input-with-icon">
+              <div class="input-with-icon input-with-action">
                 <span class="material-icons input-icon">home</span>
                 <input type="text" id="details_address" formControlName="details_address" placeholder="Street, building, suite">
+                <button 
+                  type="button" 
+                  class="location-btn" 
+                  (click)="getCurrentLocation()" 
+                  [disabled]="isLoading"
+                  title="Get current location">
+                  <span class="material-icons">my_location</span>
+                </button>
               </div>
             </div>
             <div class="form-group">
@@ -282,14 +305,39 @@
           <div class="form-group">
             <label for="maxAttendees">Total Capacity *</label>
             <div class="input-with-icon">
+              <span class="material-icons input-icon">groups</span>
               <input type="number" id="maxAttendees" formControlName="maxAttendees" min="1">
             </div>
           </div>
           <div class="form-group">
             <label for="displayPrice">Display Price *</label>
             <div class="input-with-icon">
+              <span class="material-icons input-icon">payments</span>
               <input type="number" id="displayPrice" formControlName="displayPrice" min="0" step="0.01">
             </div>
+          </div>
+        </div>
+
+        <div class="form-grid two-column">
+          <div class="form-group">
+            <label for="currency">Currency *</label>
+            <div class="input-with-icon">
+              <span class="material-icons input-icon">currency_exchange</span>
+              <ng-select
+                id="currency"
+                formControlName="currency"
+                [items]="currencies"
+                bindLabel="displayText"
+                bindValue="code"
+                placeholder="Select currency"
+                [searchable]="true"
+                [clearable]="false"
+                class="currency-select">
+              </ng-select>
+            </div>
+            @if (eventForm.get('currency')?.touched && eventForm.get('currency')?.errors?.['required']) {
+              <div class="error-message">Currency is required</div>
+            }
           </div>
         </div>
 
@@ -306,24 +354,28 @@
                 <div class="form-group">
                   <label for="name">Name *</label>
                   <div class="input-with-icon">
+                    <span class="material-icons input-icon">confirmation_number</span>
                     <input type="text" formControlName="name" placeholder="VIP, General, ...">
                   </div>
                 </div>
                 <div class="form-group">
                   <label for="price">Price *</label>
                   <div class="input-with-icon">
+                    <span class="material-icons input-icon">paid</span>
                     <input type="number" formControlName="price" min="0" step="0.01">
                   </div>
                 </div>
                 <div class="form-group">
                   <label for="quantity">Quantity *</label>
                   <div class="input-with-icon">
+                    <span class="material-icons input-icon">stacked_bar_chart</span>
                     <input type="number" formControlName="quantity" min="0">
                   </div>
                 </div>
                 <div class="form-group">
                   <label for="saleStartDate">Sale opens</label>
                   <div class="input-with-icon">
+                    <span class="material-icons input-icon">schedule</span>
                     <input type="datetime-local" formControlName="saleStartDate">
                   </div>
                 </div>

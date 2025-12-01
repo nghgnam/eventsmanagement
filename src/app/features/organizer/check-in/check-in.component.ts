@@ -2,6 +2,7 @@ import { Component, OnInit, inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
+import { TimestampLike } from '../../../core/models/eventstype';
 
 /**
  * Check-in System Component
@@ -17,6 +18,13 @@ import { Router, ActivatedRoute, RouterModule } from '@angular/router';
  * - System validates ticket and checks in attendee
  * - Real-time update to prevent same ticket being checked in twice
  */
+
+interface CheckInEvent {
+  name?: string;
+  startDate?: TimestampLike;
+  [key: string]: unknown;
+}
+
 @Component({
   selector: 'app-check-in',
   standalone: true,
@@ -30,7 +38,7 @@ export class CheckInComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
 
   eventId: string = '';
-  event: Record<string, unknown> | null = null;
+  event: CheckInEvent | null = null;
   
   // Scanner state
   isScanning = false;
@@ -117,6 +125,27 @@ export class CheckInComponent implements OnInit {
    */
   removeGalleryImage(_index: number): void {
     // TODO: Remove image from gallery
+  }
+
+  /**
+   * Convert TimestampLike to Date for date pipe
+   */
+  getEventDate(timestamp?: TimestampLike): Date | null {
+    if (!timestamp) return null;
+    if (timestamp instanceof Date) return timestamp;
+    if (typeof timestamp === 'string') return new Date(timestamp);
+    if (typeof timestamp === 'object' && timestamp !== null) {
+      if ('toDate' in timestamp && typeof timestamp.toDate === 'function') {
+        return timestamp.toDate();
+      }
+      if ('seconds' in timestamp && typeof timestamp.seconds === 'number') {
+        return new Date(timestamp.seconds * 1000);
+      }
+      if ('_seconds' in timestamp && typeof timestamp._seconds === 'number') {
+        return new Date(timestamp._seconds * 1000);
+      }
+    }
+    return null;
   }
 }
 

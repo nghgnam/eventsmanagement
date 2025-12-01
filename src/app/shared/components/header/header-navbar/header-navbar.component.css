@@ -84,6 +84,7 @@ app-header-search {
     color: var(--header-link-hover) !important;
     background: var(--header-bg-hover);
     border: 1px solid var(--header-accent);
+    cursor: pointer;
 }
 
 .header_navbar_logo img {
@@ -158,6 +159,9 @@ app-header-search {
     color: var(--header-link) !important;
     font-family: inherit;
     border-bottom: 1px solid var(--header-dropdown-border);
+    pointer-events: auto;
+    user-select: none;
+    -webkit-user-select: none;
 }
 .user_dropdown_menu .options_menu:last-child {
     border-bottom: none;

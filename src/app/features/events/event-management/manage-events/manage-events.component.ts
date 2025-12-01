@@ -2,7 +2,7 @@
 
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, PLATFORM_ID } from '@angular/core';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { SafeUrlService } from '../../../../core/services/santizer.service';
 import { Router, RouterModule } from '@angular/router';
 import { Subscription, from } from 'rxjs';
 import { EventList } from '../../../../core/models/eventstype';
@@ -11,19 +11,20 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { EventsService } from '../../../../core/services/events.service';
 import { UsersService } from '../../../../core/services/users.service';
 import { CreateEventComponent } from '../create-event/create-event.component';
+import { EditEventComponent } from '../edit-event/edit-event.component';
 import { PopupComponent } from '../../../../shared/components/popup/popup.component';
 
 @Component({
   selector: 'app-manage-events',
   standalone: true,
-  imports: [RouterModule, CommonModule, CreateEventComponent, PopupComponent],
+  imports: [RouterModule, CommonModule, CreateEventComponent, EditEventComponent, PopupComponent],
   templateUrl: './manage-events.component.html',
   styleUrls: ['./manage-events.component.css']
 })
 export class ManageEventsComponent implements OnInit, OnDestroy {
   private usersService = inject(UsersService);
   private router = inject(Router);
-  private sanitizer = inject(DomSanitizer);
+  private sanitizer = inject(SafeUrlService);
   private eventService = inject(EventsService);
   private authService = inject(AuthService);
   private platformId = inject(PLATFORM_ID);
@@ -34,6 +35,7 @@ export class ManageEventsComponent implements OnInit, OnDestroy {
   errorMessage: string = '';
   successMessage: string = '';
   showCreateEventPopup: boolean = false;
+  showEditEventPopup: boolean = false;
   activeTab: 'upcoming' | 'past' | 'edit' | 'delete' | 'create' | undefined = 'upcoming';
   isLoading: boolean = false;
 
@@ -42,6 +44,7 @@ export class ManageEventsComponent implements OnInit, OnDestroy {
 
   showDeleteDialog: boolean = false;
   eventToDelete: EventList | null = null;
+  eventToEdit: EventList | null = null;
 
   private authSubscription: Subscription | null = null;
   private createSuccessTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -120,11 +123,11 @@ export class ManageEventsComponent implements OnInit, OnDestroy {
     this.closeCreateEventPopup();
   }
 
-  sanitizeImageUrl(imageUrl: string | undefined): SafeUrl | undefined {
+  sanitizeImageUrl(imageUrl: string | undefined): string | undefined {
     if (!imageUrl || imageUrl.trim() === '') {
       return undefined;
     }
-    return this.sanitizer.bypassSecurityTrustUrl(imageUrl);
+    return this.sanitizer.getSafeUrl(imageUrl, true);
   }
 
   getComingUpEvents(event: EventList): boolean {
@@ -184,8 +187,27 @@ export class ManageEventsComponent implements OnInit, OnDestroy {
   }
 
   editEvent(event: EventList): void {
+    this.eventToEdit = event;
     this.editEventid = event.id;
-    this.activeTab = 'edit';
+    this.openEditEventPopup();
+  }
+
+  openEditEventPopup(): void {
+    this.showEditEventPopup = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  closeEditEventPopup(): void {
+    if (!this.showEditEventPopup) {
+      return;
+    }
+    this.showEditEventPopup = false;
+    this.eventToEdit = null;
+    this.editEventid = undefined;
+    this.successMessage = '';
+    this.errorMessage = '';
+    this.resetSuccessMessageTimeout();
   }
 
   confirmDelete(event: EventList): void {
@@ -255,6 +277,19 @@ export class ManageEventsComponent implements OnInit, OnDestroy {
   }
 
   handleCreateError(message: string): void {
+    this.errorMessage = message;
+    this.successMessage = '';
+  }
+
+  handleEditSuccess(message: string): void {
+    this.successMessage = message;
+    this.errorMessage = '';
+    this.closeEditEventPopup();
+    this.loadOrganizerEvents();
+    this.scheduleSuccessMessageClear();
+  }
+
+  handleEditError(message: string): void {
     this.errorMessage = message;
     this.successMessage = '';
   }

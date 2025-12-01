@@ -24,6 +24,14 @@ export const routes: Routes = [
       },
       { path: 'userprofile/:id', component: UserInformationComponent },
       { path: 'ticketsEvent', component: TicketEventsManageComponent},
+      { 
+        path: 'tickets-manage', 
+        component: TicketEventsManageComponent
+      },
+      {
+        path: 'account',
+        loadComponent: () => import('./features/users/settings/user-setting-account/user-setting-account.component').then(m => m.UserSettingAccountComponent)
+      },
       {
         path: 'search-results',
         loadComponent: () => import('./features/events/search/search-results/search-results.component').then(m => m.SearchResultsComponent)

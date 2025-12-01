@@ -1,6 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
-import { SafeUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, Observable, Subject, Subscription } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
@@ -173,8 +172,8 @@ export class DetailEventComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
-  getSafeUrl(url: string | null | undefined, isAvatar: boolean = false): SafeUrl {
-    return this.sanitizer.getSafeImageUrl(url, isAvatar);
+  getSafeUrl(url: string | null | undefined, isAvatar: boolean = false): string {
+    return this.sanitizer.getSafeUrl(url, isAvatar);
   }
 
   getDefaultImageUrl(): string {

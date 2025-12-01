@@ -1,7 +1,6 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { SafeUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { Observable, Subscription, forkJoin, of } from 'rxjs';
 import { catchError, finalize, switchMap, tap } from 'rxjs/operators';
@@ -225,8 +224,8 @@ export class TicketEventsManageComponent implements OnInit, OnDestroy {
     this.listTicketExpired = [];
   }
 
-  getSafeUrl(url: string | undefined): SafeUrl | undefined {
-    return this.sanitizer.sanitizeImageUrl(url);
+  getSafeUrl(url: string | undefined): string | undefined {
+    return this.sanitizer.getSafeUrl(url, true);
   }
 
   changeTabSelected(tab: string): void {

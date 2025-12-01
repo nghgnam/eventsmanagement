@@ -1,6 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, PLATFORM_ID, DestroyRef, model } from '@angular/core';
-import { SafeUrl } from '@angular/platform-browser';
 import { Router, RouterModule } from '@angular/router';
 import { Observable, Subscription } from 'rxjs';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -154,7 +153,7 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
     });
   }
 
-  sanitizeImageUrl(url: string | undefined): SafeUrl | undefined {
+  sanitizeImageUrl(url: string | undefined): string | undefined {
     if (!url) return undefined;
     return this.sanitizer.sanitizeImageUrl(url);
   }
@@ -175,6 +174,8 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
   isHelpOpen = model<boolean>(false);
   openPopup(){
     this.isHelpOpen.set(true);
+    console.log('openPopup' , this.isHelpOpen());
+
   }
 
 }

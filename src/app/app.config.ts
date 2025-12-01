@@ -10,7 +10,7 @@ import { provideRouter } from '@angular/router';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
 import { ssrLoggingInterceptor } from './core/interceptors/ssr-logging.interceptor';
-
+import { setLogLevel } from 'firebase/firestore';
 export const appConfig: ApplicationConfig = {
   providers: [
     // Zone.js change detection - required for animations and SSR compatibility
@@ -20,6 +20,7 @@ export const appConfig: ApplicationConfig = {
       withEventReplay()  
     ),
     provideAnimations(),
+    // provideAnimationsAsync(),
     provideHttpClient(
       withFetch(),
       withInterceptors([ssrLoggingInterceptor])
@@ -28,6 +29,7 @@ export const appConfig: ApplicationConfig = {
     // These will be called but should handle SSR gracefully
     provideFirebaseApp(() => {
       // Check if running in browser before initializing
+      setLogLevel('debug');
       if (typeof window === 'undefined') {
         // Return a dummy app for SSR - will be replaced on client
         return {} as any;

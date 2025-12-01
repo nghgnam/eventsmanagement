@@ -1,6 +1,9 @@
 /* Angular Material Theme */
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
+/* Ng-Select Styles */
+@import '@ng-select/ng-select/themes/default.theme.css';
+
 body{
     padding: 0;
     margin: 0;

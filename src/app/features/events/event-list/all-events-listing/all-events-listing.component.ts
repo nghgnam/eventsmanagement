@@ -5,7 +5,6 @@ import { EventList } from '../../../../core/models/eventstype';
 import { Observable, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { RouterModule } from '@angular/router';
-import { SafeUrl } from '@angular/platform-browser';
 import { SafeUrlService } from '../../../../core/services/santizer.service';
 @Component({
   selector: 'app-all-events-listing',
@@ -37,8 +36,8 @@ export class AllEventsListingComponent implements OnInit, OnDestroy {
     this.subscription.add(sub);
   }
 
-    getSafeUrl(url: string | null | undefined): SafeUrl | undefined {
-      return this.sanitizer.sanitizeImageUrl(url ?? undefined);
+    getSafeUrl(url: string | null | undefined): string | undefined {
+      return this.sanitizer.getSafeUrl(url ?? undefined, false);
     }
 
   getDateValue(value: unknown): Date | null {

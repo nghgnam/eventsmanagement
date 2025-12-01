@@ -6,7 +6,6 @@ import { map, Observable, Subscription } from 'rxjs';
 import { Router } from '@angular/router'; 
 import { RouterModule } from '@angular/router';
 import { SafeUrlService } from '../../../../core/services/santizer.service';
-import { SafeUrl } from '@angular/platform-browser';
 import { ImageErrorHandlerDirective } from '../../../../shared/directives/image-error-handler.directive';
 
 @Component({
@@ -110,8 +109,8 @@ export class BodyEventsDataListingComponent implements OnInit, OnDestroy, OnChan
     return filtered;
   }
 
-  getSafeUrl(url: string | null | undefined, isAvatar: boolean = false): SafeUrl {
-    return this.sanitizer.getSafeImageUrl(url, isAvatar);
+  getSafeUrl(url: string | null | undefined, isAvatar: boolean = false): string {
+    return this.sanitizer.getSafeUrl(url, isAvatar);
   }
 
   getDateValue(value: unknown): Date | null {

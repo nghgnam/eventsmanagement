@@ -92,5 +92,28 @@ export class EventDashboardComponent {
   viewAttendeeDetails(_attendeeId: string): void {
     // TODO: Show attendee details modal
   }
+
+  /**
+   * Get event start date for display
+   */
+  getEventStartDate(): Date | null {
+    if (!this.event) return null;
+    const startDate = this.event.schedule?.startDate;
+    if (!startDate) return null;
+    if (startDate instanceof Date) return startDate;
+    if (typeof startDate === 'string') return new Date(startDate);
+    if (typeof startDate === 'object' && startDate !== null) {
+      if ('toDate' in startDate && typeof startDate.toDate === 'function') {
+        return startDate.toDate();
+      }
+      if ('seconds' in startDate && typeof startDate.seconds === 'number') {
+        return new Date(startDate.seconds * 1000);
+      }
+      if ('_seconds' in startDate && typeof startDate._seconds === 'number') {
+        return new Date(startDate._seconds * 1000);
+      }
+    }
+    return null;
+  }
 }
 

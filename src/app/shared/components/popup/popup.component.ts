@@ -43,7 +43,6 @@ export class PopupComponent implements OnDestroy {
 
 
     closePopupHandler(): void {
-        console.log('closePopupHandler');
         this.isVisible.set(false);
     }
 

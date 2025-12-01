@@ -2,6 +2,7 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { TimestampLike } from '../../../core/models/eventstype';
 
 /**
  * User Dashboard Component
@@ -11,6 +12,38 @@ import { RouterModule } from '@angular/router';
  * - Saved Events: Wishlist of saved events
  * - Order History: Transaction history with invoices
  */
+
+interface SavedEvent {
+  id?: string;
+  name?: string;
+  image_url?: string;
+  startDate?: TimestampLike;
+}
+
+interface OrderEvent {
+  id?: string;
+  name?: string;
+}
+
+interface Order {
+  id?: string;
+  created_at?: TimestampLike;
+  status?: string;
+  order_status?: string;
+  event?: OrderEvent;
+  tickets?: unknown[];
+  total_price?: number;
+}
+
+interface Ticket {
+  id?: string;
+  eventName?: string;
+  eventDate?: TimestampLike;
+  ticketType?: string;
+  used?: boolean;
+  qrCodeUrl?: string;
+}
+
 @Component({
   selector: 'app-user-dashboard',
   standalone: true,
@@ -25,9 +58,9 @@ export class UserDashboardComponent implements OnInit {
   
   // Data
   
-  myTickets: unknown[] = [];
-  savedEvents: unknown[] = [];
-  orderHistory: unknown[] = [];
+  myTickets: Ticket[] = [];
+  savedEvents: SavedEvent[] = [];
+  orderHistory: Order[] = [];
 
   // Loading states
   isLoadingTickets = false;
@@ -53,25 +86,46 @@ export class UserDashboardComponent implements OnInit {
   /**
    * Remove event from saved list
    */
-  removeSavedEvent(eventId: string): void {
+  removeSavedEvent(eventId?: string): void {
+    if (!eventId) return;
     // TODO: Remove from saved events
-    void eventId;
   }
 
   /**
    * Download invoice
    */
-  downloadInvoice(orderId: string): void {
+  downloadInvoice(orderId?: string): void {
+    if (!orderId) return;
     // TODO: Generate and download invoice PDF
-    void orderId;
   }
 
   /**
    * Download ticket
    */
-  downloadTicket(ticketId: string): void {
+  downloadTicket(ticketId?: string): void {
+    if (!ticketId) return;
     // TODO: Generate and download ticket PDF
-    void ticketId;
+  }
+
+  /**
+   * Convert TimestampLike to Date for date pipe
+   */
+  getDate(timestamp?: TimestampLike): Date | null {
+    if (!timestamp) return null;
+    if (timestamp instanceof Date) return timestamp;
+    if (typeof timestamp === 'string') return new Date(timestamp);
+    if (typeof timestamp === 'object' && timestamp !== null) {
+      if ('toDate' in timestamp && typeof timestamp.toDate === 'function') {
+        return timestamp.toDate();
+      }
+      if ('seconds' in timestamp && typeof timestamp.seconds === 'number') {
+        return new Date(timestamp.seconds * 1000);
+      }
+      if ('_seconds' in timestamp && typeof timestamp._seconds === 'number') {
+        return new Date(timestamp._seconds * 1000);
+      }
+    }
+    return null;
   }
 }
 

@@ -33,7 +33,7 @@
               <div class="ticket-card">
                 <div class="ticket-info">
                   <h3>{{ ticket.eventName }}</h3>
-                  <p class="ticket-date">{{ ticket.eventDate | date:'full' }}</p>
+                  <p class="ticket-date">{{ getDate(ticket.eventDate) | date:'full' }}</p>
                   <p class="ticket-type">{{ ticket.ticketType }}</p>
                   <p class="ticket-status" [class.used]="ticket.used">
                     {{ ticket.used ? 'Used' : 'Active' }}
@@ -67,15 +67,15 @@
           <div class="loading">Loading saved events...</div>
         } @else if (savedEvents.length > 0) {
           <div class="saved-events-grid">
-            @for (event of savedEvents; track event.id) {
+            @for (event of savedEvents; track event?.id) {
               <div class="event-card">
-                <img [src]="event.image_url" [alt]="event.name">
+                <img [src]="event?.image_url" [alt]="event?.name">
                 <div class="event-info">
-                  <h3>{{ event.name }}</h3>
-                  <p class="event-date">{{ event.startDate | date }}</p>
+                  <h3>{{ event?.name }}</h3>
+                  <p class="event-date">{{ getDate(event?.startDate) | date }}</p>
                   <div class="event-actions">
-                    <a [routerLink]="['/events', event.id]" class="btn-link">View Details</a>
-                    <button class="btn-icon" (click)="removeSavedEvent(event.id)">
+                    <a [routerLink]="['/events', event?.id]" class="btn-link">View Details</a>
+                    <button class="btn-icon" (click)="removeSavedEvent(event?.id)">
                       <i class="fa-solid fa-heart"></i>
                     </button>
                   </div>
@@ -100,27 +100,27 @@
           <div class="loading">Loading orders...</div>
         } @else if (orderHistory.length > 0) {
           <div class="orders-list">
-            @for (order of orderHistory; track order.id) {
+            @for (order of orderHistory; track order?.id) {
               <div class="order-card">
                 <div class="order-header">
                   <div>
-                    <h3>Order #{{ order.id }}</h3>
-                    <p class="order-date">{{ order.createdAt | date:'full' }}</p>
+                    <h3>Order #{{ order?.id }}</h3>
+                    <p class="order-date">{{ getDate(order?.created_at) | date:'full' }}</p>
                   </div>
                   <div class="order-status">
-                    <span [class]="'status-' + order.status">{{ order.status }}</span>
+                    <span [class]="'status-' + order?.status">{{ order?.order_status }}</span>
                   </div>
                 </div>
                 <div class="order-details">
-                  <p><strong>Event:</strong> {{ order.eventName }}</p>
-                  <p><strong>Tickets:</strong> {{ order.ticketCount }}</p>
-                  <p><strong>Total:</strong> ${{ order.totalAmount }}</p>
+                    <p><strong>Event:</strong> {{ order?.event?.name }}</p>
+                  <p><strong>Tickets:</strong> {{ order?.tickets?.length }}</p>
+                  <p><strong>Total:</strong> ${{ order?.total_price }}</p>
                 </div>
                 <div class="order-actions">
-                  <button class="btn-secondary" (click)="downloadInvoice(order.id)">
+                  <button class="btn-secondary" (click)="downloadInvoice(order?.id)">
                     Download Invoice
                   </button>
-                  <a [routerLink]="['/events', order.eventId]" class="btn-link">
+                  <a [routerLink]="['/events', order?.event?.id]" class="btn-link">
                     View Event
                   </a>
                 </div>

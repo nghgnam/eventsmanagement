@@ -2,7 +2,7 @@ import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EventList } from '../../../../core/models/eventstype';
 import { EventsService } from '../../../../core/services/events.service';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { SafeUrlService } from '../../../../core/services/santizer.service';
 
 @Component({
   selector: 'app-trash-events',
@@ -13,7 +13,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 })
 export class TrashEventsComponent implements OnInit {
   private eventsService = inject(EventsService);
-  private sanitizer = inject(DomSanitizer);
+  private sanitizer = inject(SafeUrlService);
 
   cancelledEvents: EventList[] = [];
   isLoading: boolean = false;
@@ -55,9 +55,9 @@ export class TrashEventsComponent implements OnInit {
     });
   }
 
-  getSafeUrl(url: string | undefined): SafeUrl | undefined {
+  getSafeUrl(url: string | undefined): string | undefined {
     if (!url) return undefined;
-    return this.sanitizer.bypassSecurityTrustUrl(url);
+    return this.sanitizer.getSafeUrl(url, false);
   }
 
   formatDate(date: string): string {

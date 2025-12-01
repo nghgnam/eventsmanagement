@@ -5,7 +5,7 @@
       <div class="dashboard-header">
         <div>
           <h1>{{ event.name }}</h1>
-          <p class="event-date">{{ event.startDate | date:'full' }}</p>
+          <p class="event-date">{{ getEventStartDate() | date:'full' }}</p>
         </div>
         <div class="header-actions">
           <button class="btn-secondary" (click)="exportAttendees()">

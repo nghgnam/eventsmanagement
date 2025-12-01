@@ -65,7 +65,6 @@ export class EventsService {
       this.listenToEventsCollection();
       this.retryCount = 0;
       this.isInitializing = false;
-      console.log('[EventsService] Firestore collection initialized successfully');
     } catch (error:   unknown) {
       this.isInitializing = false;
       if (error instanceof Error && (error.message.includes('Firestore can only be accessed') || 
@@ -207,7 +206,6 @@ export class EventsService {
 
   getEventByListId(listEventId: string[]): Observable<EventList[]> {
     if (listEventId.length === 0 || !listEventId || !isPlatformBrowser(this.platformId)) {
-      console.log('No event IDs provided or not in browser environment');
       return of([]);
     }
 
@@ -254,31 +252,69 @@ export class EventsService {
     }
   }
 
-  addEvent(event: EventList): Observable<void> {
+  addEvent(event: EventList): Observable<void> {    
     if (!isPlatformBrowser(this.platformId)) {
+      console.warn('[EventsService] Not in browser, returning empty observable');
       return of(undefined);
     }
+    
     try {
-      const eventsCollectionRef = collection(this.firestore, 'events'); // Use injected firestore
-      const payload = this.buildEventCreatePayload(event);
+      // Check if Firestore is available
+      if (!this.firestore) {
+        console.error('[EventsService] ❌ Firestore is not available');
+        return throwError(() => new Error('Firestore is not initialized'));
+      }
       
-      return from(
-        addDoc(eventsCollectionRef, payload).then(() => {
-          console.log('Event added successfully');
-          this.getAllEvents().subscribe(); // Refresh events list
-        }).catch(error => {
-          console.error('Error adding event:', error);
-          throw error;
-        })
-      ).pipe(
-        catchError(error => {
-          console.error('[EventsService] Error adding event:', error);
-          return throwError(() => new Error('Failed to add event'));
+      let eventsCollectionRef;
+      try {
+        eventsCollectionRef = collection(this.firestore, 'events');
+      } catch (collectionError) {
+        console.error('[EventsService] ❌ Error creating collection:', collectionError);
+        return throwError(() => new Error(`Failed to create collection: ${collectionError instanceof Error ? collectionError.message : 'Unknown error'}`));
+      }
+      
+      let payload;
+      try {
+        payload = this.buildEventCreatePayload(event);
+      } catch (payloadError) {
+        console.error('[EventsService] ❌ Error building payload:', payloadError);
+        return throwError(() => new Error(`Failed to build payload: ${payloadError instanceof Error ? payloadError.message : 'Unknown error'}`));
+      }
+      
+      let addDocPromise;
+      try {
+        addDocPromise = addDoc(eventsCollectionRef, payload);
+      } catch (addDocError) {
+        console.error('[EventsService] ❌ Error creating addDoc promise:', addDocError);
+        return throwError(() => new Error(`Failed to create addDoc promise: ${addDocError instanceof Error ? addDocError.message : 'Unknown error'}`));
+      }
+      
+      return from(addDocPromise).pipe(
+        map(() => {
+          // Refresh events list (fire and forget)
+          try {
+            this.getAllEvents().subscribe({
+              next: () => undefined,
+              error: (err) => console.warn('[EventsService] Error refreshing events:', err)
+            });
+          } catch (refreshError) {
+            console.warn('[EventsService] Error calling getAllEvents:', refreshError);
+          }
+        }),
+        catchError((error) => {
+          
+          return throwError(() => {
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            return new Error(`Failed to add event: ${errorMsg}`);
+          });
         })
       );
     } catch (error: unknown) {
-      console.error('[EventsService] Failed to add event:', error);
-      return throwError(() => new Error('Failed to add event'));
+      console.error('[EventsService] ❌ Exception in addEvent try block:', error);
+      return throwError(() => {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        return new Error(`Failed to add event: ${errorMsg}`);
+      });
     }
   }
 
@@ -293,7 +329,7 @@ export class EventsService {
 
       return from(
         /* eslint-disable @typescript-eslint/no-explicit-any */
-        updateDoc(eventRef, payload as Record<string, unknown>).then(() => {
+        updateDoc(eventRef, payload as any).then(() => {
           this.getAllEvents().subscribe(); // Refresh events list
         })
       ).pipe(
@@ -348,12 +384,12 @@ export class EventsService {
           this.getAllEvents().subscribe(); // Refresh events list
         })
       ).pipe(
-        catchError((error: unknown) => {
+        catchError(error => {
           console.error('[EventsService] Error restoring event:', error);
           return throwError(() => new Error('Failed to restore event'));
         })
       );
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('[EventsService] Failed to restore event:', error);
       return throwError(() => new Error('Failed to restore event'));
     }
@@ -374,12 +410,12 @@ export class EventsService {
           })) as EventList[];
         })
       ).pipe(
-        catchError((error: unknown) => {
+        catchError(error => {
           console.error('[EventsService] Error getting events by status:', error);
           return of([]);
         })
       );
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('[EventsService] Failed to get events by status:', error);
       return of([]);
     }
@@ -413,7 +449,7 @@ export class EventsService {
     return from(updateDoc(eventDocRef, { 'engagement.likesCount': increment(change) }))
       .pipe(
         tap(() => console.log('Event likes updated successfully')),
-        catchError((error: unknown) => {
+        catchError(error => {
           console.error('Error updating event likes:', error);
           return throwError(() => error);
         })
@@ -421,30 +457,39 @@ export class EventsService {
   }
 
   private buildEventCreatePayload(event: EventList): Record<string, unknown> {
+    console.log('[EventsService] buildEventCreatePayload called');
     const now = Timestamp.now();
-    return {
-      ...event,
-      core: {
-        ...event.core,
-        id: event.core?.id ?? event.id ?? ''
-      },
-      status: {
-        visibility: (event.status as EventStatus)?.visibility ?? 'public',
-        featured: (event.status as EventStatus)?.featured ?? false,
-        state: (event.status as EventStatus)?.state ?? 'published',
-        deletedAt: (event.status as EventStatus)?.deletedAt ?? null
-      },
-      engagement: {
-        attendeesCount: event.engagement?.attendeesCount ?? 0,
-        likesCount: event.engagement?.likesCount ?? 0,
-        viewCount: event.engagement?.viewCount ?? 0,
-        searchTerms: event.engagement?.searchTerms ?? []
-      },
-      timeline: {
-        createdAt: now,
-        updatedAt: now
-      }
-    };
+    
+    try {
+      const payload = {
+        ...event,
+        core: {
+          ...event.core,
+          id: event.core?.id ?? event.id ?? ''
+        },
+        status: {
+          visibility: (event.status as EventStatus)?.visibility ?? 'public',
+          featured: (event.status as EventStatus)?.featured ?? false,
+          state: (event.status as EventStatus)?.state ?? 'published',
+          deletedAt: (event.status as EventStatus)?.deletedAt ?? null
+        },
+        engagement: {
+          attendeesCount: event.engagement?.attendeesCount ?? 0,
+          likesCount: event.engagement?.likesCount ?? 0,
+          viewCount: event.engagement?.viewCount ?? 0,
+          searchTerms: event.engagement?.searchTerms ?? []
+        },
+        timeline: {
+          createdAt: now,
+          updatedAt: now
+        }
+      };
+      
+      return payload;
+    } catch (error) {
+      console.error('[EventsService] ❌ Error building payload:', error);
+      throw error;
+    }
   }
 
   private buildEventUpdatePayload(event: Partial<EventList>): Record<string, unknown> {

@@ -120,6 +120,29 @@
   grid-column: 1 / -1;
 }
 
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon .input-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  padding-right: 0;
+  color: #9ca3af;
+  font-size: 20px;
+}
+
+.input-with-icon input,
+.input-with-icon select,
+.input-with-icon textarea,
+.input-with-icon .ng-select-container {
+  flex: 1;
+}
+
 .address-grid .form-group {
   min-width: 200px;
 }
@@ -294,6 +317,106 @@
 
 .slot-header h5 {
   margin: 0;
+}
+
+/* Input with action button (location button) */
+.input-with-action {
+  position: relative;
+}
+
+.input-with-action .location-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+  z-index: 1;
+}
+
+.input-with-action .location-btn:hover:not(:disabled) {
+  background: #4f46e5;
+  transform: translateY(-50%) scale(1.05);
+}
+
+.input-with-action .location-btn:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.input-with-action .location-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.input-with-action .location-btn .material-icons {
+  font-size: 20px;
+}
+
+.input-with-action input {
+  padding-right: 50px !important;
+}
+
+/* Currency Select Styles */
+.currency-select {
+  width: 100%;
+}
+
+.currency-select ::ng-deep .ng-select .ng-select-container {
+  min-height: 42px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.currency-select ::ng-deep .ng-select.ng-select-focused .ng-select-container {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+.currency-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.currency-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.currency-flag {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.currency-code {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.currency-symbol {
+  color: #6366f1;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.currency-name {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-left: auto;
 }
 
 .btn-link {

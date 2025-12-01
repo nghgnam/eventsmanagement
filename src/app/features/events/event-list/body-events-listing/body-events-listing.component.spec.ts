@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { getTestBedProviders } from '../../../test-setup';
+import { getTestBedProviders } from '../../../../../test-setup';
 
 import { BodyEventsListingComponent } from './body-events-listing.component';
 

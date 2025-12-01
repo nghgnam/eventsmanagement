@@ -71,6 +71,22 @@
               }
             </app-popup>
 
+            <!-- Edit Event Form -->
+            <app-popup
+              title="Edit Event"
+              width="90vw"
+              height="90vh"
+              [(isVisible)]="showEditEventPopup">
+              @if (showEditEventPopup && eventToEdit) {
+                <app-edit-event
+                  [eventId]="eventToEdit.id"
+                  (cancelled)="closeEditEventPopup()"
+                  (updated)="handleEditSuccess($event)"
+                  (updateError)="handleEditError($event)">
+                </app-edit-event>
+              }
+            </app-popup>
+
             <!-- Events List -->
             @if (!showCreateEventPopup) {
               <div class="card events-list">
