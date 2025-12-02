@@ -1,0 +1,64 @@
+<div class="ticket-detail-page">
+  <a routerLink="/my-tickets" class="back-link">
+    ← Quay lại danh sách vé
+  </a>
+
+  <div class="ticket-layout">
+    <div class="ticket-card">
+      <div class="ticket-header">
+        <h1>{{ ticket.eventName }}</h1>
+        <p class="meta">
+          <span>{{ ticket.date | date: 'fullDate' }}</span>
+          <span class="dot">•</span>
+          <span>{{ ticket.date | date: 'shortTime' }}</span>
+        </p>
+        <p class="location">
+          {{ ticket.location }}
+        </p>
+      </div>
+
+      <div class="ticket-body">
+        <div class="qr-section">
+          <div class="qr-placeholder">
+            <!-- Placeholder QR UI, replace with real QR component/service -->
+            <div class="qr-inner">
+              <span>QR CODE</span>
+            </div>
+          </div>
+          <p class="ticket-code">
+            Mã vé: <strong>{{ ticket.id }}</strong>
+          </p>
+          <p class="ticket-info">
+            {{ ticket.quantity }} x {{ ticket.ticketType }}
+          </p>
+          @if (ticket.seat) {
+            <p class="ticket-seat">
+              Vị trí ghế: <strong>{{ ticket.seat }}</strong>
+            </p>
+          }
+        </div>
+
+        <div class="info-section">
+          <h2>Hướng dẫn tham gia</h2>
+          <ul>
+            <li>Hãy đến sớm trước giờ bắt đầu 15–30 phút để làm thủ tục check-in.</li>
+            <li>Chuẩn bị CMND/CCCD hoặc giấy tờ tùy thân có ảnh để đối chiếu.</li>
+            <li>Trình mã QR này cho nhân viên tại cổng vào để được quét vé.</li>
+            <li>Giữ điện thoại đủ pin hoặc in vé ra giấy để phòng trường hợp mất mạng.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="ticket-footer">
+        <button type="button" class="btn-primary" (click)="downloadTicket('pdf')">
+          Tải vé dạng PDF
+        </button>
+        <button type="button" class="btn-secondary" (click)="downloadTicket('image')">
+          Tải vé dạng hình ảnh
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+

@@ -8,6 +8,8 @@ import { TicketEventsManageComponent } from './features/tickets/ticket-events-ma
 import { UserInformationComponent } from './features/users/profile/user-information/user-information.component';
 import { NotFoundComponent } from './shared/components/not-found/not-found.component';
 import { authGuard } from './core/guards/authGuard.guard';
+import { MyTicketsComponent } from './features/tickets/my-tickets/my-tickets.component';
+import { TicketDetailComponent } from './features/tickets/ticket-detail/ticket-detail.component';
 export const routes: Routes = [
   {
     path: '',
@@ -28,6 +30,16 @@ export const routes: Routes = [
         path: 'tickets-manage', 
         canActivate: [authGuard],
         component: TicketEventsManageComponent
+      },
+      {
+        path: 'my-tickets',
+        canActivate: [authGuard],
+        component: MyTicketsComponent
+      },
+      {
+        path: 'my-tickets/:id',
+        canActivate: [authGuard],
+        component: TicketDetailComponent
       },
       {
         path: 'account',
