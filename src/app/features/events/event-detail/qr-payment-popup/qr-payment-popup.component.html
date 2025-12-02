@@ -1,0 +1,93 @@
+<div class="qr-payment-popup">
+  <div class="payment-header">
+    <h3 class="title">Thanh toán qua QR Code</h3>
+    <p class="subtitle">Quét mã QR để thanh toán nhanh chóng</p>
+  </div>
+
+  @if (paymentStatus() === 'pending') {
+    <div class="qr-section">
+      <div class="qr-code-container">
+        @if (qrCodeUrl()) {
+          <img [src]="qrCodeUrl()" alt="QR Code" class="qr-code-image">
+        } @else {
+          <div class="qr-placeholder">
+            <i class="fa-solid fa-qrcode"></i>
+            <p>Đang tạo mã QR...</p>
+          </div>
+        }
+      </div>
+
+      <div class="countdown-timer">
+        <i class="fa-solid fa-clock"></i>
+        <span class="timer-label">Đơn hàng hết hạn sau:</span>
+        <span class="timer-value" [class.warning]="remainingTime() < 300">
+          {{ formatTime(remainingTime()) }}
+        </span>
+      </div>
+
+      <div class="payment-info">
+        <div class="info-section">
+          <h4 class="info-title">Thông tin chuyển khoản</h4>
+          <div class="info-item">
+            <span class="info-label">Ngân hàng:</span>
+            <span class="info-value">{{ bankName() }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Số tài khoản:</span>
+            <div class="info-value-with-copy">
+              <span class="info-value">{{ accountNumber() }}</span>
+              <button type="button" class="copy-btn" (click)="copyAccountNumber()" title="Copy">
+                <i class="fa-solid fa-copy"></i>
+              </button>
+            </div>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Chủ tài khoản:</span>
+            <span class="info-value">{{ accountName() }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Số tiền:</span>
+            <span class="info-value amount">{{ amount | currency:'VND':'symbol':'1.0-0' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Nội dung:</span>
+            <div class="info-value-with-copy">
+              <span class="info-value content">{{ paymentContent() }}</span>
+              <button type="button" class="copy-btn" (click)="copyPaymentContent()" title="Copy">
+                <i class="fa-solid fa-copy"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-message">
+        <div class="loading-spinner"></div>
+        <p>Đang chờ thanh toán...</p>
+      </div>
+    </div>
+
+    <div class="payment-actions">
+      <button type="button" class="btn btn-secondary" (click)="onCancel()">
+        <i class="fa-solid fa-times"></i>
+        Hủy
+      </button>
+      <button type="button" class="btn btn-primary" (click)="onPaymentConfirmed()">
+        <i class="fa-solid fa-check"></i>
+        Tôi đã thanh toán
+      </button>
+    </div>
+  }
+
+  @if (paymentStatus() === 'expired') {
+    <div class="expired-message">
+      <i class="fa-solid fa-clock"></i>
+      <h4>Đơn hàng đã hết hạn</h4>
+      <p>Vui lòng tạo đơn hàng mới để tiếp tục thanh toán.</p>
+      <button type="button" class="btn btn-primary" (click)="onCancel()">
+        Đóng
+      </button>
+    </div>
+  }
+</div>
+

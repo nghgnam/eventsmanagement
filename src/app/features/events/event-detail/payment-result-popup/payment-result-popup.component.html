@@ -1,0 +1,70 @@
+<div class="payment-result-popup">
+  @if (result === 'success') {
+    <div class="result-content success">
+      <div class="result-icon success-icon">
+        <i class="fa-solid" [ngClass]="getResultIcon()"></i>
+      </div>
+      <h3 class="result-title">{{ getResultTitle() }}</h3>
+      <p class="result-message">{{ message || getDefaultMessage() }}</p>
+      
+      @if (orderId) {
+        <div class="order-info">
+          <span class="order-label">Mã đơn hàng:</span>
+          <span class="order-id">{{ orderId }}</span>
+        </div>
+      }
+
+      @if (ticketQrCode) {
+        <div class="ticket-qr-section">
+          <h4 class="ticket-qr-title">Mã QR vé của bạn</h4>
+          <div class="ticket-qr-container">
+            <img [src]="ticketQrCode" alt="Ticket QR Code" class="ticket-qr-image">
+          </div>
+          <p class="ticket-qr-note">Vui lòng xuất trình mã QR này khi tham dự sự kiện</p>
+        </div>
+      }
+
+      <div class="result-actions">
+        <button type="button" class="btn btn-secondary" (click)="onGoHome()">
+          <i class="fa-solid fa-home"></i>
+          Về trang chủ
+        </button>
+        <button type="button" class="btn btn-primary" (click)="onViewTickets()">
+          <i class="fa-solid fa-ticket"></i>
+          Xem vé của tôi
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (result === 'failed' || result === 'cancelled') {
+    <div class="result-content error">
+      <div class="result-icon error-icon">
+        <i class="fa-solid" [ngClass]="getResultIcon()"></i>
+      </div>
+      <h3 class="result-title">{{ getResultTitle() }}</h3>
+      <p class="result-message">{{ message || getDefaultMessage() }}</p>
+      
+      @if (orderId) {
+        <div class="order-info">
+          <span class="order-label">Mã đơn hàng:</span>
+          <span class="order-id">{{ orderId }}</span>
+        </div>
+      }
+
+      <div class="result-actions">
+        <button type="button" class="btn btn-secondary" (click)="onClose()">
+          <i class="fa-solid fa-times"></i>
+          Đóng
+        </button>
+        @if (result === 'failed') {
+          <button type="button" class="btn btn-primary" (click)="onRetry()">
+            <i class="fa-solid fa-redo"></i>
+            Thử lại
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>
+

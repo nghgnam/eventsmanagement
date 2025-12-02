@@ -61,8 +61,8 @@ export class LoginActionDemoComponent implements OnInit {
       takeUntilDestroyed(this.destroyRef)
     ).subscribe({
       next: (user) => {
-        if (user && this.router.url !== '/body') {
-          this.router.navigate(['/body']);
+        if (user && this.router.url !== '/home') {
+          this.router.navigate(['/home']);
         }
       },
       error: (error) => {
@@ -88,7 +88,7 @@ export class LoginActionDemoComponent implements OnInit {
     this.authService.login(email, password).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.router.navigate(['/body']);
+        this.router.navigate(['/home']);
       },
       error: (error) => {
         this.isLoading.set(false);
@@ -128,7 +128,7 @@ export class LoginActionDemoComponent implements OnInit {
     this.authService.googleSignIn().subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.router.navigate(['/body']);
+        this.router.navigate(['/home']);
       },
       error: (error) => {
         this.isLoading.set(false);

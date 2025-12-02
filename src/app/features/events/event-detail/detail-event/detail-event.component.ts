@@ -1,5 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, Observable, Subject, Subscription } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
@@ -10,10 +10,28 @@ import { SafeUrlService } from '../../../../core/services/santizer.service';
 import { SubscriptionService } from '../../../../core/services/subscription.service';
 import { TicketService } from '../../../../core/services/ticket.service';
 import { ImageErrorHandlerDirective } from '../../../../shared/directives/image-error-handler.directive';
+import { TicketSelectionComponent } from '../ticket-selection/ticket-selection.component';
+import { OrderReviewPopupComponent } from '../order-review-popup/order-review-popup.component';
+import { PaymentMethodPopupComponent, PaymentMethod } from '../payment-method-popup/payment-method-popup.component';
+import { QRPaymentPopupComponent } from '../qr-payment-popup/qr-payment-popup.component';
+import { PaymentResultPopupComponent, PaymentResult } from '../payment-result-popup/payment-result-popup.component';
+import { PopupComponent } from '../../../../shared/components/popup/popup.component';
+import { OrderService, SelectedTicket } from '../../../../core/services/order.service';
+import { SelectedTicket as SelectedTicketType } from '../../../../core/services/order.service';
+
 @Component({
   selector: 'app-detail-event',
   standalone: true,
-  imports: [CommonModule, ImageErrorHandlerDirective],
+  imports: [
+    CommonModule, 
+    ImageErrorHandlerDirective,
+    TicketSelectionComponent,
+    OrderReviewPopupComponent,
+    PaymentMethodPopupComponent,
+    QRPaymentPopupComponent,
+    PaymentResultPopupComponent,
+    PopupComponent
+  ],
   templateUrl: './detail-event.component.html',
   styleUrls: ['./detail-event.component.css']
 })
@@ -26,6 +44,7 @@ export class DetailEventComponent implements OnInit, OnDestroy {
   private ticketsService = inject(TicketService);
   private authService = inject(AuthService);
   private platformId = inject(PLATFORM_ID);
+  private orderService = inject(OrderService);
 
   event: EventList | undefined | null = null;
   events$: Observable<EventList[]> | undefined;
@@ -52,6 +71,21 @@ export class DetailEventComponent implements OnInit, OnDestroy {
   showNotification: boolean = false;
   notificationMessage: string = '';
   notificationType: 'success' | 'error' = 'success';
+
+  // Ticket purchase flow state
+  selectedTickets: SelectedTicket[] = [];
+  showOrderReviewPopup = false;
+  showPaymentMethodPopup = false;
+  showQRPaymentPopup = false;
+  showPaymentResultPopup = false;
+  paymentResult: PaymentResult = 'success';
+  paymentResultMessage = '';
+  currentOrderId = '';
+
+  // Getter for total amount
+  get totalAmount(): number {
+    return this.selectedTickets.reduce((sum, t) => sum + t.subtotal, 0);
+  }
 
   private subscriptions: Subscription[] = [];
 
@@ -193,16 +227,34 @@ export class DetailEventComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Get other events from the same organizer
+   */
+  getOtherEventsFromOrganizer(events: EventList[] | null | undefined): EventList[] {
+    if (!events || !this.event?.organizer) {
+      return [];
+    }
+    const currentOrganizerName = this.event.organizer.name;
+    const currentEventId = this.event.id;
+    return events.filter(e => 
+      e.organizer && 
+      e.organizer.name === currentOrganizerName && 
+      e.id !== currentEventId
+    );
+  }
+
   inCreaseTicket() {
+    // Nếu event free, chỉ cho phép 1 ticket
+    if (this.event?.price === 0 || !this.event?.price) {
+      this.showError('Sự kiện miễn phí chỉ cho phép đăng ký 1 vé!');
+      return;
+    }
     this.totalTicket += 1;
     this.totalPrice = (this.event?.price ?? 0) * this.totalTicket;
   }
 
   deCreaseTicket() {
-    if(this.event?.price === 0 ){
-      this.showError('Sự kiện miễn phí chỉ cho phép đăng ký 1 vé!')
-      return ;
-    }
+    // Chỉ cho phép giảm khi totalTicket > 1
     if (this.totalTicket > 1) {
       this.totalTicket -= 1;
       this.totalPrice = (this.event?.price ?? 0) * this.totalTicket;
@@ -368,6 +420,105 @@ export class DetailEventComponent implements OnInit, OnDestroy {
   confirmUnsubscribe() {
     this.closeUnsubscribeDialog(); 
     this.actionUnsubscribe(); 
+  }
+
+  // Ticket purchase flow methods
+  onTicketsSelected(tickets: SelectedTicket[]): void {
+    this.selectedTickets = tickets;
+  }
+
+  onBuyNow(tickets: SelectedTicket[]): void {
+    this.selectedTickets = tickets;
+    this.showOrderReviewPopup = true;
+  }
+
+  onProceedToPayment(data: { buyerInfo: { fullName: string; email: string; phone: string }; couponCode?: string }): void {
+    if (!this.event) return;
+
+    // Create order
+    const order = this.orderService.createOrder(
+      this.event.id || '',
+      this.event.name || '',
+      this.selectedTickets,
+      data.buyerInfo,
+      data.couponCode
+    );
+
+    this.currentOrderId = order.orderId || '';
+    this.showOrderReviewPopup = false;
+    this.showPaymentMethodPopup = true;
+  }
+
+  onPaymentMethodSelected(method: PaymentMethod): void {
+    const orderId = this.currentOrderId;
+    if (orderId) {
+      this.orderService.updatePaymentMethod(orderId, method);
+    }
+
+    if (method === 'vnpay' || method === 'momo') {
+      this.showPaymentMethodPopup = false;
+      this.showQRPaymentPopup = true;
+    } else {
+      // For Visa/Mastercard/PayPal, redirect to payment gateway
+      // TODO: Implement payment gateway redirect
+      console.log('Redirecting to payment gateway:', method);
+      this.showPaymentMethodPopup = false;
+      // Simulate payment result for now
+      setTimeout(() => {
+        this.paymentResult = 'success';
+        this.paymentResultMessage = 'Thanh toán thành công qua ' + method;
+        this.showPaymentResultPopup = true;
+      }, 2000);
+    }
+  }
+
+  onQRPaymentConfirmed(): void {
+    const orderId = this.currentOrderId;
+    if (orderId) {
+      this.orderService.updateOrderStatus(orderId, 'paid');
+    }
+    this.showQRPaymentPopup = false;
+    this.paymentResult = 'success';
+    this.paymentResultMessage = 'Thanh toán thành công! Vé đã được gửi về email của bạn.';
+    this.showPaymentResultPopup = true;
+  }
+
+  onPaymentResultClose(): void {
+    this.showPaymentResultPopup = false;
+    this.orderService.clearOrder();
+    this.selectedTickets = [];
+  }
+
+  onPaymentResultViewTickets(): void {
+    this.showPaymentResultPopup = false;
+    // TODO: Navigate to user tickets page
+    this.router.navigate(['/profile/tickets']);
+  }
+
+  onPaymentResultGoHome(): void {
+    this.showPaymentResultPopup = false;
+    this.orderService.clearOrder();
+    this.selectedTickets = [];
+    this.router.navigate(['/home']);
+  }
+
+  onPaymentResultRetry(): void {
+    this.showPaymentResultPopup = false;
+    this.showPaymentMethodPopup = true;
+  }
+
+  onOrderReviewCancel(): void {
+    this.showOrderReviewPopup = false;
+  }
+
+  onPaymentMethodCancel(): void {
+    this.showPaymentMethodPopup = false;
+    this.showOrderReviewPopup = true;
+  }
+
+  onQRPaymentCancel(): void {
+    this.showQRPaymentPopup = false;
+    this.showPaymentMethodPopup = true;
   }
 
   

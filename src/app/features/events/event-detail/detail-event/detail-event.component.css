@@ -147,16 +147,16 @@
 .about_organizer {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
     margin-bottom: 36px;
-    padding: 25px;
+    padding: 20px;
     background: #f9fafc;
     border-radius: 16px;
-    flex-wrap: wrap;
     transition: all 0.3s ease;
     position: relative;
     border: 1px solid rgba(0, 0, 0, 0.03);
     overflow: hidden;
+    flex-wrap: nowrap;
 }
 
 .about_organizer::before {
@@ -199,11 +199,43 @@
 .organizer_info {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     color: #555;
     flex: 1;
+    min-width: 0;
     position: relative;
     z-index: 1;
+}
+
+.organizer_info_header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.organizer_by_label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #666;
+}
+
+.organizer_info_footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.organizer_followers_count {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.organizer_followers_label {
+    font-size: 14px;
+    color: #666;
 }
 
 .organizer_name {
@@ -259,12 +291,13 @@
 
 .organizer_follow {
     margin-left: auto;
-    padding: 12px 24px;
+    padding: 10px 20px;
     border: none;
     border-radius: 30px;
     background: linear-gradient(135deg, #1976d2, #1565c0);
     color: white;
     font-weight: 600;
+    font-size: 14px;
     cursor: pointer;
     transition: all 0.3s ease;
     letter-spacing: 0.02em;
@@ -272,7 +305,10 @@
     z-index: 1;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .organizer_follow i {
@@ -847,28 +883,37 @@
 /* More Events - Enhanced card styling */
 .events_other {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 30px;
-    margin-top: 40px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin-top: 30px;
+    padding: 0;
 }
 
 .event_other_block {
     background: #fff;
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     cursor: pointer;
     transition: all 0.3s ease;
+    border: 1px solid #e8ecf0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .event_other_block:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+    transform: translateY(-6px);
+    box-shadow: 0 8px 24px rgba(230, 57, 70, 0.15);
+    border-color: #e63946;
 }
 
 .event_other_image {
     position: relative;
-    height: 180px;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background: #f8f9fa;
 }
 
 .event_other_image img {
@@ -879,102 +924,110 @@
 }
 
 .event_other_block:hover .event_other_image img {
-    transform: scale(1.05);
+    transform: scale(1.08);
 }
 
 .event_other_date {
     position: absolute;
-    top: 16px;
-    left: 16px;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 10px;
-    border-radius: 12px;
+    top: 12px;
+    left: 12px;
+    background: rgba(255, 255, 255, 0.98);
+    padding: 8px 12px;
+    border-radius: 10px;
     text-align: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    min-width: 50px;
 }
 
 .event_other_date .day {
     display: block;
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: 800;
     color: #e63946;
+    line-height: 1;
 }
 
 .event_other_date .month {
     display: block;
-    font-size: 0.95rem;
-    color: #555;
-    font-weight: 500;
+    font-size: 0.75rem;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
 }
 
 .event_other_info {
     padding: 20px;
-}
-
-.event_other {
-    border: 1px solid #eaeff4;
-    border-radius: 20px;
-    overflow: hidden;
-    background: #fff;
-    transition: all 0.3s ease;
-}
-
-.event_other:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .event_other_title {
     font-weight: 700;
-    margin-bottom: 10px;
+    margin: 0;
     color: #222;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     line-height: 1.4;
+    min-height: 3.08em;
 }
 
 .event_other_time {
-    color: #e63946;
-    font-size: 0.95rem;
-    margin-bottom: 10px;
+    color: #666;
+    font-size: 0.875rem;
+    margin: 0;
     font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    line-height: 1.5;
 }
 
 .event_other_time i {
-    font-size: 1rem;
+    font-size: 0.875rem;
+    color: #e63946;
+    flex-shrink: 0;
 }
 
 .event_other_price {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 10px;
-    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e63946;
+    margin: 0;
+    font-size: 1.25rem;
+    line-height: 1.2;
 }
 
 .event_other_organizer {
     color: #666;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    margin: 0;
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
 }
 
 .event_other_organizer i {
-    font-size: 1rem;
-    color: #777;
+    font-size: 0.875rem;
+    color: #999;
+    flex-shrink: 0;
 }
 
 /* Ticket Purchase Section - Enhanced with better styling */
 .event_ticket {
     position: sticky;
     top: 20px;
-    margin-top: 20px;
+    align-self: start;
+    height: fit-content;
 }
 
 .ticket_card {
@@ -1240,18 +1293,25 @@
     }
     
     .about_organizer {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-        padding: 20px;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        flex-wrap: wrap;
+    }
+    
+    .organizer_avatar img {
+        width: 60px;
+        height: 60px;
     }
     
     .organizer_info {
-        width: 100%;
+        flex: 1;
+        min-width: 150px;
     }
     
-    .organizer_stats {
-        margin-top: 10px;
+    .organizer_info_header,
+    .organizer_info_footer {
         flex-wrap: wrap;
     }
     
@@ -1259,7 +1319,8 @@
         margin-left: 0;
         width: 100%;
         justify-content: center;
-        margin-top: 10px;
+        margin-top: 8px;
+        padding: 12px 20px;
     }
 
     .event_date_time_options {
@@ -1290,7 +1351,20 @@
 
     .events_other {
         grid-template-columns: 1fr;
-        padding: 0 15px;
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .event_other_block {
+        margin: 0;
+    }
+    
+    .event_other_image {
+        height: 180px;
+    }
+    
+    .event_other_info {
+        padding: 16px;
     }
     
     .event_location {
@@ -1340,6 +1414,26 @@
     
     .event_ticket {
         margin-top: 0;
+        position: static;
+    }
+    
+    .about_organizer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .organizer_avatar {
+        align-self: center;
+    }
+    
+    .organizer_info {
+        text-align: center;
+    }
+    
+    .organizer_follow {
+        width: 100%;
+        margin-top: 8px;
     }
     
     .ticket_header {
@@ -1414,7 +1508,26 @@
     }
     
     .events_other {
-        padding: 0 10px;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin-top: 16px;
+    }
+    
+    .event_other_image {
+        height: 160px;
+    }
+    
+    .event_other_info {
+        padding: 14px;
+        gap: 10px;
+    }
+    
+    .event_other_title {
+        font-size: 1rem;
+    }
+    
+    .event_other_price {
+        font-size: 1.1rem;
     }
 
     .organizer_avatar img {
@@ -1458,5 +1571,335 @@
     
     .dialog_actions {
         flex-direction: column;
+    }
+}
+
+/* Ticket Purchase Section - Enhanced UI */
+.get_ticket {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e8ecf0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.ticket_info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e8ecf0;
+}
+
+.ticket_quantity {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ticket_type {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ticket_type i {
+    font-size: 18px;
+    color: #e63946;
+}
+
+.ticket_type_label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.quantity_controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 8px;
+    width: fit-content;
+}
+
+.quantity_btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 2px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #333;
+    font-size: 16px;
+}
+
+.quantity_btn:hover:not(:disabled) {
+    background: #e63946;
+    border-color: #e63946;
+    color: #ffffff;
+    transform: scale(1.05);
+}
+
+.quantity_btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.quantity_btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f8f9fa;
+}
+
+.quantity_btn i {
+    font-size: 14px;
+}
+
+.quantity_display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 60px;
+}
+
+.quantity_value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+}
+
+.quantity_label_small {
+    font-size: 11px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+.ticket_price {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.price_section {
+    display: flex;
+    flex-direction: column;
+}
+
+.price_main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.price_value {
+    font-size: 32px;
+    font-weight: 800;
+    color: #e63946;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.price_value.free {
+    color: #28a745;
+}
+
+.price_per_ticket {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+.ticket_status {
+    display: flex;
+    align-items: flex-start;
+}
+
+.status_info_wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status_icon_btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #fff3cd;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #856404;
+}
+
+.status_icon_btn:hover {
+    background: #ffc107;
+    color: #333;
+    transform: scale(1.1);
+}
+
+.status_icon_btn i {
+    font-size: 14px;
+}
+
+.ticket_status_info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #fff3cd;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #856404;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.ticket_status_info.show {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+.ticket_status_info.hidden {
+    opacity: 0;
+    transform: translateX(-10px);
+}
+
+.ticket_status_info i {
+    font-size: 12px;
+}
+
+.reserve_a_spot {
+    width: 100%;
+    background: linear-gradient(135deg, #e63946 0%, #d32f2f 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 24px;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+    letter-spacing: 0.3px;
+}
+
+.reserve_a_spot:hover:not(:disabled) {
+    background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(230, 57, 70, 0.4);
+}
+
+.reserve_a_spot:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.reserve_a_spot:disabled {
+    background: linear-gradient(135deg, #8a8a8a 0%, #6c757d 100%);
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
+}
+
+.reserve_a_spot i {
+    font-size: 18px;
+}
+
+/* Responsive Design for Ticket Section */
+@media (max-width: 768px) {
+    .get_ticket {
+        padding: 20px;
+        margin-top: 20px;
+    }
+
+    .ticket_info {
+        gap: 16px;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+    }
+
+    .quantity_controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .quantity_btn {
+        width: 44px;
+        height: 44px;
+    }
+
+    .quantity_value {
+        font-size: 28px;
+    }
+
+    .price_value {
+        font-size: 28px;
+    }
+
+    .reserve_a_spot {
+        padding: 14px 20px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .get_ticket {
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .ticket_type_label {
+        font-size: 15px;
+    }
+
+    .quantity_controls {
+        padding: 6px;
+        gap: 12px;
+    }
+
+    .quantity_btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .quantity_value {
+        font-size: 24px;
+    }
+
+    .price_value {
+        font-size: 24px;
+    }
+
+    .reserve_a_spot {
+        padding: 12px 16px;
+        font-size: 15px;
+    }
+
+    .ticket_status_info {
+        font-size: 12px;
+        padding: 6px 10px;
     }
 }

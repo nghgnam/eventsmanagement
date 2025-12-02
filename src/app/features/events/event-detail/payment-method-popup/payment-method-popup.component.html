@@ -1,0 +1,70 @@
+<div class="payment-method-popup">
+  <div class="payment-header">
+    <h3 class="title">Chọn phương thức thanh toán</h3>
+    <p class="subtitle">Tổng thanh toán: <strong>{{ totalAmount | currency:'VND':'symbol':'1.0-0' }}</strong></p>
+  </div>
+
+  <div class="payment-methods">
+    @for (method of paymentMethods; track method.id) {
+      <div 
+        class="payment-method-card"
+        [class.selected]="selectedMethod() === method.id"
+        [class.recommended]="method.recommended"
+        (click)="selectMethod(method.id)">
+        <div class="method-radio">
+          <div class="radio-circle" [class.checked]="selectedMethod() === method.id">
+            @if (selectedMethod() === method.id) {
+              <i class="fa-solid fa-check"></i>
+            }
+          </div>
+        </div>
+        <div class="method-content">
+          <div class="method-header">
+            <i class="fa-solid" [ngClass]="method.icon"></i>
+            <h4 class="method-name">{{ method.name }}</h4>
+            @if (method.recommended) {
+              <span class="recommended-badge">Khuyên dùng</span>
+            }
+          </div>
+          <p class="method-description">{{ method.description }}</p>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="payment-actions">
+    <button type="button" class="btn btn-secondary" (click)="onCancel()">
+      <i class="fa-solid fa-arrow-left"></i>
+      Quay lại
+    </button>
+    @if (selectedMethod() === 'vnpay' || selectedMethod() === 'momo') {
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="proceed()"
+        [disabled]="!canProceed()">
+        <i class="fa-solid fa-qrcode"></i>
+        Tạo mã QR
+      </button>
+    } @else if (selectedMethod() === 'visa' || selectedMethod() === 'mastercard' || selectedMethod() === 'paypal') {
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="proceed()"
+        [disabled]="!canProceed()">
+        <i class="fa-solid fa-external-link-alt"></i>
+        Chuyển đến trang thanh toán
+      </button>
+    } @else {
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="proceed()"
+        [disabled]="!canProceed()">
+        <i class="fa-solid fa-credit-card"></i>
+        Tiếp tục
+      </button>
+    }
+  </div>
+</div>
+

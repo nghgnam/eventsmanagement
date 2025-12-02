@@ -1,8 +1,8 @@
-<header [class.fixed-header]="!isDetailPage" [class.relative-header]="isDetailPage">
+<header [class.fixed-header]="!isDetailPage()" [class.relative-header]="isDetailPage()">
     <app-header-navbar></app-header-navbar>
 </header>
 
-@if (showBodyPage) {
+@if (showBodyPage()) {
   <app-body-page>
   </app-body-page>
 }

@@ -1,27 +1,106 @@
 <div class="events-section">
-    <!-- Location Selection -->
+    <!-- Location and Categories Section -->
     <div class="events-position">
-        <div class="location-header">
-            <i class="fa-solid fa-location-dot"></i>
-            <h2>Browsing events in</h2>
-        </div>
-        <div class="location-input">
-            <input type="text" [(ngModel)]="location" placeholder="Enter your location">
-            @if (locationOptions.length > 0) {
-              <div class="location-options">
-                @for (option of locationOptions; track option) {
-                  <div class="location-option" (click)="selectLocation(option)">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <span>{{ option }}</span>
+        <!-- Row 1: Location Input -->
+        <div class="location-row">
+            <div class="location-input-wrapper">
+                <i class="fa-solid fa-location-dot location-icon"></i>
+                <input 
+                    type="text" 
+                    [(ngModel)]="location" 
+                    placeholder="New York, NY"
+                    class="location-input-field"
+                    (focus)="showLocationOptions = true"
+                    (blur)="onLocationBlur()">
+                @if (locationOptions.length > 0 && showLocationOptions) {
+                  <div class="location-options">
+                    @for (option of locationOptions; track option) {
+                      <div class="location-option" (click)="selectLocation(option)">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span>{{ option }}</span>
+                      </div>
+                    }
                   </div>
                 }
-              </div>
-            }
+            </div>
+        </div>
+
+        <!-- Row 2: Categories Scroll + Filters Button -->
+        <div class="categories-filters-row">
+            <!-- Categories Scroll (80%) -->
+            <div class="categories-scroll-container">
+                <button 
+                    class="scroll-btn scroll-btn-prev" 
+                    (click)="scrollCategories('prev')"
+                    [disabled]="!canScrollPrev"
+                    aria-label="Previous categories">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <div class="categories-scroll-wrapper" #categoriesScroll>
+                    <div class="categories-list">
+                        @if (categoriesLoading) {
+                            <div class="categories-loading">Loading categories...</div>
+                        } @else if (categories.length === 0) {
+                            <div class="categories-empty">No categories available</div>
+                        } @else {
+                            <!-- Special Category Buttons -->
+                            <button 
+                                class="category-chip special-chip trending-chip"
+                                [class.active]="selectedSpecialCategory === 'trending'"
+                                (click)="selectSpecialCategory('trending')">
+                                <span class="emoji">🔥</span>
+                                <span>Trending</span>
+                            </button>
+                            <button 
+                                class="category-chip special-chip weekend-chip"
+                                [class.active]="selectedSpecialCategory === 'weekend'"
+                                (click)="selectSpecialCategory('weekend')">
+                                <span class="emoji">📅</span>
+                                <span>This Weekend</span>
+                            </button>
+                            
+                            <!-- Regular Categories -->
+                            @for (category of categories; track category.id) {
+                                <button 
+                                    class="category-chip"
+                                    [class.active]="selectedCategorySlug === category.slug"
+                                    (click)="selectCategory(category)">
+                                    @if (category.icon) {
+                                        <i [class]="'fa-solid ' + category.icon"></i>
+                                    }
+                                    <span>{{ category.name }}</span>
+                                </button>
+                            }
+                        }
+                    </div>
+                </div>
+                <button 
+                    class="scroll-btn scroll-btn-next" 
+                    (click)="scrollCategories('next')"
+                    [disabled]="!canScrollNext"
+                    aria-label="Next categories">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Filters Button (20%) -->
+            <div class="filters-button-wrapper">
+                <button 
+                    class="filters-btn"
+                    (click)="openFilters()"
+                    [class.active]="activeFiltersCount > 0">
+                    <i class="fa-solid fa-filter"></i>
+                    <span>Filters</span>
+                    @if (activeFiltersCount > 0) {
+                        <span class="filter-badge">{{ activeFiltersCount }}</span>
+                    }
+                </button>
+            </div>
         </div>
     </div>
 
     <!-- Filter Categories -->
-    <div class="filter-categories">
+    <!-- <div class="filter-categories">
         <div class="filter-header">
             <i class="fa-solid fa-filter"></i>
             <h3>Filter Events</h3>
@@ -56,7 +135,137 @@
                 <span>Food & Drink</span>
             </button>
         </div>
-    </div>
+    </div> -->
+
+    <!-- Filters Modal -->
+    <app-popup
+        title="Filters"
+        width="500px"
+        height="auto"
+        [(isVisible)]="showFiltersModal">
+        @if (showFiltersModal) {
+            <div class="filters-modal-content">
+                <!-- Date Range -->
+                <div class="filter-section">
+                    <h3 class="filter-section-title">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        Date Range
+                    </h3>
+                    <div class="date-range-inputs">
+                        <div class="date-input-group">
+                            <label for="startDate">Start Date</label>
+                            <input 
+                                type="date" 
+                                [value]="filterState.dateRange.startDate ? filterState.dateRange.startDate.toISOString().split('T')[0] : ''"
+                                (change)="onDateRangeChange($any($event.target).value, filterState.dateRange.endDate ? filterState.dateRange.endDate.toISOString().split('T')[0] : null)"
+                                class="date-input">
+                        </div>
+                        <div class="date-input-group">
+                            <label for="endDate">End Date</label>
+                            <input 
+                                type="date" 
+                                [value]="filterState.dateRange.endDate ? filterState.dateRange.endDate.toISOString().split('T')[0] : ''"
+                                (change)="onDateRangeChange(filterState.dateRange.startDate ? filterState.dateRange.startDate.toISOString().split('T')[0] : null, $any($event.target).value)"
+                                class="date-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price Range -->
+                <div class="filter-section">
+                    <h3 class="filter-section-title">
+                        <i class="fa-solid fa-dollar-sign"></i>
+                        Price Range
+                    </h3>
+                    <div class="price-range-container">
+                        <div class="price-range-display">
+                            <span>${{ filterState.priceRange.min }}</span>
+                            <span> - </span>
+                            <span>${{ filterState.priceRange.max }}</span>
+                        </div>
+                        <div class="price-range-inputs">
+                            <div class="price-input-group">
+                                <label for="minPrice">Min Price</label>
+                                <input 
+                                    type="number" 
+                                    min="0" 
+                                    max="1000" 
+                                    step="10"
+                                    [value]="filterState.priceRange.min"
+                                    (input)="onPriceRangeChange(+$any($event.target).value, filterState.priceRange.max)"
+                                    class="price-input">
+                            </div>
+                            <div class="price-input-group">
+                                <label for="maxPrice">Max Price</label>
+                                <input 
+                                    type="number" 
+                                    min="0" 
+                                    max="1000" 
+                                    step="10"
+                                    [value]="filterState.priceRange.max"
+                                    (input)="onPriceRangeChange(filterState.priceRange.min, +$any($event.target).value)"
+                                    class="price-input">
+                            </div>
+                        </div>
+                        <div class="price-range-slider-wrapper">
+                            <input 
+                                type="range" 
+                                min="0" 
+                                max="1000" 
+                                step="10"
+                                [value]="filterState.priceRange.min"
+                                (input)="onPriceRangeChange(+$any($event.target).value, filterState.priceRange.max)"
+                                class="slider slider-min">
+                            <input 
+                                type="range" 
+                                min="0" 
+                                max="1000" 
+                                step="10"
+                                [value]="filterState.priceRange.max"
+                                (input)="onPriceRangeChange(filterState.priceRange.min, +$any($event.target).value)"
+                                class="slider slider-max">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Format -->
+                <div class="filter-section">
+                    <h3 class="filter-section-title">
+                        <i class="fa-solid fa-globe"></i>
+                        Format
+                    </h3>
+                    <div class="format-options">
+                        <button 
+                            class="format-option"
+                            [class.active]="filterState.format === 'online'"
+                            (click)="onFormatChange(filterState.format === 'online' ? null : 'online')">
+                            <i class="fa-solid fa-video"></i>
+                            <span>Online</span>
+                        </button>
+                        <button 
+                            class="format-option"
+                            [class.active]="filterState.format === 'offline'"
+                            (click)="onFormatChange(filterState.format === 'offline' ? null : 'offline')">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Offline</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="filter-actions">
+                    <button class="btn-clear" (click)="clearFilters()">
+                        <i class="fa-solid fa-xmark"></i>
+                        Clear All
+                    </button>
+                    <button class="btn-apply" (click)="applyFilters()">
+                        <i class="fa-solid fa-check"></i>
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+        }
+    </app-popup>
 
     <!-- Events Data Listing -->
     <app-body-events-data-listing 

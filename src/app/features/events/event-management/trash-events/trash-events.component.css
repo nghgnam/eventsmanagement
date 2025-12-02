@@ -30,7 +30,7 @@
 
 .loading-spinner i {
     margin-right: 10px;
-    color: #007bff;
+    color: #ff6b35;
 }
 
 .error-message {
@@ -140,7 +140,7 @@
 }
 
 .event-info i {
-    color: #007bff;
+    color: #ff6b35;
     width: 20px;
     text-align: center;
 }

@@ -46,7 +46,7 @@ interface FollowWithOrganizer extends Follows {
           <i class="fas fa-users"></i>
           <h3>No followed organizers</h3>
           <p>Start following organizers to see their events here</p>
-          <button class="btn-primary" routerLink="/body">Discover Organizers</button>
+          <button class="btn-primary" routerLink="/home">Discover Organizers</button>
         </div>
       }
 
