@@ -58,7 +58,7 @@ export class RegisterActionDemoComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (user) => {
         if (user) {
-          this.router.navigate(['/body']);
+          this.router.navigate(['/home']);
         }
       },
       error: (error) => {
@@ -171,7 +171,7 @@ export class RegisterActionDemoComponent implements OnInit, OnDestroy {
     this.authService.googleSignIn().subscribe({
       next: () => {
         this.isGoogleLoading.set(false);
-        this.router.navigate(['/body']);
+        this.router.navigate(['/home']);
       },
       error: (error) => {
         this.isGoogleLoading.set(false);

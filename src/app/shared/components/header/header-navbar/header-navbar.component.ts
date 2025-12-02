@@ -1,20 +1,19 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, PLATFORM_ID, DestroyRef, model } from '@angular/core';
+import { Component, DestroyRef, inject, model, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterModule } from '@angular/router';
 import { Observable, Subscription } from 'rxjs';
+import { User } from '../../../../core/models/userstype';
 import { AuthService } from '../../../../core/services/auth.service';
 import { SafeUrlService } from '../../../../core/services/santizer.service';
 import { SharedService } from '../../../../core/services/shared.service';
 import { UsersService } from '../../../../core/services/users.service';
-import { User } from '../../../../core/models/userstype';
 import { HeaderSearchComponent } from '../header-search/header-search.component';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PopupComponent } from '../../../components/popup/popup.component';
 
 @Component({
   selector: 'app-header-navbar',
   standalone: true,
-  imports: [RouterModule, CommonModule, HeaderSearchComponent, PopupComponent],
+  imports: [RouterModule, CommonModule, HeaderSearchComponent],
   templateUrl: './header-navbar.component.html',
   styleUrls: ['./header-navbar.component.css']
 })

@@ -1,0 +1,101 @@
+<div class="my-tickets-page">
+  <div class="page-header">
+    <div>
+      <h1>Vé của tôi</h1>
+      <p class="subtitle">Quản lý tất cả vé đã mua cho các sự kiện.</p>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'upcoming'"
+      (click)="setTab('upcoming')"
+    >
+      Sắp diễn ra
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'past'"
+      (click)="setTab('past')"
+    >
+      Đã qua
+    </button>
+  </div>
+
+  @if (activeTab === 'upcoming') {
+    <div class="ticket-list">
+      @if (upcomingTickets.length) {
+        @for (ticket of upcomingTickets; track ticket.id) {
+          <div class="ticket-card">
+            <div class="ticket-main">
+              <h2>{{ ticket.eventName }}</h2>
+              <p class="meta">
+                <span>{{ ticket.date | date: 'short' }}</span>
+                <span class="dot">•</span>
+                <span>{{ ticket.location }}</span>
+              </p>
+              <p class="info">
+                {{ ticket.quantity }} x {{ ticket.ticketType }}
+              </p>
+            </div>
+            <div class="ticket-actions">
+              <span class="status status-upcoming">Sắp diễn ra</span>
+              <a
+                class="btn-primary"
+                [routerLink]="['/my-tickets', ticket.id]"
+              >
+                Xem vé
+              </a>
+            </div>
+          </div>
+        }
+      } @else {
+        <div class="empty-state">
+          <h3>Chưa có vé sắp diễn ra</h3>
+          <p>Hãy khám phá và đặt vé cho các sự kiện sắp tới.</p>
+          <a routerLink="/home" class="btn-ghost">Khám phá sự kiện</a>
+        </div>
+      }
+    </div>
+  }
+
+  @if (activeTab === 'past') {
+    <div class="ticket-list">
+      @if (pastTickets.length) {
+        @for (ticket of pastTickets; track ticket.id) {
+          <div class="ticket-card">
+            <div class="ticket-main">
+              <h2>{{ ticket.eventName }}</h2>
+              <p class="meta">
+                <span>{{ ticket.date | date: 'short' }}</span>
+                <span class="dot">•</span>
+                <span>{{ ticket.location }}</span>
+              </p>
+              <p class="info">
+                {{ ticket.quantity }} x {{ ticket.ticketType }}
+              </p>
+            </div>
+            <div class="ticket-actions">
+              <span class="status status-past">Đã diễn ra</span>
+              <a
+                class="btn-secondary"
+                [routerLink]="['/my-tickets', ticket.id]"
+              >
+                Xem vé
+              </a>
+            </div>
+          </div>
+        }
+      } @else {
+        <div class="empty-state">
+          <h3>Chưa có sự kiện đã tham gia</h3>
+          <p>Các sự kiện đã tham gia sẽ hiển thị tại đây.</p>
+          <a routerLink="/home" class="btn-ghost">Xem sự kiện</a>
+        </div>
+      }
+    </div>
+  }
+</div>

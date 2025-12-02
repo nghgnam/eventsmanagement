@@ -1,0 +1,45 @@
+<div class="not-found-container">
+    <div class="not-found-content">
+        <div class="error-code">
+            <span class="code-number">4</span>
+            <span class="code-icon">
+                <i class="fa-solid fa-circle-exclamation"></i>
+            </span>
+            <span class="code-number">4</span>
+        </div>
+        
+        <h1 class="error-title">Page Not Found</h1>
+        
+        <p class="error-message">
+            Oops! The page you're looking for doesn't exist or has been moved.
+        </p>
+        
+        <div class="error-actions">
+            <a routerLink="/home" class="btn-primary">
+                <i class="fa-solid fa-house"></i>
+                <span>Go to Home</span>
+            </a>
+            <button (click)="goBack()" class="btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Go Back</span>
+            </button>
+        </div>
+        
+        <div class="helpful-links">
+            <h3>You might be looking for:</h3>
+            <ul>
+                <li><a routerLink="/home">Home</a></li>
+                <li><a routerLink="/home">Browse Events</a></li>
+                <li><a routerLink="/manage-events">Manage Events</a></li>
+                <li><a routerLink="/search-results">Search Events</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="not-found-illustration">
+        <div class="illustration-circle circle-1"></div>
+        <div class="illustration-circle circle-2"></div>
+        <div class="illustration-circle circle-3"></div>
+    </div>
+</div>
+

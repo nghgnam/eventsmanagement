@@ -15,7 +15,7 @@
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #6366f1;
+  color: #ff6b35;
   margin: 0 0 4px;
 }
 
@@ -95,7 +95,7 @@
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #818cf8;
+  color: #ff8c42;
   margin-bottom: 2px;
 }
 
@@ -200,8 +200,8 @@
 }
 
 .step-item.active {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.1);
 }
 
 .step-item.completed {
@@ -213,8 +213,8 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #eef2ff;
-  color: #4f46e5;
+  background: #fff4f0;
+  color: #ff6b35;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -259,9 +259,9 @@
 }
 
 .category-chip.selected {
-  border-color: #4f46e5;
-  background: #eef2ff;
-  color: #4f46e5;
+  border-color: #ff6b35;
+  background: #fff4f0;
+  color: #ff6b35;
 }
 
 .gallery-upload {
@@ -329,7 +329,7 @@
   right: 8px;
   top: 50%;
   transform: translateY(-50%);
-  background: #6366f1;
+  background: #ff6b35;
   color: white;
   border: none;
   border-radius: 6px;
@@ -345,7 +345,7 @@
 }
 
 .input-with-action .location-btn:hover:not(:disabled) {
-  background: #4f46e5;
+  background: #ff8c42;
   transform: translateY(-50%) scale(1.05);
 }
 
@@ -379,8 +379,8 @@
 }
 
 .currency-select ::ng-deep .ng-select.ng-select-focused .ng-select-container {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
 }
 
 .currency-option {
@@ -408,7 +408,7 @@
 }
 
 .currency-symbol {
-  color: #6366f1;
+  color: #ff6b35;
   font-weight: 500;
   font-size: 0.9rem;
 }

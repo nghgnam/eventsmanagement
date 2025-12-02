@@ -24,6 +24,7 @@ import { CloudinaryService } from '../../../../core/services/cloudinary.service'
 import { EventsService } from '../../../../core/services/events.service';
 import { CURRENCIES, Currency, getDefaultCurrency } from '../../../../core/models/currencies';
 import { NgSelectModule } from '@ng-select/ng-select';
+import { CategoriesService, Category } from '../../../../core/services/categories.service';
 
 interface CloudinaryResponse {
   secure_url: string;
@@ -47,6 +48,7 @@ export class CreateEventComponent implements OnInit, OnDestroy {
   private cloudinaryService = inject(CloudinaryService);
   private eventsService = inject(EventsService);
   private platformId = inject(PLATFORM_ID);
+  private categoriesService = inject(CategoriesService);
 
   eventForm: FormGroup;
   isLoading = false;
@@ -64,7 +66,9 @@ export class CreateEventComponent implements OnInit, OnDestroy {
   wardsValue: any[] = [];
   districtsWithCities: any[] = [];
   wardsWithDistricts: any[] = [];
-  availableCategories: string[] = ['Automotive', 'Technology', 'Health', 'Education', 'Sports', 'Entertainment', 'Finance'];
+  availableCategories: Category[] = [];
+  categoriesLoading = false;
+  categoriesError = '';
   wizardSteps: string[] = ['General Info & Media', 'Time & Location', 'Tickets & Capacity', 'Review & Submit'];
   currentStep = 1;
   readonly maxSteps = 4;
@@ -120,6 +124,7 @@ export class CreateEventComponent implements OnInit, OnDestroy {
     this.loadLocationData();
     this.setupFormListeners();
     this.initializeEventTypeState();
+    this.loadAvailableCategories();
   }
 
   ngOnDestroy(): void {
@@ -153,17 +158,17 @@ export class CreateEventComponent implements OnInit, OnDestroy {
     }
   }
 
-  toggleCategory(category: string): void {
-    const categories = new Set(this.eventForm.value.category || []);
-    if (categories.has(category)) {
-      categories.delete(category);
+  toggleCategory(category: Category): void {
+    const categories = new Set<string>(this.eventForm.value.category || []);
+    if (categories.has(category.slug)) {
+      categories.delete(category.slug);
     } else {
-      categories.add(category);
+      categories.add(category.slug);
     }
     this.eventForm.patchValue({ category: Array.from(categories) });
   }
-  isCategorySelected(category: string): boolean {
-    return (this.eventForm.value.category || []).includes(category);
+  isCategorySelected(category: Category): boolean {
+    return (this.eventForm.value.category || []).includes(category.slug);
   }
 
 
@@ -482,6 +487,37 @@ export class CreateEventComponent implements OnInit, OnDestroy {
     const value = eventTypeControl?.value;
     this.isOffline = value === 'offline';
     this.isHybird = value === 'hybrid';
+  }
+
+  private loadAvailableCategories(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      this.availableCategories = [];
+      return;
+    }
+
+    this.categoriesLoading = true;
+    const sub = this.categoriesService.getCategories().subscribe({
+      next: (categories) => {
+        this.availableCategories = categories;
+        this.categoriesError = categories.length ? '' : 'No categories available';
+        this.categoriesLoading = false;
+      },
+      error: (error) => {
+        console.error('Failed to load categories:', error);
+        this.availableCategories = [];
+        this.categoriesError = 'Failed to load categories';
+        this.categoriesLoading = false;
+      }
+    });
+
+    this.formSubscriptions.push(sub);
+  }
+
+  private getDefaultCategorySlugs(count = 2): string[] {
+    if (!this.availableCategories.length) {
+      return [];
+    }
+    return this.availableCategories.slice(0, count).map(cat => cat.slug);
   }
 
   private loadLocationData(): void {
@@ -943,12 +979,14 @@ export class CreateEventComponent implements OnInit, OnDestroy {
       return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
+    const defaultCategories = this.getDefaultCategorySlugs(2);
+
     // Set basic form values
     this.eventForm.patchValue({
       name: 'Tech Innovation Summit 2024',
       shortDescription: 'Explore the latest trends in AI, blockchain, and IoT with industry leaders',
       content: 'A comprehensive conference featuring keynote speakers, panel discussions, and networking sessions on emerging technologies. Join us for an exciting day of learning and networking with industry experts.',
-      category: ['Technology', 'Innovation'],
+      category: defaultCategories.length ? defaultCategories : ['cong-nghe-ai', 'innovation'],
       tags: 'Technology, Innovation, AI, Blockchain, IoT, Networking',
       eventType: 'offline',
       location: 'Ho Chi Minh City Convention Center',
@@ -1037,6 +1075,8 @@ export class CreateEventComponent implements OnInit, OnDestroy {
     endDate.setHours(21, 0, 0, 0);
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+    const mockCategories = this.getDefaultCategorySlugs(2);
+
     const mockEvent: Partial<EventList> = {
       core: {
         id: '',
@@ -1044,7 +1084,7 @@ export class CreateEventComponent implements OnInit, OnDestroy {
         shortDescription: 'Explore the latest trends in AI, blockchain, and IoT with industry leaders',
         description: 'A comprehensive conference featuring keynote speakers, panel discussions, and networking sessions on emerging technologies.',
         content: 'A comprehensive conference featuring keynote speakers, panel discussions, and networking sessions on emerging technologies. Join us for an exciting day of learning and networking with industry experts.',
-        category: ['Technology', 'Innovation'],
+        category: mockCategories.length ? mockCategories : ['cong-nghe-ai', 'innovation'],
         tags: ['Technology', 'Innovation', 'AI', 'Blockchain', 'IoT', 'Networking'],
         eventType: 'offline',
         price: 299000

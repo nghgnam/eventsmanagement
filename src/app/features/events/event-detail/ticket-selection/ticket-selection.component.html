@@ -1,0 +1,96 @@
+<div class="ticket-selection">
+  <h3 class="ticket-selection-title">Chọn vé</h3>
+  
+  @if (availableTickets.length === 0) {
+    <div class="no-tickets">
+      <i class="fa-solid fa-ticket"></i>
+      <p>Chưa có loại vé nào được cấu hình cho sự kiện này.</p>
+    </div>
+  } @else {
+    <div class="tickets-list">
+      @for (ticket of availableTickets; track ticket.id) {
+        <div class="ticket-card" [class.disabled]="!ticket.quantityAvailable || (ticket.quantityAvailable <= 0)">
+          <div class="ticket-header">
+            <div class="ticket-info">
+              <h4 class="ticket-name">{{ ticket.name || 'General Admission' }}</h4>
+              @if (ticket.description) {
+                <p class="ticket-description">{{ ticket.description }}</p>
+              }
+            </div>
+            <div class="ticket-price">
+              @if (ticket.price && ticket.price > 0) {
+                <span class="price-value">{{ ticket.price | currency:'VND':'symbol':'1.0-0' }}</span>
+              } @else {
+                <span class="price-value free">Miễn phí</span>
+              }
+            </div>
+          </div>
+          
+          <div class="ticket-footer">
+            <div class="ticket-availability">
+              @if (ticket.quantityAvailable !== null && ticket.quantityAvailable !== undefined) {
+                <span class="available-label">
+                  Còn lại: <strong>{{ ticket.quantityAvailable }}</strong> vé
+                </span>
+              } @else if (ticket.quantity !== null && ticket.quantity !== undefined) {
+                <span class="available-label">
+                  Tổng số: <strong>{{ ticket.quantity }}</strong> vé
+                </span>
+              }
+            </div>
+            
+            <div class="quantity-controls">
+              <button 
+                type="button"
+                class="quantity-btn decrease" 
+                (click)="decreaseQuantity(ticket)"
+                [disabled]="!canDecrease(ticket.id)">
+                <i class="fa-solid fa-minus"></i>
+              </button>
+              <span class="quantity-value">{{ getSelectedQuantity(ticket.id) }}</span>
+              <button 
+                type="button"
+                class="quantity-btn increase" 
+                (click)="increaseQuantity(ticket)"
+                [disabled]="!canIncrease(ticket) || !ticket.quantityAvailable || ticket.quantityAvailable <= 0">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+          </div>
+          
+          @if (getSelectedQuantity(ticket.id) > 0) {
+            <div class="ticket-subtotal">
+              {{ getSelectedQuantity(ticket.id) }} vé × {{ (ticket.price || 0) | currency:'VND':'symbol':'1.0-0' }} = 
+              <strong>{{ (getSelectedQuantity(ticket.id) * (ticket.price || 0)) | currency:'VND':'symbol':'1.0-0' }}</strong>
+            </div>
+          }
+        </div>
+      }
+    </div>
+    
+    @if (getTotalQuantity() > 0) {
+      <div class="order-summary">
+        <div class="summary-row">
+          <span>Tổng số vé:</span>
+          <strong>{{ getTotalQuantity() }} vé</strong>
+        </div>
+        <div class="summary-row total">
+          <span>Tổng tạm tính:</span>
+          <strong class="total-price">{{ totalPrice() | currency:'VND':'symbol':'1.0-0' }}</strong>
+        </div>
+      </div>
+      
+      <div class="buy-now-section">
+        <button 
+          type="button"
+          class="buy-now-btn" 
+          (click)="onBuyNow()"
+          [disabled]="!canBuyNow()">
+          <i class="fa-solid fa-shopping-cart"></i>
+          <span>Đặt vé ngay</span>
+        </button>
+      </div>
+    }
+  }
+</div>
+

@@ -40,11 +40,14 @@
                       }
                   </div>
                   <div class="organizer_info">
-                      <span style="font-weight: 600;">By</span>
-                      <p>{{ event.organizer.name }}</p>
-                      <span>-</span>
-                      <p>{{ event.organizer.followers }}</p>
-                      <span style="font-weight: 600;">followers</span>
+                      <div class="organizer_info_header">
+                          <span class="organizer_by_label">By</span>
+                          <p class="organizer_name">{{ event.organizer.name }}</p>
+                      </div>
+                      <div class="organizer_info_footer">
+                          <span class="organizer_followers_count">{{ event.organizer.followers }}</span>
+                          <span class="organizer_followers_label">followers</span>
+                      </div>
                   </div>
                   <button (click)="actionFollow()" [disabled]="isFollowLoading || isOrganizer" [class.active]="hasFollow"
                       class="organizer_follow">
@@ -158,65 +161,123 @@
 
             <!-- More Events from Organizer -->
             @if (events$ | async; as events) {
-              <div class="section_title">
-                <h2>More events from this organizer</h2>
-              </div>
-              <div class="events_other">
-                @for (e of events; track e.id) {
-                  <div class="event_other">
-                    @if (event.organizer && e.organizer && e.organizer.name === event.organizer.name) {
-                      <div class="event_other_block" (click)="goToDetail(e.id)">
-                        <div class="event_other_image">
-                            @if (getSafeUrl(e.image_url); as SafeUrl) {
-                              <img [src]="SafeUrl" [alt]="e.name">
-                            }
-                            <div class="event_other_date">
-                                <span class="day">{{e.date_time_options[0].start_time | date : "d"}}</span>
-                                <span class="month">{{e.date_time_options[0].start_time | date : "MMM"}}</span>
-                            </div>
-                        </div>
-                        <div class="event_other_info">
-                            <p class="event_other_title">{{e.name}}</p>
-                            <p class="event_other_time">{{e.date_time_options[0].start_time | date : "EEEE MMMM d ha"}}
-                            </p>
-                            <p class="event_other_price">{{e.price ? (e.price | currency) : 'Free'}}</p>
-                            <p class="event_other_organizer">{{e.organizer.name}}</p>
+              @if (getOtherEventsFromOrganizer(events).length > 0) {
+                <div class="section_title">
+                  <h2>More events from this organizer</h2>
+                </div>
+                <div class="events_other">
+                  @for (e of getOtherEventsFromOrganizer(events); track e.id) {
+                    <div class="event_other_block" (click)="goToDetail(e.id)">
+                      <div class="event_other_image">
+                        @if (getSafeUrl(e.image_url); as SafeUrl) {
+                          <img [src]="SafeUrl" [alt]="e.name" appImageErrorHandler>
+                        } @else {
+                          <img [src]="getDefaultImageUrl()" [alt]="e.name" appImageErrorHandler>
+                        }
+                        <div class="event_other_date">
+                          <span class="day">{{e.date_time_options[0]?.start_time | date : "d"}}</span>
+                          <span class="month">{{e.date_time_options[0]?.start_time | date : "MMM"}}</span>
                         </div>
                       </div>
-                    }
-                  </div>
-                }
-              </div>
+                      <div class="event_other_info">
+                        <h3 class="event_other_title">{{e.name}}</h3>
+                        <p class="event_other_time">
+                          <i class="fa-solid fa-clock"></i>
+                          {{e.date_time_options[0]?.start_time | date : "EEEE MMMM d, y 'at' h:mm a"}}
+                        </p>
+                        <p class="event_other_price">
+                          {{e.price && e.price > 0 ? (e.price | currency:'VND':'symbol':'1.0-0') : 'Free'}}
+                        </p>
+                        @if (e.organizer) {
+                          <p class="event_other_organizer">
+                            <i class="fa-solid fa-user"></i>
+                            {{e.organizer.name}}
+                          </p>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
             }
         </div>
 
         <!-- Ticket Purchase Section -->
-        <div class="get_ticket">
-            <div class="ticket_info">
-                <div class="ticket_quantity">
-                    <span>General Admission</span>
-                    <div class="quantity_controls">
-                        <button class="decrease" (click)="deCreaseTicket()">-</button>
-                        <p class="total_ticket">{{totalTicket}}</p>
-                        <button class="increase" (click)="inCreaseTicket()">+</button>
-                    </div>
-                </div>
-                <div class="ticket_price">
-                    @if (totalPrice) {
-                      <div class="price">{{totalPrice | currency}}</div>
-                    } @else {
-                      <div class="price">Free</div>
-                    }
-                    <div class="ticket_status">
-                        <i class="fa-solid fa-circle-exclamation" (click)="isChecked()"></i>
-                        <p class="ticket_status_info" [class.hidden]="isHidden" [class.show]="!isHidden">
-                            Sale ends on {{showEndTime | date: "MMMM d yyyy"}}
-                        </p>
-                    </div>
-                </div>
+        <div class="event_ticket">
+            <div class="get_ticket">
+                <app-ticket-selection
+                    [event]="event"
+                    (ticketsSelected)="onTicketsSelected($event)"
+                    (buyNow)="onBuyNow($event)">
+                </app-ticket-selection>
             </div>
-            <button class="reserve_a_spot">Reserve a spot</button>
         </div>
     </div>
   </div>
+
+  <!-- Order Review Popup -->
+  <app-popup
+    title="Xác nhận đơn hàng"
+    width="90vw"
+    height="90vh"
+    [(isVisible)]="showOrderReviewPopup">
+    @if (showOrderReviewPopup) {
+      <app-order-review-popup
+        [event]="event"
+        [selectedTickets]="selectedTickets"
+        (proceedToPayment)="onProceedToPayment($event)"
+        (cancel)="onOrderReviewCancel()">
+      </app-order-review-popup>
+    }
+  </app-popup>
+
+  <!-- Payment Method Popup -->
+  <app-popup
+    title="Chọn phương thức thanh toán"
+    width="90vw"
+    height="90vh"
+    [(isVisible)]="showPaymentMethodPopup">
+    @if (showPaymentMethodPopup) {
+      <app-payment-method-popup
+        [totalAmount]="totalAmount"
+        (methodSelected)="onPaymentMethodSelected($event)"
+        (cancel)="onPaymentMethodCancel()">
+      </app-payment-method-popup>
+    }
+  </app-popup>
+
+  <!-- QR Payment Popup -->
+  <app-popup
+    title="Thanh toán qua QR Code"
+    width="90vw"
+    height="90vh"
+    [(isVisible)]="showQRPaymentPopup">
+    @if (showQRPaymentPopup) {
+      <app-qr-payment-popup
+        [orderId]="currentOrderId"
+        [amount]="totalAmount"
+        (paymentConfirmed)="onQRPaymentConfirmed()"
+        (cancel)="onQRPaymentCancel()">
+      </app-qr-payment-popup>
+    }
+  </app-popup>
+
+  <!-- Payment Result Popup -->
+  <app-popup
+    [title]="paymentResult === 'success' ? 'Thanh toán thành công' : 'Kết quả thanh toán'"
+    width="90vw"
+    height="90vh"
+    [(isVisible)]="showPaymentResultPopup">
+    @if (showPaymentResultPopup) {
+      <app-payment-result-popup
+        [result]="paymentResult"
+        [message]="paymentResultMessage"
+        [orderId]="currentOrderId"
+        (close)="onPaymentResultClose()"
+        (viewTickets)="onPaymentResultViewTickets()"
+        (goHome)="onPaymentResultGoHome()"
+        (retry)="onPaymentResultRetry()">
+      </app-payment-result-popup>
+    }
+  </app-popup>
 }

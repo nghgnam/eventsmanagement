@@ -106,13 +106,19 @@
             <div class="category-selector">
               <p class="section-label">Categories</p>
               <div class="category-chip-group">
-                @for (category of availableCategories; track category) {
-                  <button type="button"
-                    class="category-chip"
-                    [class.selected]="isCategorySelected(category)"
-                    (click)="toggleCategory(category)">
-                    {{ category }}
-                  </button>
+                @if (categoriesLoading) {
+                  <span class="loading-text">Loading categories...</span>
+                } @else if (availableCategories.length > 0) {
+                  @for (category of availableCategories; track category.slug) {
+                    <button type="button"
+                      class="category-chip"
+                      [class.selected]="isCategorySelected(category)"
+                      (click)="toggleCategory(category)">
+                      {{ category.name }}
+                    </button>
+                  }
+                } @else {
+                  <span class="empty-text">{{ categoriesError || 'No categories available' }}</span>
                 }
               </div>
             </div>

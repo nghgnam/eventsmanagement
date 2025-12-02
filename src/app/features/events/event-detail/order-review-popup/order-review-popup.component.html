@@ -1,0 +1,124 @@
+<div class="order-review">
+  <div class="order-summary-section">
+    <h3 class="section-title">Tóm tắt đơn hàng</h3>
+    
+    @if (event) {
+      <div class="event-info">
+        <h4 class="event-name">{{ event.name }}</h4>
+      </div>
+    }
+    
+    <div class="tickets-list">
+      @for (ticket of selectedTickets; track ticket.ticketId) {
+        <div class="ticket-item">
+          <div class="ticket-details">
+            <span class="ticket-name">{{ ticket.ticketType.name || 'General Admission' }}</span>
+            <span class="ticket-quantity">× {{ ticket.quantity }}</span>
+          </div>
+          <span class="ticket-subtotal">{{ ticket.subtotal | currency:'VND':'symbol':'1.0-0' }}</span>
+        </div>
+      }
+    </div>
+    
+    <div class="price-breakdown">
+      <div class="price-row">
+        <span>Tạm tính:</span>
+        <span>{{ getSubtotal() | currency:'VND':'symbol':'1.0-0' }}</span>
+      </div>
+      @if (discount() > 0) {
+        <div class="price-row discount">
+          <span>Giảm giá:</span>
+          <span class="discount-value">-{{ discount() | currency:'VND':'symbol':'1.0-0' }}</span>
+        </div>
+      }
+      <div class="price-row total">
+        <span>Tổng cộng:</span>
+        <strong class="total-price">{{ getTotal() | currency:'VND':'symbol':'1.0-0' }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="buyer-info-section">
+    <h3 class="section-title">Thông tin người mua</h3>
+    
+    <form [formGroup]="buyerForm" class="buyer-form">
+      <div class="form-group">
+        <label for="fullName">Họ và tên <span class="required">*</span></label>
+        <input 
+          type="text" 
+          id="fullName"
+          formControlName="fullName"
+          placeholder="Nhập họ và tên"
+          [class.invalid]="buyerForm.get('fullName')?.invalid && buyerForm.get('fullName')?.touched">
+        @if (buyerForm.get('fullName')?.invalid && buyerForm.get('fullName')?.touched) {
+          <span class="error-message">Vui lòng nhập họ và tên</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email <span class="required">*</span></label>
+        <input 
+          type="email" 
+          id="email"
+          formControlName="email"
+          placeholder="Nhập email"
+          [class.invalid]="buyerForm.get('email')?.invalid && buyerForm.get('email')?.touched">
+        @if (buyerForm.get('email')?.invalid && buyerForm.get('email')?.touched) {
+          <span class="error-message">
+            {{ buyerForm.get('email')?.errors?.['required'] ? 'Vui lòng nhập email' : 'Email không hợp lệ' }}
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Số điện thoại <span class="required">*</span></label>
+        <input 
+          type="tel" 
+          id="phone"
+          formControlName="phone"
+          placeholder="Nhập số điện thoại"
+          [class.invalid]="buyerForm.get('phone')?.invalid && buyerForm.get('phone')?.touched">
+        @if (buyerForm.get('phone')?.invalid && buyerForm.get('phone')?.touched) {
+          <span class="error-message">Vui lòng nhập số điện thoại</span>
+        }
+      </div>
+    </form>
+  </div>
+
+  <div class="coupon-section">
+    <h3 class="section-title">Mã giảm giá (nếu có)</h3>
+    <div class="coupon-input-group">
+      <input 
+        type="text" 
+        [value]="couponCode()"
+        (input)="couponCode.set($any($event.target).value)"
+        placeholder="Nhập mã giảm giá"
+        class="coupon-input">
+      <button type="button" class="apply-coupon-btn" (click)="applyCoupon()">
+        Áp dụng
+      </button>
+    </div>
+    @if (discount() > 0) {
+      <div class="coupon-success">
+        <i class="fa-solid fa-check-circle"></i>
+        <span>Đã áp dụng mã giảm giá thành công!</span>
+      </div>
+    }
+  </div>
+
+  <div class="action-buttons">
+    <button type="button" class="btn btn-secondary" (click)="onCancel()">
+      <i class="fa-solid fa-arrow-left"></i>
+      Quay lại
+    </button>
+    <button 
+      type="button" 
+      class="btn btn-primary" 
+      (click)="onProceedToPayment()"
+      [disabled]="buyerForm.invalid">
+      <i class="fa-solid fa-credit-card"></i>
+      Tiếp tục thanh toán
+    </button>
+  </div>
+</div>
+

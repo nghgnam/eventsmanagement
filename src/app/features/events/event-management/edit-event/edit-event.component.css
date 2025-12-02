@@ -5,7 +5,7 @@
 }
 
 .clickable-step:focus {
-  outline: 2px solid #6366f1;
+  outline: 2px solid #ff6b35;
   outline-offset: 2px;
 }
 
