@@ -10,6 +10,7 @@ import { NotFoundComponent } from './shared/components/not-found/not-found.compo
 import { authGuard } from './core/guards/authGuard.guard';
 import { MyTicketsComponent } from './features/tickets/my-tickets/my-tickets.component';
 import { TicketDetailComponent } from './features/tickets/ticket-detail/ticket-detail.component';
+import { SavedEventsComponent } from './features/events/event-list/saved-events/saved-events.component';
 export const routes: Routes = [
   {
     path: '',
@@ -55,6 +56,11 @@ export const routes: Routes = [
         path: 'following',
         canActivate: [authGuard],
         loadComponent: () => import('./features/users/following/following-organizers/following-organizers.component').then(m => m.FollowingOrganizersComponent)
+      },
+      {
+        path: 'saved-events',
+        canActivate: [authGuard],
+        component: SavedEventsComponent
       },
       {
         path: 'not-found',
