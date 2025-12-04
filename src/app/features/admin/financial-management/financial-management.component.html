@@ -1,0 +1,253 @@
+<div class="financial-management-container">
+  <div class="container">
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1>Quản lý tài chính</h1>
+        <p class="subtitle">Quản lý doanh thu và xử lý yêu cầu rút tiền</p>
+      </div>
+    </div>
+
+    <!-- Revenue Summary -->
+    <div class="revenue-summary">
+      <div class="summary-card">
+        <h3>Tổng doanh thu</h3>
+        <p class="summary-value">{{ revenueSummary.totalRevenue | currency:'VND':'symbol':'1.0-0' }}</p>
+      </div>
+      <div class="summary-card">
+        <h3>Phí sàn</h3>
+        <p class="summary-value fee">{{ revenueSummary.platformFee | currency:'VND':'symbol':'1.0-0' }}</p>
+        <small>{{ (platformFeeRate * 100) }}% phí sàn</small>
+      </div>
+      <div class="summary-card">
+        <h3>Đã chi trả</h3>
+        <p class="summary-value paid">{{ revenueSummary.totalPayouts | currency:'VND':'symbol':'1.0-0' }}</p>
+      </div>
+      <div class="summary-card">
+        <h3>Chờ xử lý</h3>
+        <p class="summary-value pending">{{ revenueSummary.pendingPayouts | currency:'VND':'symbol':'1.0-0' }}</p>
+      </div>
+      <div class="summary-card highlight">
+        <h3>Lợi nhuận sàn</h3>
+        <p class="summary-value profit">{{ revenueSummary.platformProfit | currency:'VND':'symbol':'1.0-0' }}</p>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+      <div class="filters-row">
+        <div class="search-box">
+          <i class="fa-solid fa-search"></i>
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (input)="onSearchChange()"
+            placeholder="Tìm kiếm theo tổ chức, email, số tài khoản..."
+          />
+        </div>
+        <select [(ngModel)]="filterStatus" (change)="onFilterChange()">
+          <option value="pending">Chờ xử lý</option>
+          <option value="all">Tất cả</option>
+          <option value="processing">Đang xử lý</option>
+          <option value="completed">Hoàn thành</option>
+          <option value="rejected">Đã từ chối</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Payouts List -->
+    <div class="payouts-list-section">
+      @if (isLoading) {
+        <div class="loading">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <p>Đang tải...</p>
+        </div>
+      } @else if (filteredPayouts.length > 0) {
+        <div class="payouts-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Tổ chức</th>
+                <th>Số tiền</th>
+                <th>Phí sàn</th>
+                <th>Số tiền nhận</th>
+                <th>Thông tin ngân hàng</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (payout of filteredPayouts; track payout.id) {
+                <tr>
+                  <td>
+                    <div class="organizer-info">
+                      <strong>{{ payout.organizerName }}</strong>
+                      <p class="organizer-email">{{ payout.organizerEmail }}</p>
+                      <p class="request-date">
+                        <i class="fa-solid fa-clock"></i>
+                        Yêu cầu: {{ payout.requestedAt | date:'dd/MM/yyyy HH:mm' }}
+                      </p>
+                    </div>
+                  </td>
+                  <td>
+                    <strong class="amount">{{ payout.amount | currency:'VND':'symbol':'1.0-0' }}</strong>
+                  </td>
+                  <td>
+                    <span class="fee-amount">{{ payout.platformFee | currency:'VND':'symbol':'1.0-0' }}</span>
+                  </td>
+                  <td>
+                    <strong class="net-amount">{{ payout.netAmount | currency:'VND':'symbol':'1.0-0' }}</strong>
+                  </td>
+                  <td>
+                    <div class="bank-info">
+                      <p><strong>{{ payout.bankName }}</strong></p>
+                      <p>{{ payout.bankAccount }}</p>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="status-badge" [class]="getStatusBadgeClass(payout.status)">
+                      {{ getStatusText(payout.status) }}
+                    </span>
+                    @if (payout.processedAt) {
+                      <p class="processed-date">
+                        Xử lý: {{ payout.processedAt | date:'dd/MM/yyyy HH:mm' }}
+                      </p>
+                    }
+                    @if (payout.transactionId) {
+                      <p class="transaction-id">
+                        <i class="fa-solid fa-receipt"></i>
+                        {{ payout.transactionId }}
+                      </p>
+                    }
+                    @if (payout.rejectionReason) {
+                      <p class="rejection-reason">
+                        <i class="fa-solid fa-exclamation-triangle"></i>
+                        {{ payout.rejectionReason }}
+                      </p>
+                    }
+                  </td>
+                  <td>
+                    <div class="payout-actions">
+                      @if (payout.status === 'pending') {
+                        <button class="btn-small btn-success" (click)="openProcessModal(payout)">
+                          <i class="fa-solid fa-check"></i> Xử lý
+                        </button>
+                        <button class="btn-small btn-danger" (click)="openRejectModal(payout)">
+                          <i class="fa-solid fa-times"></i> Từ chối
+                        </button>
+                      } @else if (payout.status === 'completed') {
+                        <span class="completed-badge">
+                          <i class="fa-solid fa-check-circle"></i> Đã hoàn thành
+                        </span>
+                      } @else if (payout.status === 'rejected') {
+                        <span class="rejected-badge">
+                          <i class="fa-solid fa-times-circle"></i> Đã từ chối
+                        </span>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="fa-solid fa-wallet"></i>
+          <p>Không tìm thấy yêu cầu rút tiền nào</p>
+          @if (searchQuery || filterStatus !== 'all') {
+            <button class="btn-ghost" (click)="searchQuery = ''; filterStatus = 'pending'; applyFilters()">
+              Xóa bộ lọc
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Process Modal -->
+  @if (showProcessModal && selectedPayout) {
+    <div class="modal-overlay" (click)="closeProcessModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Xử lý yêu cầu rút tiền</h2>
+          <button class="modal-close" (click)="closeProcessModal()">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="payout-details">
+            <p><strong>Tổ chức:</strong> {{ selectedPayout.organizerName }}</p>
+            <p><strong>Email:</strong> {{ selectedPayout.organizerEmail }}</p>
+            <p><strong>Số tiền yêu cầu:</strong> {{ selectedPayout.amount | currency:'VND':'symbol':'1.0-0' }}</p>
+            <p><strong>Phí sàn ({{ platformFeeRate * 100 }}%):</strong> {{ selectedPayout.platformFee | currency:'VND':'symbol':'1.0-0' }}</p>
+            <p><strong>Số tiền chi trả:</strong> <span class="highlight">{{ selectedPayout.netAmount | currency:'VND':'symbol':'1.0-0' }}</span></p>
+            <p><strong>Ngân hàng:</strong> {{ selectedPayout.bankName }}</p>
+            <p><strong>Số tài khoản:</strong> {{ selectedPayout.bankAccount }}</p>
+          </div>
+
+          <div class="form-group">
+            <label for="transactionId">Mã giao dịch chuyển khoản <span class="required">*</span></label>
+            <input
+              id="transactionId"
+              type="text"
+              [(ngModel)]="transactionId"
+              placeholder="Nhập mã giao dịch từ ngân hàng..."
+              class="form-control"
+            />
+            <small class="form-hint">Mã giao dịch này sẽ được lưu để đối chiếu</small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeProcessModal()">Hủy</button>
+          <button type="button" class="btn-success" (click)="processPayout()" [disabled]="!transactionId.trim()">
+            <i class="fa-solid fa-check"></i> Xác nhận đã chuyển khoản
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Reject Modal -->
+  @if (showRejectModal && selectedPayout) {
+    <div class="modal-overlay" (click)="closeRejectModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Từ chối yêu cầu rút tiền</h2>
+          <button class="modal-close" (click)="closeRejectModal()">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="payout-details">
+            <p><strong>Tổ chức:</strong> {{ selectedPayout.organizerName }}</p>
+            <p><strong>Số tiền yêu cầu:</strong> {{ selectedPayout.amount | currency:'VND':'symbol':'1.0-0' }}</p>
+          </div>
+
+          <div class="form-group">
+            <label for="rejectionReason">Lý do từ chối <span class="required">*</span></label>
+            <textarea
+              id="rejectionReason"
+              [(ngModel)]="rejectionReason"
+              rows="5"
+              placeholder="Nhập lý do từ chối yêu cầu này..."
+              class="form-control"
+            ></textarea>
+            <small class="form-hint">Lý do này sẽ được gửi đến Organizer</small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeRejectModal()">Hủy</button>
+          <button type="button" class="btn-danger" (click)="rejectPayout()" [disabled]="!rejectionReason.trim()">
+            <i class="fa-solid fa-times"></i> Từ chối yêu cầu
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+

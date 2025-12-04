@@ -8,6 +8,7 @@ import { TicketEventsManageComponent } from './features/tickets/ticket-events-ma
 import { UserInformationComponent } from './features/users/profile/user-information/user-information.component';
 import { NotFoundComponent } from './shared/components/not-found/not-found.component';
 import { authGuard } from './core/guards/authGuard.guard';
+import { adminGuard } from './core/guards/adminGuard.guard';
 import { MyTicketsComponent } from './features/tickets/my-tickets/my-tickets.component';
 import { TicketDetailComponent } from './features/tickets/ticket-detail/ticket-detail.component';
 import { SavedEventsComponent } from './features/events/event-list/saved-events/saved-events.component';
@@ -97,6 +98,34 @@ export const routes: Routes = [
             path: '',
             redirectTo: 'events',
             pathMatch: 'full'
+          }
+        ]
+      },
+      // Admin group routes
+      {
+        path: 'admin',
+        canActivate: [adminGuard],
+        children: [
+          {
+            path: '',
+            redirectTo: 'dashboard',
+            pathMatch: 'full'
+          },
+          {
+            path: 'dashboard',
+            loadComponent: () => import('./features/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
+          },
+          {
+            path: 'events',
+            loadComponent: () => import('./features/admin/event-moderation/event-moderation.component').then(m => m.EventModerationComponent)
+          },
+          {
+            path: 'users',
+            loadComponent: () => import('./features/admin/user-management/user-management.component').then(m => m.UserManagementComponent)
+          },
+          {
+            path: 'payouts',
+            loadComponent: () => import('./features/admin/financial-management/financial-management.component').then(m => m.FinancialManagementComponent)
           }
         ]
       },

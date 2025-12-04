@@ -1,0 +1,127 @@
+<div class="admin-dashboard-container">
+  <div class="container">
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1>Admin Dashboard</h1>
+        <p class="subtitle">Tổng quan hệ thống</p>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon events">
+          <i class="fa-solid fa-calendar-check"></i>
+        </div>
+        <div class="stat-content">
+          <h3>Tổng sự kiện</h3>
+          <p class="stat-value">{{ stats.totalEvents | number }}</p>
+          <a routerLink="/admin/events" class="stat-link">
+            {{ stats.pendingEvents }} đang chờ duyệt <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon users">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-content">
+          <h3>Tổng người dùng</h3>
+          <p class="stat-value">{{ stats.totalUsers | number }}</p>
+          <div class="stat-details">
+            <span class="success">{{ stats.activeUsers }} hoạt động</span>
+            <span class="danger">{{ stats.blockedUsers }} bị khóa</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon revenue">
+          <i class="fa-solid fa-money-bill-wave"></i>
+        </div>
+        <div class="stat-content">
+          <h3>Tổng doanh thu</h3>
+          <p class="stat-value">{{ stats.totalRevenue | currency:'VND':'symbol':'1.0-0' }}</p>
+          <p class="stat-subtitle">Phí sàn: {{ stats.platformFee | currency:'VND':'symbol':'1.0-0' }}</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon payouts">
+          <i class="fa-solid fa-credit-card"></i>
+        </div>
+        <div class="stat-content">
+          <h3>Chờ xử lý rút tiền</h3>
+          <p class="stat-value">{{ stats.pendingPayouts | currency:'VND':'symbol':'1.0-0' }}</p>
+          <a routerLink="/admin/payouts" class="stat-link">
+            Xem chi tiết <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <h2>Thao tác nhanh</h2>
+      <div class="actions-grid">
+        <a routerLink="/admin/events" class="action-card">
+          <i class="fa-solid fa-clipboard-check"></i>
+          <h3>Duyệt sự kiện</h3>
+          <p>{{ stats.pendingEvents }} sự kiện đang chờ</p>
+        </a>
+        <a routerLink="/admin/users" class="action-card">
+          <i class="fa-solid fa-user-gear"></i>
+          <h3>Quản lý người dùng</h3>
+          <p>Quản lý tài khoản và quyền truy cập</p>
+        </a>
+        <a routerLink="/admin/payouts" class="action-card">
+          <i class="fa-solid fa-wallet"></i>
+          <h3>Quản lý tài chính</h3>
+          <p>Xử lý yêu cầu rút tiền</p>
+        </a>
+      </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="recent-activities">
+      <h2>Hoạt động gần đây</h2>
+      <div class="activities-list">
+        @if (isLoading) {
+          <div class="loading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Đang tải...</p>
+          </div>
+        } @else if (recentActivities.length > 0) {
+          @for (activity of recentActivities; track activity.timestamp) {
+            <div class="activity-item">
+              <div class="activity-icon" [class]="activity.type">
+                @switch (activity.type) {
+                  @case ('event') {
+                    <i class="fa-solid fa-calendar"></i>
+                  }
+                  @case ('user') {
+                    <i class="fa-solid fa-user"></i>
+                  }
+                  @case ('payout') {
+                    <i class="fa-solid fa-money-bill"></i>
+                  }
+                }
+              </div>
+              <div class="activity-content">
+                <p class="activity-description">{{ activity.description }}</p>
+                <span class="activity-time">{{ getTimeAgo(activity.timestamp) }}</span>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="empty-state">
+            <p>Chưa có hoạt động nào</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+

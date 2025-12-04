@@ -1,0 +1,154 @@
+<div class="event-moderation-container">
+  <div class="container">
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1>Duyệt sự kiện</h1>
+        <p class="subtitle">Kiểm duyệt và phê duyệt sự kiện trước khi công khai</p>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+      <div class="filters-row">
+        <div class="search-box">
+          <i class="fa-solid fa-search"></i>
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (input)="onSearchChange()"
+            placeholder="Tìm kiếm theo tên sự kiện, tổ chức, địa điểm..."
+          />
+        </div>
+        <select [(ngModel)]="filterStatus" (change)="onFilterChange()">
+          <option value="pending">Chờ duyệt</option>
+          <option value="all">Tất cả</option>
+          <option value="approved">Đã duyệt</option>
+          <option value="rejected">Đã từ chối</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Events List -->
+    <div class="events-list-section">
+      @if (isLoading) {
+        <div class="loading">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <p>Đang tải...</p>
+        </div>
+      } @else if (filteredEvents.length > 0) {
+        <div class="events-grid">
+          @for (event of filteredEvents; track event.id) {
+            <div class="event-card">
+              <div class="event-image">
+                <img [src]="event.imageUrl" [alt]="event.name" />
+                <span class="status-badge" [class]="getStatusBadgeClass(event.status)">
+                  {{ getStatusText(event.status) }}
+                </span>
+              </div>
+
+              <div class="event-content">
+                <h3 class="event-title">{{ event.name }}</h3>
+                <p class="event-description">{{ event.description }}</p>
+
+                <div class="event-details">
+                  <div class="detail-item">
+                    <i class="fa-solid fa-user"></i>
+                    <span>{{ event.organizerName }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <i class="fa-solid fa-calendar"></i>
+                    <span>{{ event.startDate | date:'dd/MM/yyyy HH:mm' }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>{{ event.locationText }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>Gửi: {{ event.submittedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                  </div>
+                  @if (event.reviewedAt) {
+                    <div class="detail-item">
+                      <i class="fa-solid fa-check-circle"></i>
+                      <span>Duyệt: {{ event.reviewedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                    </div>
+                  }
+                  @if (event.rejectionReason) {
+                    <div class="rejection-reason">
+                      <i class="fa-solid fa-exclamation-triangle"></i>
+                      <span><strong>Lý do từ chối:</strong> {{ event.rejectionReason }}</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="event-actions">
+                  <a [routerLink]="['/detail', event.id]" class="btn-small btn-secondary" target="_blank">
+                    <i class="fa-solid fa-eye"></i> Xem chi tiết
+                  </a>
+                  @if (event.status === 'pending') {
+                    <button class="btn-small btn-success" (click)="approveEvent(event)">
+                      <i class="fa-solid fa-check"></i> Duyệt
+                    </button>
+                    <button class="btn-small btn-danger" (click)="openRejectModal(event)">
+                      <i class="fa-solid fa-times"></i> Từ chối
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="fa-solid fa-clipboard-list"></i>
+          <p>Không tìm thấy sự kiện nào</p>
+          @if (searchQuery || filterStatus !== 'all') {
+            <button class="btn-ghost" (click)="searchQuery = ''; filterStatus = 'pending'; applyFilters()">
+              Xóa bộ lọc
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  @if (showRejectModal && selectedEvent) {
+    <div class="modal-overlay" (click)="closeRejectModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Từ chối sự kiện</h2>
+          <button class="modal-close" (click)="closeRejectModal()">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <p><strong>Sự kiện:</strong> {{ selectedEvent.name }}</p>
+          <p><strong>Tổ chức:</strong> {{ selectedEvent.organizerName }}</p>
+
+          <div class="form-group">
+            <label for="rejectionReason">Lý do từ chối <span class="required">*</span></label>
+            <textarea
+              id="rejectionReason"
+              [(ngModel)]="rejectionReason"
+              rows="5"
+              placeholder="Nhập lý do từ chối sự kiện này..."
+              class="form-control"
+            ></textarea>
+            <small class="form-hint">Lý do này sẽ được gửi đến Organizer</small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeRejectModal()">Hủy</button>
+          <button type="button" class="btn-danger" (click)="rejectEvent()" [disabled]="!rejectionReason.trim()">
+            <i class="fa-solid fa-times"></i> Từ chối sự kiện
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+

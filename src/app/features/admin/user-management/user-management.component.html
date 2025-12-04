@@ -1,0 +1,207 @@
+<div class="user-management-container">
+  <div class="container">
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1>Quản lý người dùng</h1>
+        <p class="subtitle">Quản lý tài khoản và quyền truy cập</p>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+      <div class="filters-row">
+        <div class="search-box">
+          <i class="fa-solid fa-search"></i>
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (input)="onSearchChange()"
+            placeholder="Tìm kiếm theo email, tên..."
+          />
+        </div>
+        <select [(ngModel)]="filterRole" (change)="onFilterChange()">
+          <option value="all">Tất cả vai trò</option>
+          <option value="user">Người dùng</option>
+          <option value="organizer">Tổ chức</option>
+          <option value="admin">Quản trị viên</option>
+        </select>
+        <select [(ngModel)]="filterStatus" (change)="onFilterChange()">
+          <option value="all">Tất cả trạng thái</option>
+          <option value="active">Đang hoạt động</option>
+          <option value="blocked">Đã khóa</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Users List -->
+    <div class="users-list-section">
+      @if (isLoading) {
+        <div class="loading">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <p>Đang tải...</p>
+        </div>
+      } @else if (filteredUsers.length > 0) {
+        <div class="users-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Người dùng</th>
+                <th>Vai trò</th>
+                <th>Trạng thái</th>
+                <th>Thông tin</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of filteredUsers; track user.id) {
+                <tr [class.blocked]="user.isBlocked">
+                  <td>
+                    <div class="user-info">
+                      <div class="user-avatar">
+                        {{ user.displayName.charAt(0).toUpperCase() }}
+                      </div>
+                      <div>
+                        <strong>{{ user.displayName }}</strong>
+                        <p class="user-email">{{ user.email }}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="role-badge" [class]="getRoleBadgeClass(user.role)">
+                      {{ getRoleText(user.role) }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (user.isBlocked) {
+                      <span class="status-badge blocked">Đã khóa</span>
+                      @if (user.blockReason) {
+                        <p class="block-reason">{{ user.blockReason }}</p>
+                      }
+                    } @else {
+                      <span class="status-badge active">Hoạt động</span>
+                    }
+                  </td>
+                  <td>
+                    <div class="user-details">
+                      <p><i class="fa-solid fa-calendar"></i> Tạo: {{ user.createdAt | date:'dd/MM/yyyy' }}</p>
+                      @if (user.lastLoginAt) {
+                        <p><i class="fa-solid fa-clock"></i> Đăng nhập: {{ user.lastLoginAt | date:'dd/MM/yyyy HH:mm' }}</p>
+                      }
+                      @if (user.totalEvents !== undefined) {
+                        <p><i class="fa-solid fa-calendar-check"></i> {{ user.totalEvents }} sự kiện</p>
+                      }
+                      @if (user.totalTickets !== undefined) {
+                        <p><i class="fa-solid fa-ticket"></i> {{ user.totalTickets }} vé</p>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <div class="user-actions">
+                      @if (user.isBlocked) {
+                        <button class="btn-small btn-success" (click)="openUnblockModal(user)">
+                          <i class="fa-solid fa-unlock"></i> Mở khóa
+                        </button>
+                      } @else {
+                        <button class="btn-small btn-danger" (click)="openBlockModal(user)">
+                          <i class="fa-solid fa-lock"></i> Khóa
+                        </button>
+                      }
+                      <a [routerLink]="['/userprofile', user.id]" class="btn-small btn-secondary" target="_blank">
+                        <i class="fa-solid fa-eye"></i> Xem
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="fa-solid fa-users"></i>
+          <p>Không tìm thấy người dùng nào</p>
+          @if (searchQuery || filterStatus !== 'all' || filterRole !== 'all') {
+            <button class="btn-ghost" (click)="searchQuery = ''; filterStatus = 'all'; filterRole = 'all'; applyFilters()">
+              Xóa bộ lọc
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Block Modal -->
+  @if (showBlockModal && selectedUser) {
+    <div class="modal-overlay" (click)="closeBlockModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Khóa tài khoản</h2>
+          <button class="modal-close" (click)="closeBlockModal()">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <p><strong>Người dùng:</strong> {{ selectedUser.displayName }}</p>
+          <p><strong>Email:</strong> {{ selectedUser.email }}</p>
+
+          <div class="form-group">
+            <label for="blockReason">Lý do khóa tài khoản <span class="required">*</span></label>
+            <textarea
+              id="blockReason"
+              [(ngModel)]="blockReason"
+              rows="5"
+              placeholder="Nhập lý do khóa tài khoản này..."
+              class="form-control"
+            ></textarea>
+            <small class="form-hint">Lý do này sẽ được lưu trong hệ thống</small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeBlockModal()">Hủy</button>
+          <button type="button" class="btn-danger" (click)="blockUser()" [disabled]="!blockReason.trim()">
+            <i class="fa-solid fa-lock"></i> Khóa tài khoản
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Unblock Modal -->
+  @if (showUnblockModal && selectedUser) {
+    <div class="modal-overlay" (click)="closeUnblockModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Mở khóa tài khoản</h2>
+          <button class="modal-close" (click)="closeUnblockModal()">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <p><strong>Người dùng:</strong> {{ selectedUser.displayName }}</p>
+          <p><strong>Email:</strong> {{ selectedUser.email }}</p>
+          @if (selectedUser.blockReason) {
+            <div class="info-box">
+              <p><strong>Lý do khóa:</strong> {{ selectedUser.blockReason }}</p>
+              @if (selectedUser.blockedAt) {
+                <p><strong>Khóa vào:</strong> {{ selectedUser.blockedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+              }
+            </div>
+          }
+          <p class="confirm-text">Bạn có chắc chắn muốn mở khóa tài khoản này?</p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeUnblockModal()">Hủy</button>
+          <button type="button" class="btn-success" (click)="unblockUser()">
+            <i class="fa-solid fa-unlock"></i> Mở khóa tài khoản
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
