@@ -17,6 +17,86 @@
 
   <div class="header_navbar_right">
     @if (checkingForLogin) {
+      <div class="header_navbar_notifications">
+        <button
+          type="button"
+          class="notification-bell"
+          (click)="toggleNotifications()"
+          aria-label="Notifications"
+        >
+          <span class="bell-icon">
+            🔔
+          </span>
+          @if (unreadCount > 0) {
+            <span class="badge">{{ unreadCount }}</span>
+          }
+        </button>
+
+        @if (isNotificationsOpen) {
+          <div class="notifications-panel">
+            <div class="panel-header">
+              <span>Thông báo</span>
+              <span class="panel-subtitle">Cập nhật mới nhất về sự kiện của bạn</span>
+            </div>
+
+            <div class="panel-section">
+              <div class="section-title">Nhắc nhở sự kiện</div>
+              @for (item of notifications; track item.id) {
+                @if (item.type === 'reminder') {
+                  <div class="notification-item reminder">
+                    <div class="item-icon">⏰</div>
+                    <div class="item-content">
+                      <div class="item-title">{{ item.title }}</div>
+                      <div class="item-message">{{ item.message }}</div>
+                      <div class="item-time">{{ item.time }}</div>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+
+            <div class="panel-section">
+              <div class="section-title">Organizer bạn theo dõi</div>
+              @for (item of notifications; track item.id) {
+                @if (item.type === 'organizer') {
+                  <div class="notification-item organizer">
+                    <div class="item-icon">⭐</div>
+                    <div class="item-content">
+                      <div class="item-title">{{ item.title }}</div>
+                      <div class="item-message">{{ item.message }}</div>
+                      <div class="item-time">{{ item.time }}</div>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+
+            <div class="panel-section">
+              <div class="section-title">Thay đổi / hủy sự kiện</div>
+              @for (item of notifications; track item.id) {
+                @if (item.type === 'change') {
+                  <div class="notification-item change">
+                    <div class="item-icon">📍</div>
+                    <div class="item-content">
+                      <div class="item-title">{{ item.title }}</div>
+                      <div class="item-message">{{ item.message }}</div>
+                      <div class="item-time">{{ item.time }}</div>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
+
+            <div class="panel-footer">
+              <a routerLink="/my-tickets" class="panel-link">
+                Xem vé và sự kiện của tôi
+              </a>
+            </div>
+          </div>
+        }
+      </div>
+    }
+    @if (checkingForLogin) {
       <div class="header_navbar_user_group" (mouseenter)="showDropdown(true)" (mouseleave)="showDropdown(false)">
         @if (sanitizeImageUrl(userCurrentImage); as safeUrl) {
           <img [src]="safeUrl" class="header_navbar_avatar" alt="Avatar" />

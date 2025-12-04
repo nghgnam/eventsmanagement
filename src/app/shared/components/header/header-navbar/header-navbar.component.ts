@@ -41,6 +41,33 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
   isMobile = false;
   private subscriptions: Subscription[] = [];
 
+  // Notifications UI state (dummy data for now)
+  isNotificationsOpen = false;
+  unreadCount = 3;
+  notifications = [
+    {
+      id: '1',
+      type: 'reminder',
+      title: 'Sự kiện sắp diễn ra',
+      message: 'Blood Donation Day 2025 sẽ diễn ra sau 24 giờ. Đừng quên chuẩn bị!',
+      time: '24h trước'
+    },
+    {
+      id: '2',
+      type: 'organizer',
+      title: 'Organizer bạn theo dõi vừa tạo sự kiện mới',
+      message: 'Red Cross VN vừa mở đăng ký sự kiện “Hiến máu nhân đạo tháng 5”.',
+      time: '2h trước'
+    },
+    {
+      id: '3',
+      type: 'change',
+      title: 'Cập nhật địa điểm sự kiện',
+      message: 'Sự kiện Charity Music Night đã đổi sang Nhà hát Lớn Hà Nội.',
+      time: 'Hôm qua'
+    }
+  ];
+
   constructor() {
     this.user$ = this.usersService.users$;
   }
@@ -159,6 +186,13 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
 
   toggleMobileMenu() {
     this.mobileMenuOpen = !this.mobileMenuOpen;
+  }
+
+  toggleNotifications() {
+    this.isNotificationsOpen = !this.isNotificationsOpen;
+    if (this.isNotificationsOpen) {
+      this.unreadCount = 0;
+    }
   }
 
   onResize() {

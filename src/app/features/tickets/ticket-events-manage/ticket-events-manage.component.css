@@ -10,9 +10,11 @@
 
 /* Layout chính */
 
+/* Layout chính */
+
 .container {
     display: flex;
-    background-color: #1a1d21;
+    background-color: #f3f4f6;
     min-height: 100vh;
     color: #e4e6eb;
 }
@@ -21,20 +23,22 @@
 /* Sidebar */
 
 .sidebar {
-    width: 400px;
-    background-color: #23272f;
-    padding: 20px;
-    border-right: 1px solid #2d3238;
+    width: 360px;
+    background: radial-gradient(circle at top, rgba(249, 115, 22, 0.18), transparent 55%), #020617;
+    padding: 20px 20px 24px;
+    border-right: 1px solid #1f2933;
     height: 100vh;
     overflow-y: auto;
     transition: all 0.3s ease;
 }
 
 .logo {
-    font-size: 24px;
-    font-weight: bold;
-    color: #61dafb;
+    font-size: 22px;
+    font-weight: 700;
+    color: #f97316;
     margin-bottom: 20px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .user-info {
@@ -42,15 +46,15 @@
     align-items: center;
     gap: 10px;
     margin: 16px 0;
-    border: 1px solid #2d3238;
+    border: 1px solid rgba(148, 163, 184, 0.35);
     padding: 15px;
     border-radius: 12px;
-    background-color: #2d3238;
+    background: rgba(15, 23, 42, 0.95);
     transition: all 0.3s ease;
 }
 
 .user-info:hover {
-    border-color: #61dafb;
+    border-color: #f97316;
     transform: translateY(-2px);
 }
 
@@ -59,7 +63,7 @@
     height: 50px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #61dafb;
+    border: 2px solid #f97316;
 }
 
 .username {
@@ -69,8 +73,8 @@
 }
 
 .role {
-    font-size: 14px;
-    color: #61dafb;
+    font-size: 13px;
+    color: #f97316;
 }
 
 .menu {
@@ -95,15 +99,15 @@
 }
 
 .menu li:hover {
-    background-color: #2d3238;
+    background-color: rgba(15, 23, 42, 0.9);
     transform: translateX(5px);
 }
 
 .menu li.active {
-    background-color: #61dafb;
-    color: #23272f;
+    background: linear-gradient(135deg, #ff6b35, #f97316);
+    color: #f9fafb;
     font-weight: bold;
-    box-shadow: 0 4px 6px rgba(97, 218, 251, 0.2);
+    box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4);
 }
 
 /* Main content */
@@ -113,18 +117,18 @@
 }
 
 .main-content {
-    width: 98%;
+    width: 100%;
     margin: 20px;
-    background-color: #23272f;
-    border-radius: 12px;
-    padding: 20px;
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 20px 22px 24px;
 }
 
 .card {
-    background: #2d3238;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px 20px 22px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.9);
     opacity: 0;
     transform: translateX(100%);
     transition: all 0.5s ease;
@@ -141,7 +145,7 @@
     justify-content: center;
     align-items: center;
     min-height: 200px;
-    color: #61dafb;
+    color: #f97316;
 }
 
 /* Error state */
@@ -156,7 +160,7 @@
     text-align: center;
     padding: 40px;
     color: #e4e6eb;
-    background-color: #2d3238;
+    background-color: #ffffff;
     border-radius: 12px;
     margin: 20px 0;
 }

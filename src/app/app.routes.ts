@@ -10,6 +10,7 @@ import { NotFoundComponent } from './shared/components/not-found/not-found.compo
 import { authGuard } from './core/guards/authGuard.guard';
 import { MyTicketsComponent } from './features/tickets/my-tickets/my-tickets.component';
 import { TicketDetailComponent } from './features/tickets/ticket-detail/ticket-detail.component';
+import { SavedEventsComponent } from './features/events/event-list/saved-events/saved-events.component';
 export const routes: Routes = [
   {
     path: '',
@@ -20,9 +21,11 @@ export const routes: Routes = [
       { path: 'detail/:id', canActivate: [authGuard], component: DetailEventComponent },
       { path: 'login', component: LoginActionDemoComponent },
       { path: 'register', component: RegisterActionDemoComponent },
+      // Legacy path for organizer manage events (kept for backward compatibility)
       {
         path: 'manage-events',
-        loadComponent: () => import('./features/events/event-management/manage-events/manage-events.component').then(m => m.ManageEventsComponent)
+        redirectTo: 'organizer/events',
+        pathMatch: 'full'
       },
       { path: 'userprofile/:id', canActivate: [authGuard], component: UserInformationComponent },
       { path: 'ticketsEvent', canActivate: [authGuard], component: TicketEventsManageComponent},
@@ -55,6 +58,47 @@ export const routes: Routes = [
         path: 'following',
         canActivate: [authGuard],
         loadComponent: () => import('./features/users/following/following-organizers/following-organizers.component').then(m => m.FollowingOrganizersComponent)
+      },
+      {
+        path: 'saved-events',
+        canActivate: [authGuard],
+        component: SavedEventsComponent
+      },
+      // Organizer group routes
+      {
+        path: 'organizer',
+        canActivate: [authGuard],
+        children: [
+          {
+            path: 'events',
+            loadComponent: () => import('./features/events/event-management/manage-events/manage-events.component').then(m => m.ManageEventsComponent)
+          },
+          {
+            path: 'dashboard/:eventId',
+            loadComponent: () => import('./features/organizer/event-dashboard/event-dashboard.component').then(m => m.EventDashboardComponent)
+          },
+          {
+            path: 'check-in/:eventId',
+            loadComponent: () => import('./features/organizer/check-in/check-in.component').then(m => m.CheckInComponent)
+          },
+          {
+            path: 'attendees/:eventId',
+            loadComponent: () => import('./features/organizer/attendee-management/attendee-management.component').then(m => m.AttendeeManagementComponent)
+          },
+          {
+            path: 'coupons',
+            loadComponent: () => import('./features/organizer/coupon-management/coupon-management.component').then(m => m.CouponManagementComponent)
+          },
+          {
+            path: 'coupons/:eventId',
+            loadComponent: () => import('./features/organizer/coupon-management/coupon-management.component').then(m => m.CouponManagementComponent)
+          },
+          {
+            path: '',
+            redirectTo: 'events',
+            pathMatch: 'full'
+          }
+        ]
       },
       {
         path: 'not-found',

@@ -82,6 +82,36 @@ export class DetailEventComponent implements OnInit, OnDestroy {
   paymentResultMessage = '';
   currentOrderId = '';
 
+  // Wishlist / Saved event
+  isSaved = false;
+
+  // Reviews
+  reviews = [
+    {
+      id: 'r1',
+      userName: 'Nguyễn Văn A',
+      rating: 5,
+      comment: 'Sự kiện tổ chức rất chuyên nghiệp, không phải chờ lâu, nhân viên hỗ trợ nhiệt tình. Rất đáng tham gia!',
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      verified: true
+    },
+    {
+      id: 'r2',
+      userName: 'Trần Thị B',
+      rating: 4,
+      comment: 'Không gian ổn, quy trình hiến máu nhanh gọn. Hy vọng lần sau có thêm khu vực nghỉ ngơi rộng hơn.',
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      verified: true
+    }
+  ];
+
+  canReview = true; // TODO: kiểm tra user đã tham gia sự kiện và có vé hợp lệ
+  reviewForm = {
+    rating: 0,
+    comment: '',
+    showRealName: true
+  };
+
   // Getter for total amount
   get totalAmount(): number {
     return this.selectedTickets.reduce((sum, t) => sum + t.subtotal, 0);
@@ -91,6 +121,41 @@ export class DetailEventComponent implements OnInit, OnDestroy {
 
   constructor() {
     this.events$ = this.eventsService.events$;
+  }
+
+  toggleSave(): void {
+    this.isSaved = !this.isSaved;
+  }
+
+  get averageRating(): number {
+    if (!this.reviews.length) return 0;
+    const total = this.reviews.reduce((sum, r) => sum + r.rating, 0);
+    return total / this.reviews.length;
+  }
+
+  get totalReviews(): number {
+    return this.reviews.length;
+  }
+
+  setRating(value: number): void {
+    this.reviewForm.rating = value;
+  }
+
+  submitReview(): void {
+    if (!this.reviewForm.rating || !this.reviewForm.comment.trim()) {
+      return;
+    }
+    // TODO: Gửi review lên backend khi có API
+    console.log('Submit review', this.reviewForm);
+    this.reviewForm = { rating: 0, comment: '', showRealName: true };
+  }
+
+  onCommentChange(value: string): void {
+    this.reviewForm.comment = value;
+  }
+
+  onShowRealNameChange(checked: boolean): void {
+    this.reviewForm.showRealName = checked;
   }
   ngOnInit() {
     this.subscriptions.push(

@@ -1,0 +1,276 @@
+<div class="attendee-management-container">
+  <div class="container">
+    @if (event) {
+      <!-- Header -->
+      <div class="page-header">
+        <div>
+          <h1>Quản lý người tham dự</h1>
+          <p class="event-name">{{ event.name }}</p>
+          <p class="event-date">{{ getEventStartDate() | date:'full' }}</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn-secondary" (click)="openEmailModal()" [disabled]="filteredAttendees.length === 0">
+            <i class="fa-solid fa-envelope"></i> Gửi email hàng loạt
+          </button>
+          <div class="export-group">
+            <select [(ngModel)]="exportFormat" class="export-select">
+              <option value="csv">CSV</option>
+              <option value="excel">Excel</option>
+            </select>
+            <button class="btn-primary" (click)="exportAttendees()" [disabled]="isExporting || filteredAttendees.length === 0">
+              <i class="fa-solid fa-download"></i>
+              {{ isExporting ? 'Đang xuất...' : 'Xuất dữ liệu' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Overview -->
+      <div class="stats-overview">
+        <div class="stat-card">
+          <h3>Tổng người tham dự</h3>
+          <p class="stat-value">{{ totalAttendees }}</p>
+        </div>
+        <div class="stat-card">
+          <h3>Đã check-in</h3>
+          <p class="stat-value success">{{ checkedInCount }}</p>
+        </div>
+        <div class="stat-card">
+          <h3>Chưa check-in</h3>
+          <p class="stat-value warning">{{ notCheckedInCount }}</p>
+        </div>
+        <div class="stat-card">
+          <h3>Tổng doanh thu</h3>
+          <p class="stat-value">{{ totalRevenue | currency:'VND':'symbol':'1.0-0' }}</p>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-section">
+        <div class="filters-row">
+          <div class="search-box">
+            <i class="fa-solid fa-search"></i>
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              (input)="onSearchChange()"
+              placeholder="Tìm kiếm theo tên, email, số điện thoại, mã đơn..."
+            />
+          </div>
+          <select [(ngModel)]="filterStatus" (change)="onFilterChange()">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="checked-in">Đã check-in</option>
+            <option value="not-checked-in">Chưa check-in</option>
+          </select>
+          <select [(ngModel)]="filterTicketType" (change)="onFilterChange()">
+            <option value="all">Tất cả loại vé</option>
+            @for (type of getUniqueTicketTypes(); track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+          <select [(ngModel)]="filterPaymentStatus" (change)="onFilterChange()">
+            <option value="all">Tất cả thanh toán</option>
+            <option value="paid">Đã thanh toán</option>
+            <option value="pending">Chờ thanh toán</option>
+            <option value="refunded">Đã hoàn tiền</option>
+          </select>
+        </div>
+        <div class="selection-info">
+          <span>{{ selectedAttendees.size }} người được chọn</span>
+          @if (selectedAttendees.size > 0) {
+            <button class="btn-ghost" (click)="selectedAttendees.clear(); updateSelectAllState()">
+              Bỏ chọn tất cả
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Attendees Table -->
+      <div class="attendees-table-section">
+        @if (filteredAttendees.length > 0) {
+          <table class="attendees-table">
+            <thead>
+              <tr>
+                <th class="checkbox-col">
+                  <input
+                    type="checkbox"
+                    [checked]="selectAll"
+                    (change)="selectAll = !selectAll; toggleSelectAll()"
+                  />
+                </th>
+                <th>Mã đơn</th>
+                <th>Họ tên</th>
+                <th>Email</th>
+                <th>Số điện thoại</th>
+                <th>Loại vé</th>
+                <th>Số lượng</th>
+                <th>Ngày mua</th>
+                <th>Giá trị</th>
+                <th>Thanh toán</th>
+                <th>Trạng thái</th>
+                <th>Ghế</th>
+                <th>Ghi chú</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (attendee of filteredAttendees; track attendee.id) {
+                <tr [class.selected]="selectedAttendees.has(attendee.id)">
+                  <td class="checkbox-col">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedAttendees.has(attendee.id)"
+                      (change)="toggleSelectAttendee(attendee.id)"
+                    />
+                  </td>
+                  <td class="order-id">{{ attendee.orderId }}</td>
+                  <td class="name">{{ attendee.name }}</td>
+                  <td class="email">{{ attendee.email }}</td>
+                  <td class="phone">{{ attendee.phone }}</td>
+                  <td class="ticket-type">{{ attendee.ticketType }}</td>
+                  <td class="quantity">{{ attendee.ticketQuantity }}</td>
+                  <td class="purchase-date">{{ attendee.purchaseDate | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="amount">{{ attendee.totalAmount | currency:'VND':'symbol':'1.0-0' }}</td>
+                  <td class="payment">
+                    <span class="payment-method">{{ attendee.paymentMethod }}</span>
+                    <span [class]="'payment-status ' + attendee.paymentStatus">
+                      {{ attendee.paymentStatus === 'paid' ? 'Đã thanh toán' : 
+                         attendee.paymentStatus === 'pending' ? 'Chờ thanh toán' : 'Đã hoàn tiền' }}
+                    </span>
+                  </td>
+                  <td class="status">
+                    @if (attendee.checkedIn) {
+                      <span class="status-badge checked-in">
+                        <i class="fa-solid fa-check"></i> Đã check-in
+                      </span>
+                      @if (attendee.checkInTime) {
+                        <span class="checkin-time">{{ attendee.checkInTime | date:'HH:mm' }}</span>
+                      }
+                    } @else {
+                      <span class="status-badge pending">Chưa check-in</span>
+                    }
+                  </td>
+                  <td class="seat">{{ attendee.seatInfo || '-' }}</td>
+                  <td class="notes">{{ attendee.notes || '-' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <div class="empty-state">
+            <i class="fa-solid fa-users"></i>
+            <p>Không tìm thấy người tham dự nào</p>
+            @if (searchQuery || filterStatus !== 'all' || filterTicketType !== 'all' || filterPaymentStatus !== 'all') {
+              <button class="btn-ghost" (click)="searchQuery = ''; filterStatus = 'all'; filterTicketType = 'all'; filterPaymentStatus = 'all'; applyFilters()">
+                Xóa bộ lọc
+              </button>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="loading">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <p>Đang tải thông tin sự kiện...</p>
+      </div>
+    }
+  </div>
+
+  <!-- Bulk Email Modal -->
+  @if (showEmailModal) {
+    <div class="modal-overlay" (click)="closeEmailModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Gửi email hàng loạt</h2>
+          <button class="modal-close" (click)="closeEmailModal()">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="recipients">Gửi đến</label>
+            <select [(ngModel)]="emailForm.recipients">
+              <option value="selected">Người được chọn ({{ selectedAttendees.size }})</option>
+              <option value="filtered">Kết quả lọc hiện tại ({{ filteredAttendees.length }})</option>
+              <option value="all">Tất cả người tham dự ({{ totalAttendees }})</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="template">Chọn mẫu email</label>
+            <select [(ngModel)]="emailForm.template" (change)="onTemplateChange()">
+              <option value="">-- Chọn mẫu --</option>
+              @for (template of emailTemplates; track template.id) {
+                <option [value]="template.id">{{ template.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="subject">Tiêu đề email <span class="required">*</span></label>
+            <input
+              type="text"
+              [(ngModel)]="emailForm.subject"
+              placeholder="Nhập tiêu đề email..."
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="body">Nội dung email <span class="required">*</span></label>
+            <textarea
+              rows="10"
+              [(ngModel)]="emailForm.body"
+              placeholder="Nhập nội dung email..."
+            ></textarea>
+            <small class="form-hint">
+              Biến động sẽ được thay thế tự động cho từng người nhận. Sử dụng các biến: attendeeName (Tên người nhận), eventName (Tên sự kiện), eventDate (Ngày sự kiện), eventLocation (Địa điểm), zoomLink (Link Zoom nếu có). Định dạng: &#123;tên_biến&#125;
+            </small>
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label for="includeEventInfo">
+              <input type="checkbox" [(ngModel)]="emailForm.includeEventInfo" />
+              Bao gồm thông tin sự kiện trong email
+            </label>
+            <label for="includeTicketInfo">
+              <input type="checkbox" [(ngModel)]="emailForm.includeTicketInfo" />
+              Bao gồm thông tin vé trong email
+            </label>
+          </div>
+
+          <div class="form-preview">
+            <h4>Xem trước</h4>
+            <div class="preview-box">
+              <strong>Đến:</strong> 
+              @if (emailForm.recipients === 'selected') {
+                {{ selectedAttendees.size }} người được chọn
+              } @else if (emailForm.recipients === 'filtered') {
+                {{ filteredAttendees.length }} người (kết quả lọc)
+              } @else {
+                {{ totalAttendees }} người (tất cả)
+              }
+              <br />
+              <strong>Tiêu đề:</strong> {{ emailForm.subject || '(Chưa có tiêu đề)' }}
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="closeEmailModal()">Hủy</button>
+          <button
+            class="btn-primary"
+            (click)="sendBulkEmail()"
+            [disabled]="!emailForm.subject.trim() || !emailForm.body.trim() || isSendingEmail"
+          >
+            @if (isSendingEmail) {
+              <i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...
+            } @else {
+              <i class="fa-solid fa-paper-plane"></i> Gửi email
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+

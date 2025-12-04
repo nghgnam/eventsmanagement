@@ -16,7 +16,17 @@
                     <i class="fa-solid fa-calendar-days"></i>
                     <span>{{ showStartTime | date: 'EEEE, MMMM d' }}</span>
                 </div>
-                <h1 class="event_title">{{ event.name }}</h1>
+                <div class="event_title_row">
+                  <h1 class="event_title">{{ event.name }}</h1>
+                  <button
+                    type="button"
+                    class="save_event_btn"
+                    (click)="toggleSave()"
+                    aria-label="Lưu sự kiện"
+                  >
+                    <span class="save_icon" [class.saved]="isSaved">♥</span>
+                  </button>
+                </div>
                 <div class="event_type_badge" 
                      [class.online]="event.event_type === 'online'"
                      [class.offline]="event.event_type === 'offline'"
@@ -158,6 +168,101 @@
                   <p class="host_about">This is About Organized</p>
               </div>
             }
+
+            <!-- Reviews Section -->
+            <div class="section_title">
+              <h2>Đánh giá & Bình luận</h2>
+            </div>
+            <div class="event_reviews">
+              @if (totalReviews > 0) {
+                <div class="reviews_summary">
+                <div class="score_box">
+                  <span class="score_value">{{ averageRating | number: '1.1-1' }}</span>
+                  <span class="score_max">/ 5</span>
+                </div>
+                <div class="score_detail">
+                  <span class="score_stars">★★★★★</span>
+                  <span class="score_count">{{ totalReviews }} đánh giá</span>
+                </div>
+              </div>
+              }
+
+              @if (reviews.length) {
+                <div class="reviews_list">
+                  @for (r of reviews; track r.id) {
+                    <div class="review_item">
+                      <div class="review_header">
+                        <div class="review_avatar">
+                          {{ r.userName | slice: 0:1 }}
+                        </div>
+                        <div class="review_meta">
+                          <div class="review_name">{{ r.userName }}</div>
+                          <div class="review_info">
+                            <span class="review_rating">{{ r.rating }}★</span>
+                            <span class="review_dot">·</span>
+                            <span class="review_date">{{ r.createdAt | date: 'dd/MM/yyyy' }}</span>
+                            @if (r.verified) {
+                              <span class="review_verified">Verified purchase</span>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                      <p class="review_comment">
+                        {{ r.comment }}
+                      </p>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <p class="no_reviews_text">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
+              }
+
+              @if (canReview) {
+                <div class="review_form">
+                  <h3>Viết đánh giá của bạn</h3>
+                  <div class="rating_input">
+                    <label for="rating">Đánh giá</label>
+                    <div class="stars">
+                      @for (s of [1,2,3,4,5]; track s) {
+                        <button
+                          type="button"
+                          id="rating"
+                          class="star_btn"
+                          [class.filled]="s <= reviewForm.rating"
+                          (click)="setRating(s)"
+                        >
+                          ★
+                        </button>
+                      }
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="comment">Nội dung đánh giá</label>
+                    <textarea
+                      rows="4"
+                      id="comment"
+                      [value]="reviewForm.comment"
+                      (input)="onCommentChange($any($event.target).value)"
+                      placeholder="Chia sẻ trải nghiệm của bạn về sự kiện..."
+                    ></textarea>
+                  </div>
+                  <div class="field checkbox_field">
+                    <label for="showRealName">
+                      <input type="checkbox" id="showRealName" [checked]="reviewForm.showRealName" (change)="onShowRealNameChange($any($event.target).checked)" />
+                      Hiển thị tên thật của tôi
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    class="submit_review_btn"
+                    [disabled]="!reviewForm.rating || !reviewForm.comment"
+                    (click)="submitReview()"
+                  >
+                    Gửi đánh giá
+                  </button>
+                </div>
+              }
+            </div>
 
             <!-- More Events from Organizer -->
             @if (events$ | async; as events) {

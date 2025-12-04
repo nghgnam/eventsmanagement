@@ -1,0 +1,55 @@
+<div class="saved-events-page">
+  <div class="page-header">
+    <div>
+      <h1>Sự kiện đã lưu</h1>
+      <p class="subtitle">Lưu lại các sự kiện bạn quan tâm để xem và đặt vé sau.</p>
+    </div>
+  </div>
+
+  @if (savedEvents.length) {
+    <div class="events-grid">
+      @for (event of savedEvents; track event.id) {
+        <a
+          class="event-card"
+          [routerLink]="['/detail', event.id]"
+        >
+          <div class="event-image">
+            <img [src]="event.imageUrl" [alt]="event.name" />
+            <button
+              type="button"
+              class="save-button"
+              (click)="toggleSave(event, $event)"
+            >
+              <span class="heart" [class.saved]="event.saved">♥</span>
+            </button>
+            <div class="date-badge">
+              <span class="day">{{ event.date | date: 'd' }}</span>
+              <span class="month">{{ event.date | date: 'MMM' }}</span>
+            </div>
+          </div>
+          <div class="event-info">
+            <h2 class="event-title">{{ event.name }}</h2>
+            <p class="event-meta">
+              {{ event.date | date: "EEEE, MMMM d, y '·' h:mm a" }}
+            </p>
+            <p class="event-location">{{ event.location }}</p>
+            <div class="event-footer">
+              <span class="organizer">{{ event.organizer }}</span>
+              <span class="price">
+                {{ event.price > 0 ? (event.price | currency: 'VND':'symbol':'1.0-0') : 'Free' }}
+              </span>
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+  } @else {
+    <div class="empty-state">
+      <h3>Chưa có sự kiện nào được lưu</h3>
+      <p>Bạn có thể lưu các sự kiện quan tâm bằng biểu tượng trái tim trên trang sự kiện.</p>
+      <a routerLink="/home" class="btn-ghost">Khám phá sự kiện</a>
+    </div>
+  }
+</div>
+
+
