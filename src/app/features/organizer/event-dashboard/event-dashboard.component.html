@@ -8,38 +8,115 @@
           <p class="event-date">{{ getEventStartDate() | date:'full' }}</p>
         </div>
         <div class="header-actions">
-          <button class="btn-secondary" (click)="exportAttendees()">
-            <i class="fa-solid fa-download"></i> Export Data
-          </button>
+          <a [routerLink]="['/organizer/attendees', eventId]" class="btn-secondary">
+            <i class="fa-solid fa-users"></i> Quản lý người tham dự
+          </a>
+          <a [routerLink]="['/organizer/check-in', eventId]" class="btn-secondary">
+            <i class="fa-solid fa-qrcode"></i> Check-in
+          </a>
         </div>
       </div>
 
       <!-- Sales Overview -->
       <div class="sales-overview">
         <div class="stat-card">
-          <h3>Total Sales</h3>
-          <p class="stat-value">${{ totalSales }}</p>
+          <h3>Tổng đơn hàng</h3>
+          <p class="stat-value">{{ totalSales }}</p>
+          <p class="stat-subtext">Orders</p>
         </div>
         <div class="stat-card">
-          <h3>Tickets Sold</h3>
+          <h3>Vé đã bán</h3>
           <p class="stat-value">{{ totalTicketsSold }}</p>
+          <p class="stat-subtext">/ {{ totalTicketsSold + totalTicketsRemaining }} vé</p>
         </div>
         <div class="stat-card">
-          <h3>Revenue</h3>
-          <p class="stat-value">${{ totalRevenue }}</p>
+          <h3>Doanh thu</h3>
+          <p class="stat-value">{{ totalRevenue | currency:'VND':'symbol':'1.0-0' }}</p>
+          <p class="stat-subtext">Real-time</p>
         </div>
         <div class="stat-card">
-          <h3>Check-ins</h3>
+          <h3>Check-in</h3>
           <p class="stat-value">{{ checkedInCount }} / {{ totalTicketsSold }}</p>
+          <p class="stat-subtext">Đã vào / Đã bán</p>
         </div>
       </div>
 
-      <!-- Sales Chart -->
-      <div class="chart-section">
-        <h2>Sales Over Time</h2>
-        <div class="chart-container">
-          <!-- TODO: Implement chart (Chart.js, ng2-charts, etc.) -->
-          <p>Sales chart will be displayed here</p>
+      <!-- Charts Row -->
+      <div class="charts-row">
+        <!-- Revenue over time -->
+        <div class="chart-section">
+          <div class="chart-header">
+            <div>
+              <h2>Doanh thu theo thời gian</h2>
+              <p class="chart-subtitle">Dữ liệu real-time, có thể gắn Chart.js</p>
+            </div>
+            <select>
+              <option>7 ngày gần nhất</option>
+              <option>30 ngày</option>
+              <option>Toàn thời gian</option>
+            </select>
+          </div>
+          <div class="chart-container">
+            <!-- Placeholder canvas for Chart.js -->
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Tickets sold vs remaining -->
+        <div class="chart-section chart-small">
+          <div class="chart-header">
+            <div>
+              <h2>Vé đã bán / còn lại</h2>
+              <p class="chart-subtitle">Theo dõi tình trạng sold-out</p>
+            </div>
+          </div>
+          <div class="chart-container donut-container">
+            <canvas id="ticketsChart"></canvas>
+            <div class="donut-legend">
+              <div class="legend-item">
+                <span class="dot sold"></span>
+                <span>Đã bán</span>
+                <strong>{{ totalTicketsSold }}</strong>
+              </div>
+              <div class="legend-item">
+                <span class="dot remaining"></span>
+                <span>Còn lại</span>
+                <strong>{{ totalTicketsRemaining }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Traffic & Conversion -->
+      <div class="chart-section traffic-section">
+        <div class="chart-header">
+          <div>
+            <h2>Page views & Conversion</h2>
+            <p class="chart-subtitle">Hiệu quả landing page của sự kiện</p>
+          </div>
+        </div>
+        <div class="traffic-content">
+          <div class="traffic-chart">
+            <canvas id="trafficChart"></canvas>
+          </div>
+          <div class="traffic-stats">
+            <div class="traffic-card">
+              <span class="label">Page views</span>
+              <span class="value">{{ pageViews | number }}</span>
+              <span class="hint">Tổng lượt xem trang chi tiết</span>
+            </div>
+            <div class="traffic-card">
+              <span class="label">Visitors</span>
+              <span class="value">{{ uniqueVisitors | number }}</span>
+              <span class="hint">Người dùng duy nhất</span>
+            </div>
+            <div class="traffic-card">
+              <span class="label">Conversion rate</span>
+              <span class="value">{{ conversionRate | number:'1.1-1' }}%</span>
+              <span class="hint">Vé đã mua / lượt truy cập</span>
+            </div>
+          </div>
         </div>
       </div>
 

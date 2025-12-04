@@ -37,10 +37,14 @@ export class EventDashboardComponent {
   event: EventList | null = null;
   
   // Sales data
-  totalSales = 0;
-  totalTicketsSold = 0;
-  totalRevenue = 0;
+  totalSales = 124; // tổng số đơn hàng (dummy)
+  totalTicketsSold = 320; // vé đã bán (dummy)
+  totalTicketsRemaining = 80; // vé còn lại (dummy)
+  totalRevenue = 52000000; // doanh thu (VND, dummy)
   salesChartData: unknown[] = [];
+  pageViews = 5400; // lượt xem trang (dummy)
+  conversionRate = 8.5; // %
+  uniqueVisitors = 3200; // dummy
   
   // Attendees
   attendees: AttendeeRow[] = [];

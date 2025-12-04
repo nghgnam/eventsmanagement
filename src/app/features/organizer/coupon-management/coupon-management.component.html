@@ -1,0 +1,328 @@
+<div class="coupon-management-container">
+  <div class="container">
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1>Quản lý mã giảm giá</h1>
+        @if (eventId) {
+          <p class="subtitle">Mã giảm giá cho sự kiện này</p>
+        } @else {
+          <p class="subtitle">Quản lý tất cả mã giảm giá</p>
+        }
+      </div>
+      <button class="btn-primary" (click)="openCreateModal()">
+        <i class="fa-solid fa-plus"></i> Tạo mã mới
+      </button>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="stats-overview">
+      <div class="stat-card">
+        <h3>Tổng số mã</h3>
+        <p class="stat-value">{{ totalCoupons }}</p>
+      </div>
+      <div class="stat-card">
+        <h3>Đang hoạt động</h3>
+        <p class="stat-value success">{{ activeCoupons }}</p>
+      </div>
+      <div class="stat-card">
+        <h3>Tổng lượt sử dụng</h3>
+        <p class="stat-value">{{ totalUses }}</p>
+      </div>
+      <div class="stat-card">
+        <h3>Tổng giảm giá đã cho</h3>
+        <p class="stat-value">{{ totalDiscountGiven | currency:'VND':'symbol':'1.0-0' }}</p>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+      <div class="filters-row">
+        <div class="search-box">
+          <i class="fa-solid fa-search"></i>
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (input)="onSearchChange()"
+            placeholder="Tìm kiếm theo mã hoặc mô tả..."
+          />
+        </div>
+        <select [(ngModel)]="filterStatus" (change)="onFilterChange()">
+          <option value="all">Tất cả trạng thái</option>
+          <option value="active">Đang hoạt động</option>
+          <option value="expired">Đã hết hạn</option>
+          <option value="inactive">Đã tắt</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Coupons List -->
+    <div class="coupons-list-section">
+      @if (isLoading) {
+        <div class="loading">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <p>Đang tải...</p>
+        </div>
+      } @else if (filteredCoupons.length > 0) {
+        <div class="coupons-grid">
+          @for (coupon of filteredCoupons; track coupon.id) {
+            <div class="coupon-card" [class.expired]="getCouponStatus(coupon) === 'expired'">
+              <div class="coupon-header">
+                <div class="coupon-code">
+                  <strong>{{ coupon.code }}</strong>
+                  <button 
+                    class="copy-btn" 
+                    (click)="copyCouponCode(coupon.code)"
+                    title="Sao chép mã"
+                  >
+                    <i class="fa-solid fa-copy"></i>
+                  </button>
+                </div>
+                <div class="coupon-status">
+                  @switch (getCouponStatus(coupon)) {
+                    @case ('active') {
+                      <span class="status-badge active">Đang hoạt động</span>
+                    }
+                    @case ('expired') {
+                      <span class="status-badge expired">Đã hết hạn</span>
+                    }
+                    @case ('used-up') {
+                      <span class="status-badge used-up">Đã hết lượt</span>
+                    }
+                    @case ('inactive') {
+                      <span class="status-badge inactive">Đã tắt</span>
+                    }
+                  }
+                </div>
+              </div>
+
+              <div class="coupon-body">
+                <div class="coupon-discount">
+                  <span class="discount-value">{{ getCouponDisplayValue(coupon) }}</span>
+                  <span class="discount-type">{{ coupon.type === 'percentage' ? 'giảm giá' : 'giảm trực tiếp' }}</span>
+                </div>
+
+                @if (coupon.description) {
+                  <p class="coupon-description">{{ coupon.description }}</p>
+                }
+
+                <div class="coupon-details">
+                  <div class="detail-item">
+                    <i class="fa-solid fa-calendar"></i>
+                    <span>
+                      {{ coupon.startDate | date:'dd/MM/yyyy' }} - {{ coupon.endDate | date:'dd/MM/yyyy' }}
+                    </span>
+                  </div>
+                  
+                  @if (coupon.usageLimit) {
+                    <div class="detail-item">
+                      <i class="fa-solid fa-users"></i>
+                      <span>
+                        Đã dùng: {{ coupon.usedCount }} / {{ coupon.usageLimit }}
+                      </span>
+                      <div class="usage-progress">
+                        <div 
+                          class="usage-progress-bar" 
+                          [style.width.%]="(coupon.usedCount / coupon.usageLimit) * 100"
+                        ></div>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="detail-item">
+                      <i class="fa-solid fa-users"></i>
+                      <span>Đã dùng: {{ coupon.usedCount }} (không giới hạn)</span>
+                    </div>
+                  }
+
+                  @if (coupon.minPurchaseAmount) {
+                    <div class="detail-item">
+                      <i class="fa-solid fa-money-bill"></i>
+                      <span>Áp dụng cho đơn từ {{ coupon.minPurchaseAmount | currency:'VND':'symbol':'1.0-0' }}</span>
+                    </div>
+                  }
+
+                  @if (coupon.eventId) {
+                    <div class="detail-item">
+                      <i class="fa-solid fa-calendar-check"></i>
+                      <span>Chỉ áp dụng cho sự kiện cụ thể</span>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <div class="coupon-actions">
+                <button 
+                  class="btn-small btn-secondary" 
+                  (click)="openEditModal(coupon)"
+                >
+                  <i class="fa-solid fa-edit"></i> Sửa
+                </button>
+                <button 
+                  class="btn-small"
+                  [class.btn-success]="!coupon.isActive"
+                  [class.btn-warning]="coupon.isActive"
+                  (click)="toggleCouponStatus(coupon)"
+                >
+                  <i [class]="coupon.isActive ? 'fa-solid fa-toggle-on' : 'fa-solid fa-toggle-off'"></i>
+                  {{ coupon.isActive ? 'Tắt' : 'Bật' }}
+                </button>
+                <button 
+                  class="btn-small btn-danger" 
+                  (click)="deleteCoupon(coupon)"
+                >
+                  <i class="fa-solid fa-trash"></i> Xóa
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="fa-solid fa-ticket"></i>
+          <p>Không tìm thấy mã giảm giá nào</p>
+          @if (searchQuery || filterStatus !== 'all') {
+            <button class="btn-ghost" (click)="searchQuery = ''; filterStatus = 'all'; applyFilters()">
+              Xóa bộ lọc
+            </button>
+          } @else {
+            <button class="btn-primary" (click)="openCreateModal()">
+              Tạo mã giảm giá đầu tiên
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  @if (showCreateModal) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ editingCoupon ? 'Chỉnh sửa mã giảm giá' : 'Tạo mã giảm giá mới' }}</h2>
+          <button class="modal-close" (click)="closeModal()">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+
+        <form [formGroup]="couponForm" (ngSubmit)="saveCoupon()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="code">Mã giảm giá <span class="required">*</span></label>
+              <input
+                type="text"
+                formControlName="code"
+                placeholder="VD: SUMMER2025"
+                [class.invalid]="couponForm.get('code')?.invalid && couponForm.get('code')?.touched"
+              />
+              @if (couponForm.get('code')?.invalid && couponForm.get('code')?.touched) {
+                <small class="error-text">
+                  Mã giảm giá phải có từ 3-50 ký tự
+                </small>
+              }
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="type">Loại giảm giá <span class="required">*</span></label>
+                <select formControlName="type" (change)="onTypeChange()">
+                  <option value="percentage">Phần trăm (%)</option>
+                  <option value="fixed">Số tiền cố định (VND)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="value">Giá trị giảm giá <span class="required">*</span></label>
+                <input
+                  type="number"
+                  formControlName="value"
+                  [placeholder]="couponForm.get('type')?.value === 'percentage' ? '0-100' : '0'"
+                  [class.invalid]="couponForm.get('value')?.invalid && couponForm.get('value')?.touched"
+                />
+                @if (couponForm.get('value')?.invalid && couponForm.get('value')?.touched) {
+                  <small class="error-text">
+                    @if (couponForm.get('type')?.value === 'percentage') {
+                      Giá trị phải từ 0-100%
+                    } @else {
+                      Giá trị phải lớn hơn 0
+                    }
+                  </small>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="startDate">Ngày bắt đầu <span class="required">*</span></label>
+                <input
+                  type="date"
+                  formControlName="startDate"
+                  [class.invalid]="couponForm.get('startDate')?.invalid && couponForm.get('startDate')?.touched"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="endDate">Ngày kết thúc <span class="required">*</span></label>
+                <input
+                  type="date"
+                  formControlName="endDate"
+                  [class.invalid]="couponForm.get('endDate')?.invalid && couponForm.get('endDate')?.touched"
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="usageLimit">Số lượng giới hạn</label>
+                <input
+                  type="number"
+                  formControlName="usageLimit"
+                  placeholder="Để trống = không giới hạn"
+                  min="1"
+                />
+                <small class="form-hint">Số lượt sử dụng tối đa (để trống = không giới hạn)</small>
+              </div>
+
+              <div class="form-group">
+                <label for="minPurchaseAmount">Đơn hàng tối thiểu</label>
+                <input
+                  type="number"
+                  formControlName="minPurchaseAmount"
+                  placeholder="Để trống = không yêu cầu"
+                  min="0"
+                />
+                <small class="form-hint">Áp dụng cho đơn hàng từ số tiền này trở lên (VND)</small>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="description">Mô tả</label>
+              <textarea
+                formControlName="description"
+                rows="3"
+                placeholder="Mô tả về mã giảm giá (tùy chọn)"
+              ></textarea>
+            </div>
+
+            <div class="form-group checkbox-group">
+              <label for="isActive">
+                <input type="checkbox" formControlName="isActive" />
+                Kích hoạt mã giảm giá ngay sau khi tạo
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeModal()">Hủy</button>
+            <button type="submit" class="btn-primary" [disabled]="couponForm.invalid">
+              <i class="fa-solid fa-save"></i>
+              {{ editingCoupon ? 'Cập nhật' : 'Tạo mã' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>
+
+

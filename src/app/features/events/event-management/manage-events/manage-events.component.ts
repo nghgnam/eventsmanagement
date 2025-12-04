@@ -316,6 +316,11 @@ export class ManageEventsComponent implements OnInit, OnDestroy {
     this.loadOrganizerEvents(); // Cập nhật lại danh sách
   }
 
+  goToDashboard(event: EventList): void {
+    if (!event.id) return;
+    this.router.navigate(['/organizer/dashboard', event.id]);
+  }
+
   ngOnDestroy(): void {
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();

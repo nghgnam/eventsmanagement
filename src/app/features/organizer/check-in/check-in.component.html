@@ -3,57 +3,126 @@
     @if (event) {
       <!-- Event Info -->
       <div class="event-header">
-        <h1>{{ event.name }}</h1>
-        <p class="event-date">{{ getEventDate(event.startDate) | date:'full' }}</p>
+        <div>
+          <h1>{{ event.name }}</h1>
+          <p class="event-date">{{ getEventDate(event.startDate) | date:'full' }}</p>
+        </div>
+        <div class="event-badge">Check-in Mode</div>
       </div>
 
       <!-- Check-in Methods -->
       <div class="check-in-methods">
         <!-- QR Code Scanner -->
-        <div class="scanner-section">
+        <section class="scanner-section">
           <h2>QR Code Scanner</h2>
+          <p class="section-subtitle">Sử dụng camera trên laptop/mobile để quét QR trên vé.</p>
           @if (!isScanning) {
             <button class="btn-primary btn-scan" (click)="startScanner()">
-              <i class="fa-solid fa-qrcode"></i> Start Scanner
+              <i class="fa-solid fa-qrcode"></i>
+              Bắt đầu quét QR
             </button>
           } @else {
             <div class="scanner-view">
               <!-- TODO: QR Scanner component -->
               <div class="scanner-placeholder">
-                <p>QR Scanner will be displayed here</p>
-                <p class="scanner-hint">Point camera at ticket QR code</p>
+                <p>QR Scanner sẽ hiển thị tại đây</p>
+                <p class="scanner-hint">Đưa mã QR của vé vào giữa khung hình để quét</p>
               </div>
             </div>
             <button class="btn-secondary" (click)="stopScanner()">
-              Stop Scanner
+              Dừng quét
             </button>
           }
           @if (scannerError) {
             <div class="error-message">{{ scannerError }}</div>
           }
-        </div>
+        </section>
 
-        <!-- Manual Check-in -->
-        <div class="manual-section">
+        <!-- Manual Check-in + Search -->
+        <section class="manual-section">
           <h2>Manual Check-in</h2>
+          <p class="section-subtitle">Dùng khi khách quên vé, mất QR hoặc cần tra cứu nhanh.</p>
+
           <div class="manual-input-group">
-            <input 
-              type="text" 
-              [(ngModel)]="ticketCode" 
-              placeholder="Enter ticket code"
-              (keyup.enter)="manualCheckIn()">
-            <button 
-              class="btn-primary" 
-              (click)="manualCheckIn()"
-              [disabled]="!ticketCode || isProcessing">
-              {{ isProcessing ? 'Processing...' : 'Check In' }}
-            </button>
+            <label for="ticketCode" class="input-label">Mã vé</label>
+            <div class="input-row">
+              <input 
+                id="ticketCode"
+                type="text" 
+                [(ngModel)]="ticketCode" 
+                placeholder="Nhập mã vé (VD: TCK-001)"
+                (keyup.enter)="manualCheckIn()">
+              <button 
+                class="btn-primary" 
+                (click)="manualCheckIn()"
+                [disabled]="!ticketCode || isProcessing">
+                {{ isProcessing ? 'Đang xử lý...' : 'Check-in' }}
+              </button>
+            </div>
           </div>
-        </div>
+
+          <div class="manual-search">
+            <div class="search-header">
+              <span class="search-title">Tìm kiếm theo tên / SĐT</span>
+              <button type="button" class="link-btn" (click)="clearSearch()">Xóa lọc</button>
+            </div>
+            <div class="search-row">
+              <div class="field">
+                <label for="searchName">Tên khách</label>
+                <input
+                  id="searchName"
+                  type="text"
+                  [(ngModel)]="searchName"
+                  placeholder="VD: Nguyễn Văn A">
+              </div>
+              <div class="field">
+                <label for="searchPhone">Số điện thoại</label>
+                <input
+                  id="searchPhone"
+                  type="tel"
+                  [(ngModel)]="searchPhone"
+                  placeholder="VD: 0901 234 567">
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn-outline"
+              (click)="searchAttendee()"
+              [disabled]="!searchName && !searchPhone">
+              Tìm khách để check-in
+            </button>
+
+            @if (manualResults.length) {
+              <div class="manual-results">
+                @for (item of manualResults; track item.id) {
+                  <div class="manual-result-item">
+                    <div class="info">
+                      <div class="name">{{ item.attendeeName }}</div>
+                      <div class="meta">
+                        <span>{{ item.phone }}</span>
+                        <span class="dot">•</span>
+                        <span>{{ item.ticketType }}</span>
+                      </div>
+                    </div>
+                    <div class="actions">
+                      @if (item.status === 'checked_in') {
+                        <span class="badge checked">Đã check-in</span>
+                      } @else {
+                        <button type="button" class="btn-small">
+                          Check-in
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
       </div>
 
       <!-- Recent Check-ins -->
-      <div class="recent-checkins">
+      <section class="recent-checkins">
         <h2>Recent Check-ins</h2>
         @if (recentCheckIns.length > 0) {
           <div class="checkins-list">
@@ -74,12 +143,12 @@
           </div>
         } @else {
           <div class="empty-state">
-            <p>No check-ins yet</p>
+            <p>Chưa có lượt check-in nào.</p>
           </div>
         }
-      </div>
+      </section>
     } @else {
-      <div class="loading">Loading event...</div>
+      <div class="loading">Đang tải thông tin sự kiện...</div>
     }
   </div>
 </div>

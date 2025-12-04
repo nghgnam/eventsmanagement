@@ -46,6 +46,8 @@ export class CheckInComponent implements OnInit {
   
   // Manual check-in
   ticketCode = '';
+  searchName = '';
+  searchPhone = '';
   isProcessing = false;
   
   // Recent check-ins
@@ -54,6 +56,15 @@ export class CheckInComponent implements OnInit {
     attendeeName: string;
     ticketType: string;
     checkInTime: string | Date;
+  }[] = [];
+
+  // Manual search results (dummy data for UI)
+  manualResults: {
+    id: string;
+    attendeeName: string;
+    phone: string;
+    ticketType: string;
+    status: 'not_checked_in' | 'checked_in';
   }[] = [];
 
   ngOnInit(): void {
@@ -109,6 +120,40 @@ export class CheckInComponent implements OnInit {
     // TODO: Show success/error message
     // TODO: Clear input
     this.isProcessing = false;
+  }
+
+  /**
+   * Manual search by name / phone
+   */
+  searchAttendee(): void {
+    if (!this.searchName && !this.searchPhone) {
+      return;
+    }
+
+    // TODO: Call backend to search attendees
+    // Dummy data for UI demonstration
+    this.manualResults = [
+      {
+        id: 't-001',
+        attendeeName: 'Nguyễn Văn A',
+        phone: '0901 234 567',
+        ticketType: 'Standard',
+        status: 'not_checked_in'
+      },
+      {
+        id: 't-002',
+        attendeeName: 'Trần Thị B',
+        phone: '0902 345 678',
+        ticketType: 'VIP',
+        status: 'checked_in'
+      }
+    ];
+  }
+
+  clearSearch(): void {
+    this.searchName = '';
+    this.searchPhone = '';
+    this.manualResults = [];
   }
 
   /**
