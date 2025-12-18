@@ -21,7 +21,7 @@ export interface EventModeration {
   organizerName: string;
   startDate: Date | string;
   locationText: string;
-  imageUrl: string;
+  image_url: string; // Đồng nhất với EventList interface
 }
 
 @Component({
@@ -68,7 +68,7 @@ export class EventModerationComponent implements OnInit {
         startDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         locationText: 'Sân vận động Quốc gia',
         organizerName: 'Event Organizer ABC',
-        imageUrl: 'https://via.placeholder.com/400x300'
+        image_url: 'https://via.placeholder.com/400x300'
       } as EventModeration,
       {
         id: 'e2',
@@ -79,7 +79,7 @@ export class EventModerationComponent implements OnInit {
         startDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
         locationText: 'Trung tâm Hội nghị',
         organizerName: 'Tech Company XYZ',
-        imageUrl: 'https://via.placeholder.com/400x300'
+        image_url: 'https://via.placeholder.com/400x300'
       } as EventModeration,
       {
         id: 'e3',
@@ -92,7 +92,7 @@ export class EventModerationComponent implements OnInit {
         startDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
         locationText: 'Công viên Trung tâm',
         organizerName: 'Music Events Co.',
-        imageUrl: 'https://via.placeholder.com/400x300'
+        image_url: 'https://via.placeholder.com/400x300'
       } as EventModeration,
       {
         id: 'e4',
@@ -106,7 +106,7 @@ export class EventModerationComponent implements OnInit {
         startDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
         locationText: 'N/A',
         organizerName: 'Spam Organizer',
-        imageUrl: 'https://via.placeholder.com/400x300'
+        image_url: 'https://via.placeholder.com/400x300'
       } as EventModeration
     ];
 

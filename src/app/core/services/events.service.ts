@@ -1,12 +1,12 @@
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpParams } from "@angular/common/http";
 import { DestroyRef, inject, Injectable, PLATFORM_ID, signal } from "@angular/core";
-import { toObservable } from "@angular/core/rxjs-interop";
+import { toObservable, toSignal } from "@angular/core/rxjs-interop";
 import { isPlatformBrowser } from "@angular/common";
 import { addDoc, collection, doc, getDoc, getDocs, increment, onSnapshot, query, Timestamp, updateDoc, where, Firestore } from '@angular/fire/firestore';
-import { forkJoin, from, Observable, of, throwError } from "rxjs";
-import { catchError, map, tap } from "rxjs/operators";
-import { EventList, EventStatus } from '../models/eventstype';
-
+import { forkJoin, from, Observable, of, pipe, throwError } from "rxjs";
+import { catchError, debounceTime, map, startWith, switchMap, tap } from "rxjs/operators";
+import { EventList, EventStatus, FilterEventsPaging } from '../models/eventstype';
+import { url, apiRoutes } from "../../../environments/environment";
 @Injectable({
   providedIn: 'root'
 })
@@ -26,6 +26,25 @@ export class EventsService {
   private readonly MAX_RETRIES = 10;
   private readonly INITIAL_RETRY_DELAY = 100; // ms
   private isInitializing = false;
+
+  readonly filterState = signal<FilterEventsPaging>({
+    name: null,
+    city: null,
+    category: null,
+    tags: null,
+    minPrice: null,
+    maxPrice: null,
+    startDate: null,
+    endDate: null,
+    timeFrame: null,
+    sort: null,
+    type: null,
+    page: 1,
+    limit: 20,
+    lat: null,
+    lng: null,
+    radius: null,
+  });
 
   constructor() {
     // Don't initialize collection in constructor - use lazy initialization
@@ -532,5 +551,56 @@ export class EventsService {
       payload['metadata'] = event.metadata;
     }
     return payload;
+  }
+
+  private eventsRequest$ = toObservable(this.filterState.asReadonly()).pipe(
+    debounceTime(1000),
+    switchMap(filter => {
+      console.log("Debugger: filter", filter);
+      // Build query params matching BE `/v1/events/search-filter`
+      // BE expects: keyword, category, tags, city, startDate, endDate, minPrice, maxPrice, isFree, sort, type, timeFrame, page, limit, lat, lng, radius
+      let params = new HttpParams();
+
+      // paging
+      if (filter.page != null) params = params.set('page', String(filter.page));
+      if (filter.limit != null) params = params.set('limit', String(filter.limit));
+
+      // keyword mapping (FE uses `name`, BE uses `keyword`)
+      if (filter.name) params = params.set('keyword', filter.name);
+
+      if (filter.category) params = params.set('category', filter.category);
+      if (filter.tags) params = params.set('tags', filter.tags);
+      if (filter.city) params = params.set('city', filter.city);
+
+      if (filter.startDate) params = params.set('startDate', filter.startDate);
+      if (filter.endDate) params = params.set('endDate', filter.endDate);
+      if (filter.timeFrame) params = params.set('timeFrame', filter.timeFrame);
+
+      if (filter.minPrice != null) params = params.set('minPrice', String(filter.minPrice));
+      if (filter.maxPrice != null) params = params.set('maxPrice', String(filter.maxPrice));
+
+      if (filter.sort) params = params.set('sort', filter.sort);
+      if (filter.type) params = params.set('type', filter.type);
+
+      // Optional geo filters (present in DTO)
+      if (filter.lat != null) params = params.set('lat', String(filter.lat));
+      if (filter.lng != null) params = params.set('lng', String(filter.lng));
+      if (filter.radius != null) params = params.set('radius', String(filter.radius));
+
+      return this.http.get<FilterEventsPaging>(`${url.api}${apiRoutes.events.searchFilter}`, { params })
+      .pipe(
+        map(data => ({ data, isLoading: false, error: null})),
+        startWith({data: null, isLoading: true, error: null}),
+        catchError(error => of({data: null, isLoading: false, error: error})),
+      )
+    }),
+  );
+
+  readonly eventsResource = toSignal(this.eventsRequest$, {
+    initialValue: {data: null, isLoading: true, error: null}
+  });
+
+  updateFilter(newFilter: Partial<FilterEventsPaging>): void {
+    this.filterState.update(prev => ({...prev, ...newFilter}));
   }
 }

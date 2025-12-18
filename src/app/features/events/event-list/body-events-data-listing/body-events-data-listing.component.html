@@ -1,15 +1,15 @@
 <div class="events-data-listing">
     <!-- Location Header -->
-    <div class="events-location">
+    <!-- <div class="events-location">
         <i class="fa-solid fa-map-marker-alt"></i>
         <span>Events in {{ location || 'All Locations' }}</span>
-    </div>
+    </div> -->
 
     <!-- Events Grid -->
-    @if (events$ | async; as events) {
+    @if (events()) {
       <div class="events-container">
         <!-- Loading State -->
-        @if (isLoading) {
+        @if (isLoading()) {
           <div class="loading-container">
             <div class="loading-spinner"></div>
             <p>Loading Events...</p>
@@ -17,7 +17,7 @@
         }
         
         <!-- No Events Message -->
-        @if (!isLoading && displayedEvents.length === 0) {
+        @if (!isLoading() && events().length === 0) {
           <div class="no-events">
             <i class="fa-solid fa-calendar-xmark"></i>
             <h3>No events found</h3>
@@ -26,71 +26,70 @@
         }
         
         <!-- Events Grid -->
-        @if (!isLoading && displayedEvents.length > 0) {
+        @if (!isLoading() && events().length > 0) {
           <div class="events-grid">
-            @for (event of displayedEvents; track event.id) {
+            @for (event of displayedEvents(); track event.id) {
               <div class="event-card" (click)="goToDetail(event.id)">
                 <div class="event-image">
-                    @if (getSafeUrl(event.image_url); as SafeUrl) {
-                      <img [src]="SafeUrl" [alt]="event.name" appImageErrorHandler>
-                    }
-                    <div class="event-date-badge">
-                        <span class="day">{{ getDateValue($any(event.date_time_options)?.[0]?.start_time) | date: 'dd' }}</span>
-                        <span class="month">{{ getDateValue($any(event.date_time_options)?.[0]?.start_time) | date: 'MMM' }}</span>
+                  @if (getSafeUrl(event.image_url); as SafeUrl) {
+                    <img [src]="SafeUrl" [alt]="event.name" appImageErrorHandler>
+                  }
+                  <div class="event-date-badge">
+                    <span class="day">{{ getDateValue($any(event.date_time_options)?.[0]?.start_time) | date: 'dd' }}</span>
+                    <span class="month">{{ getDateValue($any(event.date_time_options)?.[0]?.start_time) | date: 'MMM' }}</span>
+                  </div>
+                  @if (event.event_type) {
+                    <div class="event-type-badge">
+                      <i class="fa-solid" 
+                         [class.fa-music]="event.tags?.includes('music')"
+                         [class.fa-utensils]="event.tags?.includes('food')"
+                         [class.fa-video]="event.event_type === 'online'"
+                         [class.fa-ticket]="event.event_type === 'offline'"
+                         [class.fa-calendar]="event.event_type === 'hybrid'"></i>
+                      <span>{{ event.event_type | titlecase }}</span>
                     </div>
-                    @if (event.event_type) {
-                      <div class="event-type-badge">
-                        <i class="fa-solid" 
-                           [class.fa-music]="event.tags?.includes('music')"
-                           [class.fa-utensils]="event.tags?.includes('food')"
-                           [class.fa-video]="event.event_type === 'online'"
-                           [class.fa-ticket]="event.event_type === 'offline'"
-                           [class.fa-calendar]="event.event_type === 'hybrid'"></i>
-                        <span>{{ event.event_type | titlecase }}</span>
+                  }
+                </div>
+                <div class="event-content">
+                  <h3 class="event-title" (click)="goToDetail(event.id)">{{ event.name }}</h3>
+                  <div class="event-details" (click)="goToDetail(event.id)">
+                    <div class="event-info">
+                      <i class="fa-regular fa-clock"></i>
+                      <span>{{ getDateValue($any(event.date_time_options)?.[0]?.start_time) | date: 'HH:mm' }}</span>
+                    </div>
+                    <div class="event-info">
+                      <i class="fa-solid fa-location-dot"></i>
+                      <span>{{ event.location.type === 'online' ? 'Online Event' : event.location.address }}</span>
+                    </div>
+                  </div>
+                  <div class="event-footer">
+                    <div class="event-price" [class.free]="!event.price">
+                      <i class="fa-solid" [class.fa-ticket]="event.price" [class.fa-gift]="!event.price"></i>
+                      <span>{{ event.price ? (event.price + ' ' + (event.currency || 'USD')) : 'Free' }}</span>
+                    </div>
+                    @if (event.organizer) {
+                      <div class="event-organizer">
+                        @if (getSafeUrl(event.organizer.profileImage, true); as SafeUrl) {
+                          <img
+                            [src]="SafeUrl"
+                            alt="Organizer avatar" 
+                            class="organizer-avatar"
+                            appImageErrorHandler
+                            [isAvatar]="true">
+                        }
+                        <span>{{ event.organizer.name }}</span>
                       </div>
                     }
-                </div>
-                <div class="event-content" >
-                    <h3 class="event-title" (click)="goToDetail(event.id)">{{ event.name }}</h3>
-                    <div class="event-details" (click)="goToDetail(event.id)">
-                        <div class="event-info">
-                            <i class="fa-regular fa-clock"></i>
-                            <span>{{ getDateValue($any(event.date_time_options)?.[0]?.start_time) | date: 'HH:mm' }}</span>
-                        </div>
-                        <div class="event-info">
-                            <i class="fa-solid fa-location-dot"></i>
-                            <span>{{ event.location.type === 'online' ? 'Online Event' : event.location.address
-                                }}</span>
-                        </div>
+                    <!-- Like Button -->
+                    <div class="event-like">
+                      <button (click)="toggleLike(event); $event.stopPropagation();" [class.liked]="event.isLiked">
+                        <i class="fa-solid"
+                          [class.fa-heart]="event.isLiked"
+                          [class.fa-heart-circle-plus]="!event.isLiked"></i>
+                        <span>{{ event.likes_count }}</span>
+                      </button>
                     </div>
-                    <div class="event-footer">
-                        <div class="event-price" [class.free]="!event.price">
-                            <i class="fa-solid" [class.fa-ticket]="event.price" [class.fa-gift]="!event.price"></i>
-                            <span>{{ event.price ? (event.price + ' ' + (event.currency || 'USD')) : 'Free' }}</span>
-                        </div>
-                        @if (event.organizer) {
-                          <div class="event-organizer">
-                              @if (getSafeUrl(event.organizer.profileImage, true); as SafeUrl) {
-                                <img
-                                    [src]="SafeUrl"
-                                    alt="Organizer avatar" 
-                                    class="organizer-avatar"
-                                    appImageErrorHandler
-                                    [isAvatar]="true">
-                              }
-                              <span>{{ event.organizer.name }}</span>
-                          </div>
-                        }
-                        <!-- Like Button -->
-                        <div class="event-like">
-                            <button (click)="toggleLike(event); $event.stopPropagation();" [class.liked]="event.isLiked">
-                                <i class="fa-solid"
-                                    [class.fa-heart]="event.isLiked"
-                                    [class.fa-heart-circle-plus]="!event.isLiked"></i>
-                                <span>{{ event.likes_count }}</span>
-                            </button>
-                        </div>
-                    </div>
+                  </div>
                 </div>
               </div>
             }
@@ -100,13 +99,24 @@
     }
   
     <!-- See More Button -->
-    @if (showSeeMore | async) {
+    <!-- @if (showSeeMore()) {
       <div class="see-more-container">
         <button (click)="showMore()" class="see-more-btn">
           <span>See More Events</span>
           <i class="fa-solid fa-arrow-down"></i>
         </button>
       </div>
+    } -->
+
+    <!-- Paginator - Đặt ở cuối sau See More button -->
+    @if (!isLoading() && totalCount() > 0) {
+      <mat-paginator 
+        [length]="totalCount()" 
+        [pageSize]="currentPageSize()" 
+        [pageSizeOptions]="[20, 40, 80]" 
+        [pageIndex]="currentPageIndex()"
+        aria-label="Select page"
+        (page)="onPageChange($event)" style="margin-top: 20px">
+      </mat-paginator>
     }
 </div>
-      

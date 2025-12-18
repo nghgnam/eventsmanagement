@@ -19,13 +19,15 @@ export const ssrLoggingInterceptor: HttpInterceptorFn = (
   
   // Use Date.now() for SSR compatibility (performance.now() may not be available)
   const startTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
-  const requestId = `${req.method}-${req.url}-${Date.now()}`;
+  // Use urlWithParams so logs show query params (category, tags, page, ...)
+  const requestUrl = req.urlWithParams || req.url;
+  const requestId = `${req.method}-${requestUrl}-${Date.now()}`;
   
   // Only log on browser to avoid SSR noise
   if (isBrowser) {
     logger.debug(`HTTP Request started`, {
       method: req.method,
-      url: req.url,
+      url: requestUrl,
       headers: Object.keys(req.headers.keys())
     }, undefined, 'HttpInterceptor');
     
@@ -40,7 +42,7 @@ export const ssrLoggingInterceptor: HttpInterceptorFn = (
           const duration = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - startTime;
           logger.logHttpRequest(
             req.method,
-            req.url,
+            requestUrl,
             (event as unknown as { status: number }).status,
             duration,
             undefined,
@@ -55,7 +57,7 @@ export const ssrLoggingInterceptor: HttpInterceptorFn = (
           const duration = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - startTime;
           logger.logHttpRequest(
             req.method,
-            req.url,
+            requestUrl,
             error.status || 0,
             duration,
             error,
@@ -70,7 +72,7 @@ export const ssrLoggingInterceptor: HttpInterceptorFn = (
       if (isBrowser) {
         const duration = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - startTime;
         logger.error(
-          `HTTP Request failed: ${req.method} ${req.url}`,
+          `HTTP Request failed: ${req.method} ${requestUrl}`,
           {
             error: error.message,
             status: error.status,
@@ -85,7 +87,7 @@ export const ssrLoggingInterceptor: HttpInterceptorFn = (
     finalize(() => {
       // Only log on browser
       if (isBrowser) {
-        logger.endTimer(requestId, `HTTP Request completed: ${req.method} ${req.url}`, undefined, 'HttpInterceptor');
+        logger.endTimer(requestId, `HTTP Request completed: ${req.method} ${requestUrl}`, undefined, 'HttpInterceptor');
       }
     })
   );

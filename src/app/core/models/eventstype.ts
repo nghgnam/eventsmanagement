@@ -172,3 +172,23 @@ export interface EventList {
   created_at: TimestampLike;
   updated_at: TimestampLike;
 }
+
+//filter paging 
+export interface FilterEventsPaging {
+  name: string | null;
+  city: string | null;
+  category: string | null;
+  tags: string | null;
+  minPrice: number | null;
+  maxPrice: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  timeFrame: 'today' | 'week' | 'month' | 'tomorrow' | string | null;
+  sort: 'newest' | 'price_asc' | 'price_desc' | 'popular' | string | null;
+  type: 'online' | 'offline' | 'hybrid' | string | null;
+  page: number | null;
+  limit: number | null;
+  lat: number | null;
+  lng: number | null;
+  radius: number | null;
+}

@@ -5,7 +5,7 @@
     </div>
 
     <!-- Loading State -->
-    @if (isLoading) {
+    @if (isLoading()) {
       <div class="loading-container">
         <div class="loading-spinner"></div>
         <p>Loading Events...</p>
@@ -13,7 +13,7 @@
     }
 
     <!-- No Events Message -->
-    @if (!isLoading && displayedEvents.length === 0) {
+    @if (!isLoading() && events().length === 0) {
       <div class="no-events">
         <i class="fa-solid fa-calendar-xmark"></i>
         <h3>No events found</h3>
@@ -22,9 +22,9 @@
     }
 
     <!-- Events Grid -->
-    @if (!isLoading && displayedEvents.length > 0) {
+    @if (!isLoading() && events().length > 0) {
       <div class="events-grid">
-        @for (event of displayedEvents; track event.id) {
+        @for (event of events(); track event.id) {
           <div class="event-card" (click)="goToDetail(event.id)">
             <div class="event-image">
               @if (getSafeUrl(event.image_url); as SafeUrl) {

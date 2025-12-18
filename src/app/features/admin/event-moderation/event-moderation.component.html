@@ -41,7 +41,7 @@
           @for (event of filteredEvents; track event.id) {
             <div class="event-card">
               <div class="event-image">
-                <img [src]="event.imageUrl" [alt]="event.name" />
+                <img [src]="event.image_url" [alt]="event.name" />
                 <span class="status-badge" [class]="getStatusBadgeClass(event.status)">
                   {{ getStatusText(event.status) }}
                 </span>

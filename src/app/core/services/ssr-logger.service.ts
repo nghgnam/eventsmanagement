@@ -295,7 +295,7 @@ export class SSRLoggerService {
         break;
       case LogLevel.ERROR:
       case LogLevel.CRITICAL:
-        console.error(message, entry.data || '', entry.stack || '');
+        console.error(message, entry.data || '', entry.stack || '' , entry.url || '' , entry.component || '' , entry.service || '' );
         break;
     }
   }

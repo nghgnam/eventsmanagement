@@ -481,9 +481,10 @@ select {
     gap: 10px;
     justify-content: flex-end;
     align-items: center;
+    flex-wrap: wrap; /* Cho phép xuống dòng khi thiếu không gian */
 }
 
-.btn-edit, .btn-delete, .btn-restore {
+.btn-edit, .btn-delete, .btn-restore, .btn-dashboard {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -521,6 +522,16 @@ select {
 
 .btn-restore:hover {
     background: #c8e6c9;
+}
+
+/* Dashboard button */
+.btn-dashboard {
+    background: #f3f4f6; /* đồng bộ tông màu nhạt với các nút khác */
+    color: #1f2937;
+}
+
+.btn-dashboard:hover {
+    background: #e5e7eb;
 }
 
 .material-icons {

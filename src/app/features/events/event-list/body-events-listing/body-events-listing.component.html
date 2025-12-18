@@ -8,6 +8,7 @@
                 <input 
                     type="text" 
                     [(ngModel)]="location" 
+                    (ngModelChange)="onLocationInput($event)"
                     placeholder="New York, NY"
                     class="location-input-field"
                     (focus)="showLocationOptions = true"
@@ -268,11 +269,5 @@
     </app-popup>
 
     <!-- Events Data Listing -->
-    <app-body-events-data-listing 
-        [selectedFilter]="selectedFilter"
-        [location]="location">
-    </app-body-events-data-listing>
-
-    <!-- All Events Listing -->
-    <app-all-events-listing></app-all-events-listing>
+    <app-body-events-data-listing ></app-body-events-data-listing>
 </div>

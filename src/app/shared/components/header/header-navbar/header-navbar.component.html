@@ -1,9 +1,16 @@
 <nav class="header_navbar">
   <div class="header_navbar_left">
     <div class="header_navbar_menu" [class.mobile-open]="mobileMenuOpen" [class.mobile-hide]="!mobileMenuOpen && isMobile">
-      <a routerLink="/contact-sales" class="header_navbar_link">Explore</a>
-      <a routerLink="/create-event" class="header_navbar_link">Create Event</a>
-      <a routerLink="/find-tickets" class="header_navbar_link">Categories</a>
+      @if (!isLoggedIn) {
+        <a routerLink="/contact-sales" class="header_navbar_link">Explore</a>
+        <a routerLink="/find-tickets" class="header_navbar_link">Categories</a>
+        <a routerLink="/contact-sales" class="header_navbar_link">Contact Sales</a>
+      } @else {
+        <a routerLink="/contact-sales" class="header_navbar_link">Explore</a>
+        <a routerLink="/create-event" class="header_navbar_link">Create Event</a>
+        <a routerLink="/find-tickets" class="header_navbar_link">Categories</a>
+        <a routerLink="/contact-sales" class="header_navbar_link">Contact Sales</a>
+      }
       <!-- <a class="header_navbar_link" >Help</a> -->
     </div>
     <button class="header_navbar_hamburger" (click)="toggleMobileMenu()" aria-label="Toggle menu">
@@ -16,7 +23,7 @@
   </div>
 
   <div class="header_navbar_right">
-    @if (checkingForLogin) {
+    @if (isLoggedIn) {
       <div class="header_navbar_notifications">
         <button
           type="button"
@@ -96,7 +103,7 @@
         }
       </div>
     }
-    @if (checkingForLogin) {
+    @if (isLoggedIn) {
       <div class="header_navbar_user_group" (mouseenter)="showDropdown(true)" (mouseleave)="showDropdown(false)">
         @if (sanitizeImageUrl(userCurrentImage); as safeUrl) {
           <img [src]="safeUrl" class="header_navbar_avatar" alt="Avatar" />
