@@ -35,7 +35,8 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
   isDropdownOpen: boolean = false;
   currentUserType: string | null | undefined;
   
-  checkingForLogin: boolean = false;
+  checkingForLogin: boolean = false; // kept for backwards compatibility
+  isLoggedIn: boolean = false;
   users: User[] = [];
   mobileMenuOpen = false;
   isMobile = false;
@@ -81,6 +82,7 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
     // Use AuthService.onAuthStateChanged() instead of direct Firebase call
     this.authService.onAuthStateChanged().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(user => {
       this.checkingForLogin = !!user;
+      this.isLoggedIn = !!user;
       
       // Clear user data if logged out
       if (!user) {
@@ -171,6 +173,7 @@ export class HeaderNavbarComponent implements OnInit, OnDestroy {
         // Clear user data immediately
         this.clearUserData();
         this.checkingForLogin = false;
+        this.isLoggedIn = false;
         this.router.navigate(['/login']);
       },
       error: (error) => {

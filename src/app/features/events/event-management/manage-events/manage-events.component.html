@@ -17,6 +17,9 @@
                     <li [class.active]="activeTab === 'upcoming'" (click)="setActiveTab('upcoming')">
                         <span>Upcoming Events</span>
                     </li>
+                    <li [class.active]="activeTab === 'all'" (click)="setActiveTab('all')">
+                        <span>All Events</span>
+                    </li>
                     <li [class.active]="activeTab === 'past'" (click)="setActiveTab('past')">
                         <span>Past Events</span>
                     </li>
@@ -36,7 +39,15 @@
             <!-- Header -->
             <div class="header">
                 <h2>
-                    {{activeTab === 'upcoming' ? 'Upcoming Events' : 'Past Events'}}
+                    {{
+                      activeTab === 'upcoming'
+                        ? 'Upcoming Events'
+                        : activeTab === 'past'
+                          ? 'Past Events'
+                          : activeTab === 'all'
+                            ? 'All Events'
+                            : 'Events'
+                    }}
                 </h2>
                 <button class="create-event-btn" (click)="openCreateEventPopup()" >
                     Create New Event
@@ -149,7 +160,8 @@
                                 </button>
                               }
                               <button class="btn-dashboard" (click)="goToDashboard(event)">
-                                <span class="material-icons">insights</span> Dashboard
+                                <span class="material-icons">insights</span>
+                                <span>Dashboard</span>
                               </button>
                             </div>
                         </div>

@@ -36,7 +36,7 @@ export class ManageEventsComponent implements OnInit, OnDestroy {
   successMessage: string = '';
   showCreateEventPopup: boolean = false;
   showEditEventPopup: boolean = false;
-  activeTab: 'upcoming' | 'past' | 'edit' | 'delete' | 'create' | undefined = 'upcoming';
+  activeTab: 'all' | 'upcoming' | 'past' | 'edit' | 'delete' | 'create' | undefined = 'upcoming';
   isLoading: boolean = false;
 
   trashEvents: EventList[] = []; 
@@ -118,7 +118,7 @@ export class ManageEventsComponent implements OnInit, OnDestroy {
     this.resetSuccessMessageTimeout();
   }
 
-  setActiveTab(tab: 'upcoming' | 'past' | 'edit' | 'delete' | 'create' | undefined): void {
+  setActiveTab(tab: 'all' | 'upcoming' | 'past' | 'edit' | 'delete' | 'create' | undefined): void {
     this.activeTab = tab;
     this.closeCreateEventPopup();
   }
@@ -253,19 +253,31 @@ export class ManageEventsComponent implements OnInit, OnDestroy {
     if (!this.currentOrganizerEvent.length) return [];
 
     const today = new Date();
-    if (this.activeTab === 'upcoming') {
+    const isCancelled = (event: EventList): boolean => {
+      const statusState = typeof event.status === 'string' ? event.status : event.status?.state;
+      return statusState === 'cancelled';
+    };
+
+    if (this.activeTab === 'all') {
+      // All non-cancelled events
+      return this.currentOrganizerEvent.filter(event => !isCancelled(event));
+    } else if (this.activeTab === 'upcoming') {
       return this.currentOrganizerEvent.filter(event => {
         const startDate = new Date(event.date_time_options[0].start_time);
-        return startDate > today && event.status !== 'cancelled';
+        return startDate > today && !isCancelled(event);
       });
     } else if (this.activeTab === 'past') {
       return this.currentOrganizerEvent.filter(event => {
         const endDate = new Date(event.date_time_options[0].end_time);
-        return endDate < today && event.status !== 'cancelled';
+        return endDate < today && !isCancelled(event);
       });
-    } else {
-      return this.currentOrganizerEvent.filter(event => event.status !== 'cancelled');
+    } else if (this.activeTab === 'delete') {
+      // Cancelled Events tab
+      return this.currentOrganizerEvent.filter(event => isCancelled(event));
     }
+
+    // Fallback: all non-cancelled events
+    return this.currentOrganizerEvent.filter(event => !isCancelled(event));
   }
 
   handleCreateSuccess(message: string): void {

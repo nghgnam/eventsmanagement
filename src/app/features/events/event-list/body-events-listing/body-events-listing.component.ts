@@ -1,19 +1,20 @@
-import { Component, Output, EventEmitter, OnInit, inject, PLATFORM_ID, DestroyRef, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, inject, PLATFORM_ID, DestroyRef, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { BodyEventsDataListingComponent } from '../body-events-data-listing/body-events-data-listing.component';
-import { AllEventsListingComponent } from '../all-events-listing/all-events-listing.component';
 import { PopupComponent } from '../../../../shared/components/popup/popup.component';
 import { UsersService } from '../../../../core/services/users.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { CategoriesService, Category } from '../../../../core/services/categories.service';
 import { User } from '../../../../core/models/userstype';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EventsService } from '../../../../core/services/events.service';
+import { FilterEventsPaging } from '../../../../core/models/eventstype';
 
 @Component({
   selector: 'app-body-events-listing',
   standalone: true,
-  imports: [CommonModule, FormsModule, BodyEventsDataListingComponent, AllEventsListingComponent, PopupComponent],
+  imports: [CommonModule, FormsModule, BodyEventsDataListingComponent, PopupComponent],
   templateUrl: './body-events-listing.component.html',
   styleUrls: ['./body-events-listing.component.css']
 })
@@ -23,12 +24,9 @@ export class BodyEventsListingComponent implements OnInit, AfterViewInit {
   private usersService = inject(UsersService);
   private authService = inject(AuthService);
   private categoriesService = inject(CategoriesService);
+  private eventsService = inject(EventsService);
   private platformId = inject(PLATFORM_ID);
   private destroyRef = inject(DestroyRef);
-
-  @Output() filterChanged = new EventEmitter<string>();
-  @Output() locationChanged = new EventEmitter<string>();
-  @Output() categoryChanged = new EventEmitter<string>();
   
   selectedFilter: string = 'all';
   location: string = '';
@@ -241,14 +239,14 @@ export class BodyEventsListingComponent implements OnInit, AfterViewInit {
     const canScrollPrevValue = scrollLeft > 1;
     const canScrollNextValue = scrollLeft < scrollWidth - clientWidth - 1;
     
-    console.log('[BodyEventsListing] Scroll state:', {
-      scrollLeft,
-      scrollWidth,
-      clientWidth,
-      canScrollPrev: canScrollPrevValue,
-      canScrollNext: canScrollNextValue,
-      needsScroll: scrollWidth > clientWidth
-    });
+    // console.log('[BodyEventsListing] Scroll state:', {
+    //   scrollLeft,
+    //   scrollWidth,
+    //   clientWidth,
+    //   canScrollPrev: canScrollPrevValue,
+    //   canScrollNext: canScrollNextValue,
+    //   needsScroll: scrollWidth > clientWidth
+    // });
     
     this.canScrollPrev = canScrollPrevValue;
     this.canScrollNext = canScrollNextValue;
@@ -257,13 +255,17 @@ export class BodyEventsListingComponent implements OnInit, AfterViewInit {
   selectCategory(category: Category): void {
     this.selectedCategorySlug = category.slug;
     this.selectedSpecialCategory = null;
-    this.categoryChanged.emit(category.slug);
+    // Cập nhật filter BE theo category
+    this.pushFilterUpdate({
+      category: category.slug,
+      page: 1,
+    });
   }
 
   selectSpecialCategory(type: 'trending' | 'weekend'): void {
     this.selectedSpecialCategory = type;
     this.selectedCategorySlug = null;
-    
+
     if (type === 'weekend') {
       // Set date range to this weekend
       const today = new Date();
@@ -277,11 +279,11 @@ export class BodyEventsListingComponent implements OnInit, AfterViewInit {
       this.filterState.dateRange.startDate = saturday;
       this.filterState.dateRange.endDate = sunday;
     } else if (type === 'trending') {
-      // Clear date range for trending
+      // Trending: chỉ set sort phổ biến, không giới hạn dateRange
       this.filterState.dateRange.startDate = null;
       this.filterState.dateRange.endDate = null;
     }
-    
+
     this.applyFilters();
   }
 
@@ -302,8 +304,17 @@ export class BodyEventsListingComponent implements OnInit, AfterViewInit {
   }
 
   applyFilters(): void {
-    // Emit filter changes to parent components
-    this.filterChanged.emit(JSON.stringify(this.filterState));
+    // Đẩy toàn bộ filter sang EventsService (BE /search-filter)
+    this.pushFilterUpdate({
+      startDate: this.filterState.dateRange.startDate ? this.filterState.dateRange.startDate.toISOString() : null,
+      endDate: this.filterState.dateRange.endDate ? this.filterState.dateRange.endDate.toISOString() : null,
+      minPrice: this.filterState.priceRange.min > 0 ? this.filterState.priceRange.min : null,
+      maxPrice: this.filterState.priceRange.max < 1000 ? this.filterState.priceRange.max : null,
+      type: this.filterState.format,
+      // Nếu chọn trending, có thể map sang sort=popular
+      sort: this.selectedSpecialCategory === 'trending' ? 'popular' : null,
+      page: 1,
+    });
     this.closeFilters();
   }
 
@@ -320,7 +331,17 @@ export class BodyEventsListingComponent implements OnInit, AfterViewInit {
       format: null
     };
     this.selectedSpecialCategory = null;
-    this.applyFilters();
+    // Reset toàn bộ filter ở BE
+    this.pushFilterUpdate({
+      startDate: null,
+      endDate: null,
+      minPrice: null,
+      maxPrice: null,
+      type: null,
+      sort: null,
+      category: null,
+      page: 1,
+    });
   }
 
   onDateRangeChange(start: string | null, end: string | null): void {
@@ -463,13 +484,7 @@ export class BodyEventsListingComponent implements OnInit, AfterViewInit {
   }
 
   updateLocation() {
-    this.locationChanged.emit(this.location);
     this.showLocationOptions = false;
-  }
-
-  selectFilter(filter: string) {
-    this.selectedFilter = filter;
-    this.filterChanged.emit(filter);
   }
 
   adjustWidth(spanElement: HTMLElement, event: Event) {
@@ -492,5 +507,18 @@ export class BodyEventsListingComponent implements OnInit, AfterViewInit {
     this.locationOptions = [];
     this.showLocationOptions = false;
     this.updateLocation();
+  }
+
+  onLocationInput(value: string): void {
+    this.location = value;
+    // Push partial update while typing
+    this.pushFilterUpdate({
+      city: value ? value.replace(/\s+/g, '_') : null,
+      page: 1,
+    });
+  }
+
+  private pushFilterUpdate(partial: Partial<FilterEventsPaging>) {
+    this.eventsService.updateFilter(partial);
   }
 }

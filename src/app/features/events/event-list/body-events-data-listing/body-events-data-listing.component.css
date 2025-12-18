@@ -362,3 +362,12 @@
         height: 160px;
     }
 }
+/* .virtual-viewport {
+    height: calc(100vh - 200px); 
+    width: 100%;
+}
+.event-item-wrapper {
+    height: 420px; 
+    box-sizing: border-box;
+    padding-bottom: 20px;
+} */
